@@ -1,0 +1,158 @@
+{
+    "nodes": [
+        {
+            "id": "c3dce05924bb4fb9916bf24a7dd6db3f",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V_3",
+            "x": 660,
+            "y": 210
+        },
+        {
+            "id": "6305b6e0be3440b68c9771d4a158a5d7",
+            "label_dx": -30,
+            "label_dy": -30,
+            "name": "I_2",
+            "x": 360,
+            "y": 210
+        },
+        {
+            "id": "36f5a6fce9c64fb8b8b9d7151c8801e9",
+            "label_dx": 0,
+            "label_dy": -30,
+            "name": "V_2",
+            "x": 510,
+            "y": 210
+        },
+        {
+            "id": "cd702bebc99e4cf8af4cc2bd8ceebcf9",
+            "label_dx": 0,
+            "label_dy": -30,
+            "name": "V_1",
+            "x": 210,
+            "y": 210
+        },
+        {
+            "id": "0648eb7e74d340548b737113183aa64c",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V_in",
+            "x": 120,
+            "y": 210
+        },
+        {
+            "id": "c08df7b5addf443cac56ff2827f52601",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V_out",
+            "x": 750,
+            "y": 210
+        },
+        {
+            "id": "49a2ff03c1f1403b821f56cf0678f5df",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "I_in",
+            "x": 120,
+            "y": 360
+        }
+    ],
+    "branches": [
+        {
+            "id": "b63b1005f74f40d1ba3dd6a3f2a7b08e",
+            "weight": "s*C",
+            "start": "c3dce05924bb4fb9916bf24a7dd6db3f",
+            "end": "6305b6e0be3440b68c9771d4a158a5d7",
+            "label_dx": 0.0,
+            "label_dy": -30.0,
+            "spline1_x": 630.0,
+            "spline1_y": 90.0,
+            "spline2_x": 390.0,
+            "spline2_y": 90.0
+        },
+        {
+            "id": "76204cb7ddd443bf8e8dddc153abafb1",
+            "weight": "1",
+            "start": "c3dce05924bb4fb9916bf24a7dd6db3f",
+            "end": "c08df7b5addf443cac56ff2827f52601",
+            "label_dx": -2.0,
+            "label_dy": -32.0,
+            "spline1_x": 705.0,
+            "spline1_y": 210.0,
+            "spline2_x": 705.0,
+            "spline2_y": 210.0
+        },
+        {
+            "id": "d07e6e02a733427faecc9f7009eb8c57",
+            "weight": "G",
+            "start": "cd702bebc99e4cf8af4cc2bd8ceebcf9",
+            "end": "6305b6e0be3440b68c9771d4a158a5d7",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 285.0,
+            "spline1_y": 210.0,
+            "spline2_x": 285.0,
+            "spline2_y": 210.0
+        },
+        {
+            "id": "6fb563aa45214ab48262522fa5d7f68b",
+            "weight": "-G",
+            "start": "36f5a6fce9c64fb8b8b9d7151c8801e9",
+            "end": "49a2ff03c1f1403b821f56cf0678f5df",
+            "label_dx": -18.769372379266088,
+            "label_dy": -22.000368186091805,
+            "spline1_x": 480.0,
+            "spline1_y": 270.0,
+            "spline2_x": 210.0,
+            "spline2_y": 330.0
+        },
+        {
+            "id": "bcd49ba9c2b2471e8e5b469a0363b2e6",
+            "weight": "1",
+            "start": "0648eb7e74d340548b737113183aa64c",
+            "end": "cd702bebc99e4cf8af4cc2bd8ceebcf9",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 165.0,
+            "spline1_y": 210.0,
+            "spline2_x": 165.0,
+            "spline2_y": 210.0
+        },
+        {
+            "id": "7d8b3cda9bad418684189b27e303931b",
+            "weight": "-A",
+            "start": "36f5a6fce9c64fb8b8b9d7151c8801e9",
+            "end": "c3dce05924bb4fb9916bf24a7dd6db3f",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 585.0,
+            "spline1_y": 210.0,
+            "spline2_x": 585.0,
+            "spline2_y": 210.0
+        },
+        {
+            "id": "cd46038c36f94922bab007449973097f",
+            "weight": "Z_2",
+            "start": "6305b6e0be3440b68c9771d4a158a5d7",
+            "end": "36f5a6fce9c64fb8b8b9d7151c8801e9",
+            "label_dx": -15.0,
+            "label_dy": -30.0,
+            "spline1_x": 435.0,
+            "spline1_y": 210.0,
+            "spline2_x": 435.0,
+            "spline2_y": 210.0
+        },
+        {
+            "id": "9cfadcfb1c624080a9dc9bc91a853ec2",
+            "weight": "G",
+            "start": "cd702bebc99e4cf8af4cc2bd8ceebcf9",
+            "end": "49a2ff03c1f1403b821f56cf0678f5df",
+            "label_dx": 39.27521222862367,
+            "label_dy": -6.434872662825796,
+            "spline1_x": 210.0,
+            "spline1_y": 270.0,
+            "spline2_x": 120.0,
+            "spline2_y": 300.0
+        }
+    ]
+}

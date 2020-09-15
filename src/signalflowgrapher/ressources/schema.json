@@ -1,0 +1,89 @@
+{
+    "type": "object",
+    "properties": {
+        "nodes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "label_dx": {
+                        "type": "integer"
+                    },
+                    "label_dy": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "x": {
+                        "type": "integer"
+                    },
+                    "y": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "label_dx",
+                    "label_dy",
+                    "name",
+                    "x",
+                    "y"
+                ]
+            }
+        },
+        "branches": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "weight": {
+                        "type": "string"
+                    },
+                    "start": {
+                        "type": "string"
+                    },
+                    "end": {
+                        "type": "string"
+                    },
+                    "label_dx": {
+                        "type": "number"
+                    },
+                    "label_dy": {
+                        "type": "number"
+                    },
+                    "spline1_x": {
+                        "type": "number"
+                    },
+                    "spline1_y": {
+                        "type": "number"
+                    },
+                    "spline2_x": {
+                        "type": "number"
+                    },
+                    "spline2_y": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "weight",
+                    "start",
+                    "end",
+                    "label_dx",
+                    "label_dy",
+                    "spline1_x",
+                    "spline1_y",
+                    "spline2_x",
+                    "spline2_y"
+                ]
+            }
+        }
+    }
+}

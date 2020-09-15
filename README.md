@@ -1,10 +1,12 @@
-***Only README and LICENCE is here for now, code will follow on Sep 15 or SDep 16, 2020.***
-
 # SignalFlowGraper
 
-Version 0.2 (for beta test, before distribution via github)
+## Version 0.2 
+
+Intended for beta test in the autumn term of 2020.
 
 This version still has some issues and may crash; be careful and save often.
+
+And please report all issues you find to hanspeter.schmid@fhnw.ch
 
 ## License
 This package is distributed under the Artistic License 2.0, which you find in the file LICENSE and on the internet on https://opensource.org/licenses/Artistic-2.0.

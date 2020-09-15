@@ -1,0 +1,234 @@
+{
+    "nodes": [
+        {
+            "id": "364bb8c9b0cd477293cccb15877cd9e8",
+            "label_dx": 31,
+            "label_dy": 30,
+            "name": "V8e",
+            "x": 659,
+            "y": 420
+        },
+        {
+            "id": "bf50a8c632b4465181653ed9d6130512",
+            "label_dx": -29,
+            "label_dy": 30,
+            "name": "Q6e",
+            "x": 360,
+            "y": 420
+        },
+        {
+            "id": "9a1eba46a4374d0c893df1f64d8722a0",
+            "label_dx": 0,
+            "label_dy": -30,
+            "name": "Voo",
+            "x": 750,
+            "y": 270
+        },
+        {
+            "id": "c14934306adf4ccb9b37d91ae116dfd0",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "Vio",
+            "x": 120,
+            "y": 270
+        },
+        {
+            "id": "3119d0b773b64f5196235c54aa065b9a",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "Q4o",
+            "x": 360,
+            "y": 270
+        },
+        {
+            "id": "388b000d16a84753a5703ae94ec55ee0",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V8o",
+            "x": 660,
+            "y": 270
+        },
+        {
+            "id": "fef51533ef054d4a8d08cc4f68d5214d",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V3o",
+            "x": 210,
+            "y": 270
+        },
+        {
+            "id": "c49348a1c3d347079574445b1ee51b19",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V6e",
+            "x": 510,
+            "y": 420
+        },
+        {
+            "id": "5c9f928476ec45ccbec5fe1583de38b1",
+            "label_dx": -2,
+            "label_dy": -30,
+            "name": "V4o",
+            "x": 510,
+            "y": 270
+        }
+    ],
+    "branches": [
+        {
+            "id": "8d1f6f172def453c910c4700eefd7689",
+            "weight": "-z1*C2",
+            "start": "364bb8c9b0cd477293cccb15877cd9e8",
+            "end": "3119d0b773b64f5196235c54aa065b9a",
+            "label_dx": 13.45226859170441,
+            "label_dy": -26.81485539279754,
+            "spline1_x": 1198.5,
+            "spline1_y": 180.0,
+            "spline2_x": 480.5,
+            "spline2_y": -60.0
+        },
+        {
+            "id": "a71d3f17d67743ce9d942fdaf4736935",
+            "weight": "C2",
+            "start": "364bb8c9b0cd477293cccb15877cd9e8",
+            "end": "bf50a8c632b4465181653ed9d6130512",
+            "label_dx": 1.0,
+            "label_dy": 23.0,
+            "spline1_x": 628.0,
+            "spline1_y": 510.5,
+            "spline2_x": 390.0,
+            "spline2_y": 510.5
+        },
+        {
+            "id": "a1a0692b9b384e83a7748d427ce8aa82",
+            "weight": "-A",
+            "start": "5c9f928476ec45ccbec5fe1583de38b1",
+            "end": "388b000d16a84753a5703ae94ec55ee0",
+            "label_dx": -15.0,
+            "label_dy": -30.0,
+            "spline1_x": 584.0,
+            "spline1_y": 270.0,
+            "spline2_x": 586.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "38d379c116d34caeb6e0b172850c120a",
+            "weight": "-z1*C2",
+            "start": "388b000d16a84753a5703ae94ec55ee0",
+            "end": "bf50a8c632b4465181653ed9d6130512",
+            "label_dx": 89.58359213500125,
+            "label_dy": -14.832815729997492,
+            "spline1_x": 510.0,
+            "spline1_y": 345.0,
+            "spline2_x": 510.0,
+            "spline2_y": 345.0
+        },
+        {
+            "id": "c2ad1c2bd60c4cbfa2f77ce636571efa",
+            "weight": "S4o",
+            "start": "3119d0b773b64f5196235c54aa065b9a",
+            "end": "5c9f928476ec45ccbec5fe1583de38b1",
+            "label_dx": 14.0,
+            "label_dy": -30.0,
+            "spline1_x": 436.0,
+            "spline1_y": 270.0,
+            "spline2_x": 434.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "0b9a847a95c34ce091a4978fb5f93cdc",
+            "weight": "1",
+            "start": "388b000d16a84753a5703ae94ec55ee0",
+            "end": "9a1eba46a4374d0c893df1f64d8722a0",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 705.0,
+            "spline1_y": 270.0,
+            "spline2_x": 705.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "111405a830dd4c72bfcb69a910d28818",
+            "weight": "z1*C1",
+            "start": "fef51533ef054d4a8d08cc4f68d5214d",
+            "end": "bf50a8c632b4465181653ed9d6130512",
+            "label_dx": -21.213203435596427,
+            "label_dy": 21.213203435596427,
+            "spline1_x": 330.0,
+            "spline1_y": 270.0,
+            "spline2_x": 330.0,
+            "spline2_y": 360.0
+        },
+        {
+            "id": "4639fe622e504527bc6888ffe407d857",
+            "weight": "S6e",
+            "start": "bf50a8c632b4465181653ed9d6130512",
+            "end": "c49348a1c3d347079574445b1ee51b19",
+            "label_dx": 15.0,
+            "label_dy": 30.0,
+            "spline1_x": 435.0,
+            "spline1_y": 420.0,
+            "spline2_x": 435.0,
+            "spline2_y": 420.0
+        },
+        {
+            "id": "b31a02205d85449e81afdd0e5c9b34d5",
+            "weight": "-A",
+            "start": "c49348a1c3d347079574445b1ee51b19",
+            "end": "364bb8c9b0cd477293cccb15877cd9e8",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 584.5,
+            "spline1_y": 420.0,
+            "spline2_x": 584.5,
+            "spline2_y": 420.0
+        },
+        {
+            "id": "630fe18468b743d5b18d5754e559c027",
+            "weight": "1",
+            "start": "c14934306adf4ccb9b37d91ae116dfd0",
+            "end": "fef51533ef054d4a8d08cc4f68d5214d",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 165.0,
+            "spline1_y": 270.0,
+            "spline2_x": 165.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "3ecaf9b05acb40749f4a9e15e27f8119",
+            "weight": "z1*C2",
+            "start": "c49348a1c3d347079574445b1ee51b19",
+            "end": "3119d0b773b64f5196235c54aa065b9a",
+            "label_dx": -9.786796564403573,
+            "label_dy": 35.78679656440357,
+            "spline1_x": 1230.0,
+            "spline1_y": 210.0,
+            "spline2_x": 450.0,
+            "spline2_y": 0.0
+        },
+        {
+            "id": "8b5582ba684d4cbc82ccc56fcbb0d0c5",
+            "weight": "C2",
+            "start": "388b000d16a84753a5703ae94ec55ee0",
+            "end": "3119d0b773b64f5196235c54aa065b9a",
+            "label_dx": 0.0,
+            "label_dy": -30.0,
+            "spline1_x": 630.0,
+            "spline1_y": 180.0,
+            "spline2_x": 390.0,
+            "spline2_y": 180.0
+        },
+        {
+            "id": "4cf8339687b5428eaf7e22e8dd0c9a70",
+            "weight": "z1*C2",
+            "start": "5c9f928476ec45ccbec5fe1583de38b1",
+            "end": "bf50a8c632b4465181653ed9d6130512",
+            "label_dx": -45.07225655907632,
+            "label_dy": -14.353219979864036,
+            "spline1_x": 434.0,
+            "spline1_y": 345.0,
+            "spline2_x": 436.0,
+            "spline2_y": 345.0
+        }
+    ]
+}
