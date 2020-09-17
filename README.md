@@ -1,4 +1,4 @@
-# SignalFlowGraper
+# SignalFlowGrapher
 
 ## Version 0.2 
 
