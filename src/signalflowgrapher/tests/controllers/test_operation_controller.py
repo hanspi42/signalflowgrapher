@@ -103,6 +103,33 @@ class TestOperationController(TestCase):
         self.command_handler.start_script.assert_called_once()
         self.command_handler.end_script.assert_called_once()
 
+    def test_combine_parallel_self_loops(self):
+        operation = MagicMock(CombineParallelOperation)
+        branch_1 = MagicMock(CurvedBranch)
+        branch_2 = MagicMock(CurvedBranch)
+
+        n1 = MagicMock(Node)
+        branch_1.start = n1
+        branch_1.end = n1
+        branch_2.start = n1
+        branch_2.end = n1
+
+        operation.get_new_weight.return_value = "New Weight"
+
+        with patch("signalflowgrapher.controllers.operation_controller."
+                   "CombineParallelOperation",
+                   MagicMock(return_value=operation)):
+            self.controller.combine_parallel(branch_1, branch_2)
+
+        self.main_controller.remove_nodes_and_branches.called_once_with(
+            [branch_1, branch_2])
+        operation.get_new_weight.called_once_with(branch_1,
+                                                  branch_2)
+        self.main_controller.create_self_loop.assert_called_once_with(
+            n1, "New Weight")
+        self.command_handler.start_script.assert_called_once()
+        self.command_handler.end_script.assert_called_once()
+
     def test_transpose(self):
         branch_1 = MagicMock(CurvedBranch)
         branch_2 = MagicMock(CurvedBranch)
