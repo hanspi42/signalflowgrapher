@@ -10,6 +10,7 @@ from PyQt5.QtCore import Qt
 from PyQt5 import uic
 import ntpath
 import logging
+from PyQt5 import QtCore
 logger = logging.getLogger(__name__)
 
 creator_file = "signalflowgrapher/gui/main_window.ui"
@@ -86,6 +87,13 @@ class MainWindow(QMainWindow, main_window_ui):
         # Pass ctrl key release event to graph field
         if event.key() == Qt.Key_Control:
             self.__graph_field.on_ctrl_release()
+
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.ActivationChange:
+            # Manually execute release events if window loses isActive
+            if not self.isActiveWindow() and self.__graph_field:
+                logger.debug("MainWindows lost isActive")
+                self.__graph_field.on_ctrl_release()
 
     def __new(self):
         if (not self.__ask_for_continue_if_unsaved_changes()):
@@ -183,9 +191,9 @@ class MainWindow(QMainWindow, main_window_ui):
             box.setWindowTitle(QCoreApplication.translate("main_window",
                                                           "Unsaved changes"))
             box.setText(QCoreApplication.translate(
-                                           "main_window",
-                                           "Do you really want to continue "
-                                           "without saving changes?"))
+                "main_window",
+                "Do you really want to continue "
+                "without saving changes?"))
             box.setIcon(box.Icon.Question)
             response = box.exec()
 
