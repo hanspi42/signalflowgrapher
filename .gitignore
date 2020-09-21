@@ -127,5 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Visual Studio Code Stuff
 SignalFlowGrapher.code-workspace
 .vscode/
+
+# venv Stuff
+src/signalflowgrapher/pyvenv.cfg
+src/signalflowgrapher/Scripts/
