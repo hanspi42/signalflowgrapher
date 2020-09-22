@@ -3,6 +3,9 @@ from signalflowgrapher.model.model import Branch, Node
 from signalflowgrapher.io.file import write_file, read_file
 from os.path import dirname, join, isfile
 from shutil import copyfile
+from sympy import latex
+from sympy.parsing.sympy_parser import parse_expr
+from sympy.abc import _clash
 import logging
 logger = logging.getLogger(__name__)
 
@@ -80,7 +83,7 @@ class TikZExport(object):
                         % (index,
                            node.label_dx,
                            node.label_dy,
-                           self.__escape_name(node.name)))
+                           self.__latex_name(node.name)))
         return code
 
     def __get_branches_code(self, branches: Set[Branch], nodes: Set[Node]):
@@ -103,20 +106,11 @@ class TikZExport(object):
             code.append("\\node[ArrowName] at"
                         "($ (middle_%s) + (%s, %s) $) {%s};\n"
                         % (index, branch.label_dx,
-                           branch.label_dy, self.__escape_name(branch.weight)))
+                           branch.label_dy, self.__latex_name(branch.weight)))
         return code
 
-    def __escape_name(self, name: str) -> str:
-        # Escape characters that TeX/TikZ uses
-        characters_to_escape = {"#": r"\#",
-                                "$": r"\$",
-                                "%": r"\%",
-                                "&": r"\&",
-                                "{": r"\{",
-                                "}": r"\}",
-                                "_": r"\_",
-                                "~": r"\~{}",
-                                "^": r"\^{}",
-                                "\\": r"\textbackslash{}"}
-
-        return name.translate(str.maketrans(characters_to_escape))
+    def __latex_name(self, name: str) -> str:
+        latex_notation = latex(parse_expr(name, local_dict=_clash),
+                               mode="inline")
+        return(latex_notation)
+    
