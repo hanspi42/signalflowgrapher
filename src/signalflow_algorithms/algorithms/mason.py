@@ -7,6 +7,7 @@ from signalflow_algorithms.algorithms.loop_group import \
     LoopGroup, find_loop_groups
 from signalflow_algorithms.algorithms.find_paths import find_paths
 from operator import attrgetter
+from sympy.abc import _clash
 
 
 class MasonResult(object):
@@ -125,7 +126,7 @@ def loop_to_expression(loop: List[Branch]) -> Expr:
         raise Exception('A loop must contain at least one branch.')
 
     # Set expression to weight of first branch in loop
-    expression = parse_expr(loop[0].weight)
+    expression = parse_expr(loop[0].weight, local_dict=_clash)
 
     if len(loop) == 1:
         return expression
@@ -133,7 +134,8 @@ def loop_to_expression(loop: List[Branch]) -> Expr:
     # Multiply by every branch
     index = 1
     while index < len(loop):
-        expression = Mul(expression, parse_expr(loop[index].weight))
+        expression = Mul(expression, parse_expr(loop[index].weight,
+                                                local_dict=_clash))
         index += 1
 
     return expression
