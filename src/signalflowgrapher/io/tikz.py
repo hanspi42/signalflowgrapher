@@ -113,6 +113,6 @@ class TikZExport(object):
         if name == "":
             latex_notation = ""
         else:
-            latex_notation = latex(parse_expr(name, local_dict=_clash),
-                                   mode="inline")
+            latex_notation = "$%s$" % latex(parse_expr(name,
+                                                       local_dict=_clash))
         return(latex_notation)
