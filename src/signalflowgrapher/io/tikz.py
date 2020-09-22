@@ -110,10 +110,9 @@ class TikZExport(object):
         return code
 
     def __latex_name(self, name: str) -> str:
-        if name=="":
-            latex_notation=""
+        if name == "":
+            latex_notation = ""
         else:
             latex_notation = latex(parse_expr(name, local_dict=_clash),
-                                       mode="inline")
+                                   mode="inline")
         return(latex_notation)
-    
