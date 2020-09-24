@@ -29,13 +29,13 @@ class BranchWidget(GraphItem):
         self.__pen_width = 3
         # The arrow has the form of a triangle
         # Half of the width of the arrow (at the back)
-        self.__arrow_height = 10
+        self.__arrow_height = 9
         # Length of the arrow from top to back
-        self.__arrow_length = 30
+        self.__arrow_length = 27
         # The triangle is drawn with 3 bezier curves
         # These numbers determine the bend of the curves
         self.__arrow_side_spline_depth = 2
-        self.__arrow_back_spline_depth = 6
+        self.__arrow_back_spline_depth = 5.5
         # Antialiasing offsets for arrow mask
         self.__arrow_mask_length_offset = 8
         self.__arrow_mask_height_offset = 5
