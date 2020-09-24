@@ -1,10 +1,12 @@
 # SignalFlowGrapher
 
-## Version 0.2 
+## Version 0.3
 
 Intended for beta test in the autumn term of 2020.
 
-This version still has some issues and may crash; be careful and save often.
+It has been stabilized a lot from V0.2 but may still crash; be careful and save often.
+
+In addition, it now gives much nicer TikZ output. See below ...
 
 And please report all issues you find to hanspeter.schmid@fhnw.ch
 
@@ -57,11 +59,15 @@ For the managment of the dependencies, a virtual enviromnent is used.
 - Run `python -m unittest`
 - Run `flake8 -v`
 
-## User manual
+## User manual and tips
 
+### Manual
 There is none yet, but to familiarize yourself with signal-flow graphs, you can
 - Watch "Signal-Flow Graphs in 12 short lessons" on https://tube.switch.ch/channels/d206c96c?order=episodes
 - Read our papers, https://link.springer.com/article/10.1007%2Fs10470-018-1131-7 and http://rdcu.be/naw5 .
+
+### Tips
+- You can get nice SVG versions of the graphs by exporting TikZ, converting it to pdf with pdflatex, and then run https://github.com/dawbarton/pdf2svg
 
 ## Credits
 Implemention of Johnson's algorithm: https://github.com/qpwo/python-simple-cycles

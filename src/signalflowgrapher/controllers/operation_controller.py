@@ -58,9 +58,13 @@ class OperationController(object):
         start_node = branch_1.start
         end_node = branch_1.end
         self.__main_controller.remove_nodes_and_branches([branch_1, branch_2])
-        self.__main_controller.create_branch_auto_pos(start_node,
-                                                      end_node,
-                                                      new_weight)
+
+        if start_node == end_node:
+            self.__main_controller.create_self_loop(start_node, new_weight)
+        else:
+            self.__main_controller.create_branch_auto_pos(start_node,
+                                                          end_node,
+                                                          new_weight)
         self.__command_handler.end_script()
 
     def transpose(self):

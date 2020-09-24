@@ -4,6 +4,7 @@ from signalflow_algorithms.algorithms.johnson import simple_cycles
 import sympy.simplify as simplify
 from sympy import Mul, Add, Pow, Integer
 from sympy.parsing.sympy_parser import parse_expr
+from sympy.abc import _clash
 
 
 class ChainingOperation(object):
@@ -41,8 +42,10 @@ class ChainingOperation(object):
         Get the new weight of two branches after applying
         the chainging operation
         """
-        return str(simplify(Mul(parse_expr(branch_1.weight),
-                                parse_expr(branch_2.weight))))
+        return str(simplify(Mul(parse_expr(branch_1.weight,
+                                           local_dict=_clash),
+                                parse_expr(branch_2.weight,
+                                           local_dict=_clash))))
 
 
 class CombineParallelOperation(object):
@@ -60,8 +63,10 @@ class CombineParallelOperation(object):
         """ Get the new weight of two branches after applying the
         combine parallel operation
         """
-        return str(simplify(Add(parse_expr(branch_1.weight),
-                                parse_expr(branch_2.weight))))
+        return str(simplify(Add(parse_expr(branch_1.weight,
+                                           local_dict=_clash),
+                                parse_expr(branch_2.weight,
+                                           local_dict=_clash))))
 
 
 class EliminateNodeOperation(object):
@@ -90,8 +95,10 @@ class EliminateNodeOperation(object):
                         target = loop_nodes[1]
 
                     # Build self loop weight
-                    weight = str(simplify(Mul(parse_expr(loop[0].weight),
-                                              parse_expr(loop[1].weight))))
+                    weight = str(simplify(Mul(parse_expr(loop[0].weight,
+                                                         local_dict=_clash),
+                                              parse_expr(loop[1].weight,
+                                                         local_dict=_clash))))
                     results.add((target, weight))
 
         return results
@@ -137,9 +144,11 @@ class EliminateSelfLoopOperation(object):
         remove of the self loop.
         """
         denominator = Add(Integer(1),
-                          Mul(parse_expr(self_loop.weight), Integer(-1)))
+                          Mul(parse_expr(self_loop.weight, local_dict=_clash),
+                              Integer(-1)))
         return str(simplify(
-            Mul(parse_expr(target.weight), Pow(denominator, Integer(-1)))))
+            Mul(parse_expr(target.weight, local_dict=_clash),
+                Pow(denominator, Integer(-1)))))
 
 
 class InvertPathOperation(object):
@@ -158,7 +167,7 @@ class InvertPathOperation(object):
 
     def get_new_branch_weight(self, branch_to_invert: Branch) -> str:
         """Get the new weight to invert a branch."""
-        denominator = parse_expr(branch_to_invert.weight)
+        denominator = parse_expr(branch_to_invert.weight, local_dict=_clash)
         return str(simplify(Mul(Integer(1), Pow(denominator, Integer(-1)))))
 
     def get_new_affected_branch_weight(
@@ -169,8 +178,10 @@ class InvertPathOperation(object):
         Get the new weight for branch that is affected by the branch inversion.
         """
         return str(simplify(
-            Mul(Mul(Integer(-1), parse_expr(affected_branch.weight)),
-                parse_expr(self.get_new_branch_weight(branch_to_invert)))))
+            Mul(Mul(Integer(-1), parse_expr(affected_branch.weight,
+                                            local_dict=_clash)),
+                parse_expr(self.get_new_branch_weight(branch_to_invert),
+                           local_dict=_clash))))
 
     def get_affected_branches(self, branch_to_invert: Branch) -> Set[Branch]:
         """
@@ -197,11 +208,12 @@ class ScalePathOperation(object):
     def get_ingoing_branch_weight(self, branch: Branch, factor: str) -> str:
         """Get scaled weight of ingoing branch"""
         # Divide by factor
-        return str(simplify(Mul(Pow(parse_expr(factor), Integer(-1)),
-                                parse_expr(branch.weight))))
+        return str(simplify(Mul(Pow(parse_expr(factor, local_dict=_clash),
+                                    Integer(-1)),
+                                parse_expr(branch.weight, local_dict=_clash))))
 
     def get_outgoing_branch_weight(self, branch: Branch, factor: str) -> str:
         """Get scaled weight of outgoing branch"""
         # Multiply with factor
-        return str(simplify(Mul(parse_expr(factor),
-                                parse_expr(branch.weight))))
+        return str(simplify(Mul(parse_expr(factor, local_dict=_clash),
+                                parse_expr(branch.weight, local_dict=_clash))))
