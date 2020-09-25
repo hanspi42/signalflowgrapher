@@ -30,7 +30,7 @@ Simon Näf, Nicolai Wassermann, Dominik Gruntz and Hanspeter Schmid. Contact aut
 
 For the managment of the dependencies, a virtual enviromnent is used.
 - Open the `src` directory in a terminal
-- Create virtual environment using the command `python3 -m venv signalflowgrapher`
+- Create virtual environment using the command `python -m venv signalflowgrapher`
 - On Windows run `signalflowgrapher\Scripts\activate.bat` or `signalflowgrapher\Scripts\Activate.ps1`
 - On Unix or MacOS run `source signalflowgrapher/bin/activate`
 
