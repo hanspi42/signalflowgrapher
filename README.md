@@ -56,7 +56,7 @@ For the managment of the dependencies, a virtual enviromnent is used.
 ### Run application from IDE
 
 - Make sure the IDE's kernel runs in the `src` directory
-- In the kernel, run the followinmg lines:
+- In the kernel, run the following lines:
 ```
 from signalflowgrapher import app
 app.run('')
