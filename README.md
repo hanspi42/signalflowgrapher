@@ -47,11 +47,20 @@ For the managment of the dependencies, a virtual enviromnent is used.
 - Open the `src` directory in a terminal or an anaconda terminal
 - Run `pip install -r requirements.txt`
 
-### Run application
+### Run application from terminal
 
 - Open the `src` directory in a terminal or an anaconda terminal
 - Run `python -m signalflowgrapher`
 - Run `python -m signalflowgrapher --language de_CH` for using the application with german translations
+
+### Run application from IDE
+
+- Make sure the IDE's kernel runs in the `src` directory
+- In the kernel, run the followinmg lines:
+```
+from signalflowgrapher import app
+app.run('')
+```
 
 ### Run unit tests and format tests
 
