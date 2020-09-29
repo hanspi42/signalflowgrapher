@@ -14,8 +14,7 @@ And please report all issues you find to hanspeter.schmid@fhnw.ch
 This package is distributed under the Artistic License 2.0, which you find in the file LICENSE and on the internet on https://opensource.org/licenses/Artistic-2.0.
 
 ## Authors of Version 0.2
-The first version checed in was the result of a bachelor thesis at the University of Applied Sciences and Arts Northwestern Switzerland, https://www.fhnw.ch/en/ .
-Students: Simon Näf, Nicolai Wassermann. Advisors: Dominik Gruntz and Hanspeter Schmid. Contact: hanspeter.schmid@fhnw.ch
+The first version checed in was the result of a bachelor thesis at the University of Applied Sciences and Arts Northwestern Switzerland, https://www.fhnw.ch/en/. Students: Simon Näf and Nicolai Wassermann. Advisors: Dominik Gruntz and Hanspeter Schmid. Contact author: hanspeter.schmid@fhnw.ch
 
 ## Installation instructions
 
