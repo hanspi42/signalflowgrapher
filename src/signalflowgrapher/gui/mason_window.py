@@ -40,12 +40,11 @@ class MasonWindow(QDialog, mason_window_ui):
 
         t_evaluated_str = str(full_res)
 
-        # Combine all symbols to be on top for combined output
+        # Combine all symbols to be on top for combined output, except the
+        # symbols of the forward paths
         combined_symbols = ''
         combined_symbols += self.__get_symbols_str_from_interim_res(
             interim_res.determinant, sympy_import_name)
-        combined_symbols += self.__get_symbols_str_from_interim_res(
-            interim_res.paths, sympy_import_name)
         combined_symbols += self.__get_symbols_str_from_interim_res(
             interim_res.loops, sympy_import_name)
         combined_symbols += self.__get_symbols_str_from_interim_res(
@@ -58,20 +57,34 @@ class MasonWindow(QDialog, mason_window_ui):
             list(map(lambda x: str(x), full_res.free_symbols)),
             sympy_import_name)
 
-        # Set combined output to clipboard
-        combined_output = 'import sympy as {}\n\n'.format(sympy_import_name)
+        # Symbols of the forward path
+        path_symbols = self.__get_symbols_str_from_interim_res(
+            interim_res.paths, sympy_import_name)
+
+        # Now build the code that will be copied to the clipboard
+        # .. Import of sympy
+        combined_output = 'import sympy as {}\n'.format(sympy_import_name)
+        # .. all symbol definitions except for forward path
         combined_output += combined_symbols
 
-        # Build commands for interim results
-        interim_outputs = '\n{det}\n{paths}\n{loops}\n{numerator}'
-        interim_outputs += '\n{denominator}\n{transfer_function}'
+        # calculation of the graph determinant
+        interim_outputs = '\n{loops}\n{det}\n{denominator}'
         combined_output += interim_outputs.format_map(interim_strs)
 
-        # Append substitution
-        combined_output += '\n\n' + str(interim_res.transfer_function[0][0])
+        # calculation of the forward path
+        interim_outputs = '{paths}\n{numerator}'
+        combined_output += '\n\n'
+        combined_output += path_symbols
+        combined_output += interim_outputs.format_map(interim_strs)
+
+        # calculation of transfer function
+        interim_outputs = '\n\n{transfer_function}'
+        combined_output += interim_outputs.format_map(interim_strs)
+        combined_output += '\nT=' + str(interim_res.transfer_function[0][0])
         combined_output += '.subs(transfer_function).subs(numerator)'
         combined_output += '.subs(denominator).subs(determinant).subs(paths)'
-        combined_output += '.subs(loops)'
+        combined_output += '.subs(loops).simplify()'
+        combined_output += '\ndisplay(T)'
 
         # Set combined output to clipboard
         QApplication.clipboard().setText(combined_output)
