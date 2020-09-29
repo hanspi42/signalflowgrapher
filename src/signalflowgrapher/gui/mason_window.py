@@ -30,13 +30,13 @@ class MasonWindow(QDialog, mason_window_ui):
 
         # Create full formula
         T = interim_res.transfer_function[0][0]
-        full_res = T.subs(interim_res.transfer_function) \
+        non_simplified = T.subs(interim_res.transfer_function) \
             .subs(interim_res.numerator) \
             .subs(interim_res.denominator) \
             .subs(interim_res.determinant) \
             .subs(interim_res.paths) \
-            .subs(interim_res.loops) \
-            .simplify()
+            .subs(interim_res.loops)
+        full_res = non_simplified.simplify()
 
         t_evaluated_str = str(full_res)
 
@@ -54,7 +54,7 @@ class MasonWindow(QDialog, mason_window_ui):
         combined_symbols += self.__get_symbols_str_from_interim_res(
             interim_res.transfer_function, sympy_import_name)
         combined_symbols += self.__get_symbols(
-            list(map(lambda x: str(x), full_res.free_symbols)),
+            list(map(lambda x: str(x), non_simplified.free_symbols)),
             sympy_import_name)
 
         # Symbols of the forward path
