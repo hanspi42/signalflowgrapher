@@ -28,7 +28,8 @@ class MasonWindow(QDialog, mason_window_ui):
                 lambdarepr(interim_res.transfer_function))
         }
 
-        # Create full formula
+        # Create full formula; the non-simplified versdion serves to 
+        # derive the symbol list below
         T = interim_res.transfer_function[0][0]
         non_simplified = T.subs(interim_res.transfer_function) \
             .subs(interim_res.numerator) \
