@@ -8,7 +8,7 @@ It has been stabilized a lot from V0.2 but may still crash; be careful and save 
 
 In addition, it now gives much nicer TikZ output. See below ...
 
-And please report all issues you find to hanspeter.schmid@fhnw.ch
+And please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
 
 ## License
 This package is distributed under the Artistic License 2.0, which you find in the file LICENSE and on the internet on https://opensource.org/licenses/Artistic-2.0.
