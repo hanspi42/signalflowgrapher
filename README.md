@@ -1,6 +1,6 @@
 # SignalFlowGrapher
 
-## Version 0.3
+## Development of Version 0.4
 
 Intended for beta test in the autumn term of 2020.
 
@@ -8,13 +8,13 @@ It has been stabilized a lot from V0.2 but may still crash; be careful and save 
 
 In addition, it now gives much nicer TikZ output. See below ...
 
-And please report all issues you find to hanspeter.schmid@fhnw.ch
+And please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
 
 ## License
 This package is distributed under the Artistic License 2.0, which you find in the file LICENSE and on the internet on https://opensource.org/licenses/Artistic-2.0.
 
 ## Authors of Version 0.2
-Simon Näf, Nicolai Wassermann, Dominik Gruntz and Hanspeter Schmid. Contact author: hanspeter.schmid@fhnw.ch
+The first version checed in was the result of a bachelor thesis at the University of Applied Sciences and Arts Northwestern Switzerland, https://www.fhnw.ch/en/. Students: Simon Näf and Nicolai Wassermann. Advisors: Dominik Gruntz and Hanspeter Schmid. Contact author: hanspeter.schmid@fhnw.ch
 
 ## Installation instructions
 
@@ -30,7 +30,7 @@ Simon Näf, Nicolai Wassermann, Dominik Gruntz and Hanspeter Schmid. Contact aut
 
 For the managment of the dependencies, a virtual enviromnent is used.
 - Open the `src` directory in a terminal
-- Create virtual environment using the command `python3 -m venv signalflowgrapher`
+- Create virtual environment using the command `python -m venv signalflowgrapher`
 - On Windows run `signalflowgrapher\Scripts\activate.bat` or `signalflowgrapher\Scripts\Activate.ps1`
 - On Unix or MacOS run `source signalflowgrapher/bin/activate`
 
@@ -47,11 +47,20 @@ For the managment of the dependencies, a virtual enviromnent is used.
 - Open the `src` directory in a terminal or an anaconda terminal
 - Run `pip install -r requirements.txt`
 
-### Run application
+### Run application from terminal
 
 - Open the `src` directory in a terminal or an anaconda terminal
 - Run `python -m signalflowgrapher`
 - Run `python -m signalflowgrapher --language de_CH` for using the application with german translations
+
+### Run application from IDE
+
+- Make sure the IDE's kernel runs in the `src` directory
+- In the kernel, run the following lines:
+```
+from signalflowgrapher import app
+app.run('')
+```
 
 ### Run unit tests and format tests
 

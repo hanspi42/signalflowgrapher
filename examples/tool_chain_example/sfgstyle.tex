@@ -1,0 +1,22 @@
+%%%
+%%% For the SFGs
+%%%
+\tikzset{%
+	% Style of the node
+	Node/.style={circle,thick,draw=black,inner sep=0, minimum size=0.15cm},
+	% Style of the node label
+	NodeName/.style={font=\footnotesize,black,outer sep=1},
+	% Style of the branche label
+	ArrowName/.style={font=\footnotesize,auto,outer sep=1},
+	% Style of the branch
+	Connection/.style={thick},
+	->-/.style={decoration={
+			markings,
+			mark=at position #1 with {\draw[->,>=latex',line width=2pt](0pt,0)--(4pt,0);}},
+		postaction={decorate}},
+	->-/.default=0.50,
+	MarkMiddle/.style={decoration={
+			markings,
+			mark=at position 0.5 with {\node[NodeName](middle_#1){};}},
+		postaction={decorate}},
+}

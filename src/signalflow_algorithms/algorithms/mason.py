@@ -112,7 +112,7 @@ def mason(graph: Graph, start: Node, end: Node) -> MasonResult:
     denominator_symbol = Symbol("T_den")
     result.denominator = [(denominator_symbol, delta_symbol)]
 
-    transfer_function_symbol = Symbol("T")
+    transfer_function_symbol = Symbol("T_io")
     transfer_function = Mul(numerator_symbol, Pow(
         denominator_symbol, Integer(-1)))  # Division
     result.transfer_function = [(transfer_function_symbol, transfer_function)]
