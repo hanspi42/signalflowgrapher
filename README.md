@@ -1,6 +1,6 @@
 # SignalFlowGrapher
 
-## Development of Version 0.4
+## Development of Version 0.5
 
 Intended for beta test in the autumn term of 2020.
 
