@@ -1,0 +1,130 @@
+{
+    "nodes": [
+        {
+            "id": "bd176f2099c349aaaf392f993384c58e",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "",
+            "x": 330,
+            "y": 270
+        },
+        {
+            "id": "ff83a09fb57741008a3232c5196760a1",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "",
+            "x": 630,
+            "y": 270
+        },
+        {
+            "id": "7d28684fed63472e95c52e55e2d65c2a",
+            "label_dx": -30,
+            "label_dy": 30,
+            "name": "V_i",
+            "x": 180,
+            "y": 270
+        },
+        {
+            "id": "c64f838cafca4d9b8ba3abd3ccf910bd",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "",
+            "x": 480,
+            "y": 270
+        },
+        {
+            "id": "c5a93673b893437f802f7ed92338bd43",
+            "label_dx": 0,
+            "label_dy": 30,
+            "name": "V_o",
+            "x": 780,
+            "y": 270
+        }
+    ],
+    "branches": [
+        {
+            "id": "38f5bbc2ccd64ecfbdf75792759c5f37",
+            "weight": "a_1+s*a_2",
+            "start": "7d28684fed63472e95c52e55e2d65c2a",
+            "end": "c64f838cafca4d9b8ba3abd3ccf910bd",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 210.0,
+            "spline1_y": 360.0,
+            "spline2_x": 450.0,
+            "spline2_y": 390.0
+        },
+        {
+            "id": "84a64693cdcc4d449ff2f1266742298d",
+            "weight": "-omega_p/q_p",
+            "start": "ff83a09fb57741008a3232c5196760a1",
+            "end": "c64f838cafca4d9b8ba3abd3ccf910bd",
+            "label_dx": -80.0,
+            "label_dy": -13.0,
+            "spline1_x": 630.0,
+            "spline1_y": 195.0,
+            "spline2_x": 480.0,
+            "spline2_y": 195.0
+        },
+        {
+            "id": "866d0726e0714575bbd4813b663667a4",
+            "weight": "1/s",
+            "start": "bd176f2099c349aaaf392f993384c58e",
+            "end": "c64f838cafca4d9b8ba3abd3ccf910bd",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 405.0,
+            "spline1_y": 270.0,
+            "spline2_x": 405.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "4bbc71dbfc1646d7a1e459715e1373ad",
+            "weight": "1",
+            "start": "ff83a09fb57741008a3232c5196760a1",
+            "end": "c5a93673b893437f802f7ed92338bd43",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 705.0,
+            "spline1_y": 270.0,
+            "spline2_x": 705.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "f9794c3aafd2406e8befcc63bd7fe627",
+            "weight": "-omega_p**2",
+            "start": "ff83a09fb57741008a3232c5196760a1",
+            "end": "bd176f2099c349aaaf392f993384c58e",
+            "label_dx": 0.0,
+            "label_dy": -30.0,
+            "spline1_x": 630.0,
+            "spline1_y": 120.0,
+            "spline2_x": 330.0,
+            "spline2_y": 120.0
+        },
+        {
+            "id": "e1c29a0d08944a1f9449dd41f4393b25",
+            "weight": "1/s",
+            "start": "c64f838cafca4d9b8ba3abd3ccf910bd",
+            "end": "ff83a09fb57741008a3232c5196760a1",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 555.0,
+            "spline1_y": 270.0,
+            "spline2_x": 555.0,
+            "spline2_y": 270.0
+        },
+        {
+            "id": "7a3d03be25454376ae10df3c6fa22e72",
+            "weight": "a_0",
+            "start": "7d28684fed63472e95c52e55e2d65c2a",
+            "end": "bd176f2099c349aaaf392f993384c58e",
+            "label_dx": 0.0,
+            "label_dy": 30.0,
+            "spline1_x": 255.0,
+            "spline1_y": 270.0,
+            "spline2_x": 255.0,
+            "spline2_y": 270.0
+        }
+    ]
+}
