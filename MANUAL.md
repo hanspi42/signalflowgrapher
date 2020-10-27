@@ -7,7 +7,8 @@ Hanspeter Schmid, FHNW/ISE
 The signalflowgrapher is a tool that allows you to draw signal-flow graphs, calculate transfer functions (SymPy code is generated for further use in Jupyter notebooks), do graph manipulations (e.g., node elimination and graph transposition), and save a graph as TikZ for use in LaTeX documentation.
 
 To familiarize yourself with signal-flow graphs, you can
-- Watch "Signal-Flow Graphs in 12 short lessons" on https://tube.switch.ch/channels/d206c96c?order=episodes
+- Watch "Signal-Flow Graphs in 12 short lessons" on https://tube.switch.ch/channels/d206c96c?order=episodes .
+- See signalflowgrapher in action with a transistor-circuit analysis example on https://tube.switch.ch/videos/609c0510 .
 - Read our papers, https://link.springer.com/article/10.1007%2Fs10470-018-1131-7 and http://rdcu.be/naw5 .
 
 ## Drawing and editing graphs
