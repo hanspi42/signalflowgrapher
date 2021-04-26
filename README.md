@@ -72,6 +72,7 @@ app.run('')
 
 ### Manual
 There is none yet, but to familiarize yourself with signal-flow graphs, you can
+- watch the signalflowgrapher intro video on https://tube.switch.ch/videos/609c0510
 - Watch "Signal-Flow Graphs in 12 short lessons" on https://tube.switch.ch/channels/d206c96c?order=episodes
 - Read our papers, https://link.springer.com/article/10.1007%2Fs10470-018-1131-7 and http://rdcu.be/naw5 .
 
