@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun  5 14:37:48 2021
+This skript can be usde instead of starting the tool with
+python -m signalflowgrapher.
 
-@author: hansp
+@author: hanspi42
 """
 
 from signalflowgrapher import app

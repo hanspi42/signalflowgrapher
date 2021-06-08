@@ -61,13 +61,13 @@ class GraphField(QWidget):
 
     def on_ctrl_press(self):
         self.__grid = NoneGrid()
-        self.__grid_widget.hide()
+        # self.__grid_widget.hide()
 
     def on_ctrl_release(self):
         self.__grid = FixedGrid(self.__grid_size)
         self.__grid.set_offset(self.__grid_offset)
         self.__grid_widget.lower()
-        self.__grid_widget.show()
+        # self.__grid_widget.show()
 
     def __selection_changed(self):
         self.selection.set(tuple(self.__widget_model_map.get(widget)
@@ -421,6 +421,8 @@ class GraphField(QWidget):
         self.__widget_model_map[widget] = node
         widget.show()
         self.__initalize_label(node)
+        self.__clear_selection()
+        self.__add_selection(widget)
 
     def __add_branch(self, branch):
         widget = BranchWidget(branch,
@@ -450,6 +452,8 @@ class GraphField(QWidget):
         # Bézier curve
         widget.repaint()
         self.__initalize_label(branch)
+        self.__clear_selection()
+        self.__add_selection(widget)
 
     def __initalize_label(self, labeled_object: LabeledObject):
         widget = self.__model_widget_map[labeled_object]

@@ -42,4 +42,6 @@ To familiarize yourself with signal-flow graphs, you can
 ## Changes from V0.4 to V0.5:
 
 - Interface
+  - Nodes are selected after creation by double-click.
+  - Branches are selected after creation by button, but after ctrl-click creation the last node is selected.
   - Ctrl still disables locking to the grid, but the grid now keeps being displayed. 
