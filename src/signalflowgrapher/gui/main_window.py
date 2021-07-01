@@ -233,10 +233,11 @@ class MainWindow(QMainWindow, main_window_ui):
         # Create and set about text
         box = QMessageBox()
         box.setWindowTitle("About")
-        box.setText("<h1>About</h1>Developed at the University"
+        box.setText("<h1>About</h1>Initially Developed at the University"
                     " of Applied Sciences and Arts Northwestern"
                     " Switzerland (FHNW) by Nicolai Wassermann"
-                    " and Simon Näf."
-                    "<br><br>Client: Prof. Dr. Hanspeter Schmid"
-                    "<br>Supervision: Prof. Dr. Dominik Gruntz")
+                    " and Simon Näf, supervised by "
+                    " Prof. Dr. Hanspeter Schmid and Prof. Dr. Dominik Gruntz"
+                    " <br><br> Maintained by Hanspeter Schmid."
+                    " Manual: https://github.com/hanspi42/signalflowgrapher/blob/dev/MANUAL.md")
         box.exec()

@@ -147,7 +147,7 @@ class BranchWidget(GraphItem):
         """
         if self.__owner.start is event.node:
             self.__start = QPoint(event.node.x,
-                                  event.node.y)
+                                event.node.y)
             self.updateGeometry()
         if self.__owner.end is event.node:
             self.__end = QPoint(event.node.x,
