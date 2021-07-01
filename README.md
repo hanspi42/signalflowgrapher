@@ -1,14 +1,10 @@
 # SignalFlowGrapher
 
-## Development of Version 0.5
+## Version 0.5
 
-Intended for beta test in the autumn term of 2020.
+Intended for use from the autumn term of 2021 onwards.
 
-It has been stabilized a lot from V0.2 but may still crash; be careful and save often.
-
-In addition, it now gives much nicer TikZ output. See below ...
-
-And please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
+Please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
 
 ## License
 This package is distributed under the Artistic License 2.0, which you find in the file LICENSE and on the internet on https://opensource.org/licenses/Artistic-2.0.
@@ -72,6 +68,7 @@ app.run('')
 
 ### Manual
 There is none yet, but to familiarize yourself with signal-flow graphs, you can
+- watch the signalflowgrapher intro video on https://tube.switch.ch/videos/609c0510
 - Watch "Signal-Flow Graphs in 12 short lessons" on https://tube.switch.ch/channels/d206c96c?order=episodes
 - Read our papers, https://link.springer.com/article/10.1007%2Fs10470-018-1131-7 and http://rdcu.be/naw5 .
 
