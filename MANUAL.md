@@ -39,3 +39,9 @@ To familiarize yourself with signal-flow graphs, you can
 - For "Scale Path", select one or more nodes.
 - For the rest, watch Episode 3 of "Signal-Flow Graphs in 12 short lessons" on https://tube.switch.ch/channels/d206c96c?order=episodes and experiment.
 
+## Changes from V0.4 to V0.5:
+
+- Interface
+  - Nodes are selected after creation by double-click.
+  - Branches are selected after creation by button, but after ctrl-click creation the last node is selected.
+  - Ctrl still disables locking to the grid, but the grid now keeps being displayed. 

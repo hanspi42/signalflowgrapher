@@ -17,11 +17,10 @@ def run(argv):
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--language', type=str,
-                        help='Optional language name')
+    parser.add_argument('--language', type=str, help='Optional language name')
     args = parser.parse_args()
 
-    # Configure PyQt
+    # Configure PyQt and initialise application
     PyQt5.QtWidgets.QApplication.setAttribute(
         QtCore.Qt.AA_EnableHighDpiScaling,
         True)
