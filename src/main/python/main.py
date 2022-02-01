@@ -2,7 +2,6 @@ from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import QApplication
 from signalflowgrapher.containers import MainWindows
 from PyQt5 import QtCore
-import PyQt5
 import logging
 import logging.config
 import argparse
@@ -12,7 +11,7 @@ import sys
 if __name__ == '__main__':
     # Instantiate ApplicationContext
     appctxt = ApplicationContext()
-    
+
     # Init logger
     logger = logging.getLogger(__name__)
     logconfig = appctxt.get_resource('logging.conf')
@@ -27,7 +26,8 @@ if __name__ == '__main__':
 
     app = QApplication([])
 
-    # Set language by command line argument
+    # Set language by command line argument.  This is not done through the
+    # Application context yet because it anyway only works on the command line
     if (args.language):
         language_file = "src/main/python/signalflowgrapher/resources/translations/%s.qm" \
                         % (args.language)
