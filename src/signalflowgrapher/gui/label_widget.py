@@ -35,11 +35,8 @@ class LabelWidget(QLabel, GraphItem):
         Reposition on parent widget based on own size and owner position.
         """
         center = self.__owner_widget.get_center()
-        p = QPoint(center.x()
-                   + self.__owner.label_dx
-                   - self.width() / 2,
-                   center.y() + self.__owner.label_dy
-                   - self.height() / 2)
+        p = QPoint(int(center.x() + self.__owner.label_dx - self.width() / 2),
+                   int(center.y() + self.__owner.label_dy - self.height() / 2))
         self.move(p)
 
     def select(self, number):

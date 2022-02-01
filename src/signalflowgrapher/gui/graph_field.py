@@ -414,8 +414,8 @@ class GraphField(QWidget):
     def __add_node(self, node):
         widget = NodeWidget(node, parent=self)
         # Set initial position centered to given point
-        widget.move(QPoint(node.x - widget.width() / 2,
-                           node.y - widget.height() / 2))
+        widget.move(QPoint(int(node.x - widget.width() / 2),
+                           int(node.y - widget.height() / 2)))
         widget.observe(self.__on_node_click)
         self.__model_widget_map[node] = widget
         self.__widget_model_map[widget] = node
@@ -426,12 +426,10 @@ class GraphField(QWidget):
 
     def __add_branch(self, branch):
         widget = BranchWidget(branch,
-                              QPoint(
-                                  branch.spline1_x,
-                                  branch.spline1_y),
-                              QPoint(
-                                  branch.spline2_x,
-                                  branch.spline2_y),
+                              QPoint(int(branch.spline1_x),
+                                     int(branch.spline1_y)),
+                              QPoint(int(branch.spline2_x),
+                                     int(branch.spline2_y)),
                               parent=self)
 
         self.__model_widget_map[branch] = widget

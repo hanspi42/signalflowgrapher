@@ -10,7 +10,7 @@ def rotate_point(origin: QPoint, point: QPoint, angle: QPoint):
         [origin.x(), origin.y()],
         [point.x(), point.y()],
         angle)
-    return QPoint(x, y)
+    return QPoint(int(x), int(y))
 
 
 def rotate_pointF(origin: QPointF, point: QPointF, angle: QPointF):

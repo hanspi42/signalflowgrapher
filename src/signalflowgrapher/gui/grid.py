@@ -42,8 +42,8 @@ class Grid(abc.ABC):
 
         # Calculate the new absolute postion of the widget
         old_pos = widget.get_center()
-        new_pos = QPoint(old_pos.x() + dx + self.__deviation_x,
-                         old_pos.y() + dy + self.__deviation_y)
+        new_pos = QPoint(int(old_pos.x() + dx + self.__deviation_x),
+                         int(old_pos.y() + dy + self.__deviation_y))
 
         # Calculate absolut position on grid
         grid_pos = self.get_grid_position(new_pos)
@@ -56,7 +56,7 @@ class Grid(abc.ABC):
         self.__deviation_x += dx - grid_dx
         self.__deviation_y += dy - grid_dy
 
-        return QPoint(grid_dx, grid_dy)
+        return QPoint(int(grid_dx), int(grid_dy))
 
 
 class FixedGrid(Grid):
@@ -73,12 +73,12 @@ class FixedGrid(Grid):
     def get_grid_position(self, p):
         # Subtract 2 for previnting flapping of widgets
         return self.__offset + QPoint(
-            self.__size * round((p.x() - self.__offset.x() - 2) / self.__size),
-            self.__size * round((p.y() - self.__offset.y() - 2) / self.__size))
+            int(self.__size*round((p.x()-self.__offset.x()-2) / self.__size)),
+            int(self.__size*round((p.y()-self.__offset.y()-2) / self.__size)))
 
     def set_offset(self, d):
-        self.__offset = QPoint(d.x() % self.__size,
-                               d.y() % self.__size)
+        self.__offset = QPoint(int(d.x() % self.__size),
+                               int(d.y() % self.__size))
 
 
 class NoneGrid(Grid):
