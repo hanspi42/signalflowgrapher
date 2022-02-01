@@ -19,8 +19,8 @@ class FixedGridWidget(QWidget):
         """
         Sets an offset on the grid to simulate a move.
         """
-        self.__offset = QPoint(offset.x() % self.__grid_size,
-                               offset.y() % self.__grid_size)
+        self.__offset = QPoint(int(offset.x() % self.__grid_size),
+                               int(offset.y() % self.__grid_size))
 
     def paintEvent(self, event: QPaintEvent):
         # Init painter
@@ -32,14 +32,14 @@ class FixedGridWidget(QWidget):
         painter.setPen(pen)
 
         # Horizontal lines
-        start_h = QPoint(0, self.__offset.y())
-        end_h = QPoint(self.width(), self.__offset.y())
-        distance_h = QPoint(0, self.__grid_size)
+        start_h = QPoint(0, int(self.__offset.y()))
+        end_h = QPoint(int(self.width()), int(self.__offset.y()))
+        distance_h = QPoint(0, int(self.__grid_size))
 
         # Vertical lines
-        start_v = QPoint(self.__offset.x(), 0)
-        end_v = QPoint(self.__offset.x(), self.height())
-        distance_v = QPoint(self.__grid_size, 0)
+        start_v = QPoint(int(self.__offset.x()), 0)
+        end_v = QPoint(int(self.__offset.x()), int(self.height()))
+        distance_v = QPoint(int(self.__grid_size), 0)
 
         while start_h.y() < self.height():
             painter.drawLine(start_h, end_h)

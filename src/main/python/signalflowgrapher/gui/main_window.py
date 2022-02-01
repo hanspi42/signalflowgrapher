@@ -1,3 +1,4 @@
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.Qt import QCoreApplication, QDockWidget, QFileDialog, QMessageBox
 from signalflowgrapher.controllers.main_controller import MainController
@@ -11,11 +12,18 @@ from PyQt5 import uic
 import ntpath
 import logging
 from PyQt5 import QtCore
+import PyQt5
 logger = logging.getLogger(__name__)
 
-creator_file = "signalflowgrapher/gui/main_window.ui"
+# Configure PyQt and initialise application
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_EnableHighDpiScaling,
+    True)
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_UseHighDpiPixmaps,
+    True)
+creator_file = ApplicationContext().get_resource("main_window.ui")
 main_window_ui, x = uic.loadUiType(creator_file)
-
 
 class MainWindow(QMainWindow, main_window_ui):
     def __init__(self,
@@ -233,11 +241,11 @@ class MainWindow(QMainWindow, main_window_ui):
         # Create and set about text
         box = QMessageBox()
         box.setWindowTitle("About")
-        box.setText("<h1>About</h1>Initially Developed at the University"
+        box.setText("<h1>SFGrapher v0.5.0</h1>Initially Developed at the University"
                     " of Applied Sciences and Arts Northwestern"
                     " Switzerland (FHNW) by Nicolai Wassermann"
                     " and Simon Näf, supervised by "
                     " Prof. Dr. Hanspeter Schmid and Prof. Dr. Dominik Gruntz"
-                    " <br><br> Maintained by Hanspeter Schmid."
-                    " Manual: https://github.com/hanspi42/signalflowgrapher/blob/dev/MANUAL.md")
+                    " <br><br> Maintained by Hanspeter Schmid"
+                    " <br>on <a href='https://github.com/hanspi42/signalflowgrapher/'>https://github.com/hanspi42/signalflowgrapher/</a>")
         box.exec()

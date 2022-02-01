@@ -1,3 +1,4 @@
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from typing import Set
 from signalflowgrapher.model.model import Branch, Node
 from signalflowgrapher.io.file import write_file, read_file
@@ -9,6 +10,9 @@ from sympy.abc import _clash
 import logging
 logger = logging.getLogger(__name__)
 
+tex_sfgstyle = ApplicationContext().get_resource("sfgstyle.tex")
+tex_prefix = ApplicationContext().get_resource("prefix.tex")
+tex_suffix = ApplicationContext().get_resource("suffix.tex")
 
 class TikZExport(object):
     def __init__(self):
@@ -26,7 +30,7 @@ class TikZExport(object):
         write_file(path, content)
 
         # Copy style to same folder if not existing
-        source_path = "signalflowgrapher/ressources/tikz/sfgstyle.tex"
+        source_path = tex_sfgstyle
         target_path = join(dirname(path), "sfgstyle.tex")
         if (not isfile(target_path)):
             try:
@@ -50,10 +54,10 @@ class TikZExport(object):
             logger.debug("File %s already existing, do not copy", target_path)
 
     def __get_prefix(self):
-        return read_file("signalflowgrapher/ressources/tikz/prefix.tex")
+        return read_file(tex_prefix)
 
     def __get_suffix(self):
-        return read_file("signalflowgrapher/ressources/tikz/suffix.tex")
+        return read_file(tex_suffix)
 
     def __generate_tikz(self, nodes: Set[Node], branches: Set[Branch]):
         # Generate comment headers and call export for branches and nodes

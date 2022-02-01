@@ -19,10 +19,8 @@ class BranchWidget(GraphItem):
                  ** kwargs):
         super().__init__(*args, **kwargs)
         self.__owner = owner
-        self.__start = QPoint(owner.start.x,
-                              owner.start.y)
-        self.__end = QPoint(owner.end.x,
-                            owner.end.y)
+        self.__start = QPoint(int(owner.start.x), int(owner.start.y))
+        self.__end = QPoint(int(owner.end.x), int(owner.end.y))
         self.__spline1 = spline1
         self.__spline2 = spline2
         self.__branch = QPainterPath()
@@ -123,11 +121,11 @@ class BranchWidget(GraphItem):
         """
         if self.__owner is event.branch:
             update_geo = False
-            spline1_new = QPoint(event.branch.spline1_x,
-                                 event.branch.spline1_y)
+            spline1_new = QPoint(int(event.branch.spline1_x),
+                                 int(event.branch.spline1_y))
 
-            spline2_new = QPoint(event.branch.spline2_x,
-                                 event.branch.spline2_y)
+            spline2_new = QPoint(int(event.branch.spline2_x),
+                                 int(event.branch.spline2_y))
 
             if not self.__spline1 == spline1_new:
                 self.__spline1 = spline1_new
@@ -146,12 +144,12 @@ class BranchWidget(GraphItem):
         Updates the geometry of the widget if necessary.
         """
         if self.__owner.start is event.node:
-            self.__start = QPoint(event.node.x,
-                                event.node.y)
+            self.__start = QPoint(int(event.node.x),
+                                  int(event.node.y))
             self.updateGeometry()
         if self.__owner.end is event.node:
-            self.__end = QPoint(event.node.x,
-                                event.node.y)
+            self.__end = QPoint(int(event.node.x),
+                                int(event.node.y))
             self.updateGeometry()
 
     def graph_moved_event(self, event: GraphMovedEvent):
@@ -159,14 +157,14 @@ class BranchWidget(GraphItem):
         Triggered after the whole graph has been moved.
         Does not change the geometry but mvoes the widget.
         """
-        self.__start = QPoint(self.__owner.start.x,
-                              self.__owner.start.y)
-        self.__end = QPoint(self.__owner.end.x,
-                            self.__owner.end.y)
-        self.__spline1 = QPoint(self.__owner.spline1_x,
-                                self.__owner.spline1_y)
-        self.__spline2 = QPoint(self.__owner.spline2_x,
-                                self.__owner.spline2_y)
+        self.__start = QPoint(int(self.__owner.start.x),
+                              int(self.__owner.start.y))
+        self.__end = QPoint(int(self.__owner.end.x),
+                            int(self.__owner.end.y))
+        self.__spline1 = QPoint(int(self.__owner.spline1_x),
+                                int(self.__owner.spline1_y))
+        self.__spline2 = QPoint(int(self.__owner.spline2_x),
+                                int(self.__owner.spline2_y))
         super().graph_moved_event(event)
 
     def get_handles(self):
@@ -339,8 +337,8 @@ class BranchWidget(GraphItem):
         return self.get_branch_middle()
 
     def __get_handle_pos(self, origin, spline, width, height):
-        p = QPoint(origin.x() - (spline.x() - origin.x()) - (width / 2),
-                   origin.y() - (spline.y() - origin.y()) - (height / 2))
+        p = QPoint(int(origin.x() - (spline.x() - origin.x()) - (width / 2)),
+                   int(origin.y() - (spline.y() - origin.y()) - (height / 2)))
         return p
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -406,8 +404,8 @@ class SplineHandleWidget(GraphItem):
 
         # Calculate bounding rect including circle and line
         rect = QRect(self._origin_abs, __handle_pos_abs).normalized()  # Line
-        circle_offset = QPoint(self.__circle_width + self.__radius,
-                               self.__circle_width + self.__radius)
+        circle_offset = QPoint(int(self.__circle_width + self.__radius),
+                               int(self.__circle_width + self.__radius))
         circle_rect = QRect(__handle_pos_abs - circle_offset,  # Circle
                             __handle_pos_abs + circle_offset).normalized()
 
@@ -464,8 +462,8 @@ class SplineHandleWidget(GraphItem):
 
     def graph_moved_event(self, event: GraphMovedEvent):
         self._origin_abs = QPoint(
-            self.__node.x,
-            self.__node.y)
+            int(self.__node.x),
+            int(self.__node.y))
         super().graph_moved_event(event)
 
     def paintEvent(self, QPaintEvent):
@@ -525,8 +523,8 @@ class Spline1HandleWidget(SplineHandleWidget):
         Makes sure the spline positions is udpated accordingly.
         """
         if self.get_branch() is event.branch:
-            new_spline1 = QPoint(event.branch.spline1_x,
-                                 event.branch.spline1_y)
+            new_spline1 = QPoint(int(event.branch.spline1_x),
+                                 int(event.branch.spline1_y))
             if not self._spline_abs == new_spline1:
                 self._spline_abs = new_spline1
                 self.updateGeometry()
@@ -536,8 +534,8 @@ class Spline1HandleWidget(SplineHandleWidget):
         Triggered after whole graph has moved.
         Makes sure the absolute spline position is updated accordingly.
         """
-        self._spline_abs = QPoint(self.get_branch().spline1_x,
-                                  self.get_branch().spline1_y)
+        self._spline_abs = QPoint(int(self.get_branch().spline1_x),
+                                  int(self.get_branch().spline1_y))
         super().graph_moved_event(event)
 
 
@@ -555,8 +553,8 @@ class Spline2HandleWidget(SplineHandleWidget):
         Makes sure the spline positions is udpated accordingly.
         """
         if self.get_branch() is event.branch:
-            new_spline2 = QPoint(event.branch.spline2_x,
-                                 event.branch.spline2_y)
+            new_spline2 = QPoint(int(event.branch.spline2_x),
+                                 int(event.branch.spline2_y))
             if not self._spline_abs == new_spline2:
                 self._spline_abs = new_spline2
                 self.updateGeometry()
@@ -566,6 +564,6 @@ class Spline2HandleWidget(SplineHandleWidget):
         Triggered after whole graph has moved.
         Makes sure the absolute spline position is updated accordingly.
         """
-        self._spline_abs = QPoint(self.get_branch().spline2_x,
-                                  self.get_branch().spline2_y)
+        self._spline_abs = QPoint(int(self.get_branch().spline2_x),
+                                  int(self.get_branch().spline2_y))
         super().graph_moved_event(event)

@@ -1,10 +1,11 @@
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.Qt import Qt, QFont, QFontDatabase, QLabel, QPoint
 from signalflowgrapher.gui.graph_item import GraphItem
 from signalflowgrapher.model.model import PositionedNodeAddedEvent, \
     PositionedNodeMovedEvent, CurvedBranchTransformedEvent, LabeledObject, \
     LabelMovedEvent, LabelChangedTextEvent
-import os
 
+roman_font = ApplicationContext().get_resource("lmroman8-regular.otf")
 
 class LabelWidget(QLabel, GraphItem):
     def __init__(self,
@@ -17,11 +18,7 @@ class LabelWidget(QLabel, GraphItem):
         self.__owner = owner
         self.__owner_widget = owner_widget
         font_database = QFontDatabase()
-
-        # Build absolute path to prevent problems on macOS
-        path = os.path.join(os.path.dirname(__file__),
-                            "../ressources/fonts/lmroman8-regular.otf")
-        font_id = font_database.addApplicationFont(path)
+        font_id = font_database.addApplicationFont(roman_font)
         if (font_id == -1):
             raise IOError("Font could not be loaded")
         font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
@@ -35,11 +32,8 @@ class LabelWidget(QLabel, GraphItem):
         Reposition on parent widget based on own size and owner position.
         """
         center = self.__owner_widget.get_center()
-        p = QPoint(center.x()
-                   + self.__owner.label_dx
-                   - self.width() / 2,
-                   center.y() + self.__owner.label_dy
-                   - self.height() / 2)
+        p = QPoint(int(center.x() + self.__owner.label_dx - self.width() / 2),
+                   int(center.y() + self.__owner.label_dy - self.height() / 2))
         self.move(p)
 
     def select(self, number):
