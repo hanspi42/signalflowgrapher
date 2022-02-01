@@ -10,10 +10,13 @@ from os import path
 import sys
 
 if __name__ == '__main__':
+    # Instantiate ApplicationContext
+    appctxt = ApplicationContext()
     
     # Init logger
     logger = logging.getLogger(__name__)
-    logging.config.fileConfig('src/main/python/signalflowgrapher/resources/logging.conf',
+    logconfig = appctxt.get_resource('logging.conf')
+    logging.config.fileConfig(logconfig,
                               disable_existing_loggers=False)
     logger.info("Starting application")
 
@@ -22,16 +25,6 @@ if __name__ == '__main__':
     parser.add_argument('--language', type=str, help='Optional language name')
     args = parser.parse_args()
 
-    # Configure PyQt and initialise application
-    PyQt5.QtWidgets.QApplication.setAttribute(
-        QtCore.Qt.AA_EnableHighDpiScaling,
-        True)
-    PyQt5.QtWidgets.QApplication.setAttribute(
-        QtCore.Qt.AA_UseHighDpiPixmaps,
-        True)
-    
-    # Instantiate ApplicationContext
-    appctxt = ApplicationContext()
     app = QApplication([])
 
     # Set language by command line argument

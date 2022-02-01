@@ -1,3 +1,4 @@
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.Qt import QCoreApplication, QDockWidget, QFileDialog, QMessageBox
 from signalflowgrapher.controllers.main_controller import MainController
@@ -11,11 +12,18 @@ from PyQt5 import uic
 import ntpath
 import logging
 from PyQt5 import QtCore
+import PyQt5
 logger = logging.getLogger(__name__)
 
-creator_file = "src/main/python/signalflowgrapher/gui/main_window.ui"
+# Configure PyQt and initialise application
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_EnableHighDpiScaling,
+    True)
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_UseHighDpiPixmaps,
+    True)
+creator_file = ApplicationContext().get_resource("main_window.ui")
 main_window_ui, x = uic.loadUiType(creator_file)
-
 
 class MainWindow(QMainWindow, main_window_ui):
     def __init__(self,

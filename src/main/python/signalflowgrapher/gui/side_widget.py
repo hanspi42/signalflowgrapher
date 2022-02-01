@@ -1,3 +1,4 @@
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from signalflowgrapher.gui.sympy_expression_validator import \
     SympyExpressionValidator
 from signalflowgrapher.gui.mason_window import MasonWindow
@@ -27,7 +28,7 @@ from PyQt5 import QtCore
 import logging
 logger = logging.getLogger(__name__)
 
-creator_file = "src/main/python/signalflowgrapher/gui/side_widget.ui"
+creator_file = ApplicationContext().get_resource("side_widget.ui")
 side_widget_ui, x = uic.loadUiType(creator_file)
 
 
