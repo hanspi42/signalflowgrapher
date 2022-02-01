@@ -3,7 +3,7 @@ from PyQt5 import uic
 from signalflow_algorithms.algorithms.mason import MasonResult
 from sympy.printing.lambdarepr import lambdarepr
 
-creator_file = "signalflowgrapher/gui/mason_window.ui"
+creator_file = "src/main/python/signalflowgrapher/gui/mason_window.ui"
 mason_window_ui, x = uic.loadUiType(creator_file)
 
 

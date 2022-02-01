@@ -13,7 +13,7 @@ import logging
 from PyQt5 import QtCore
 logger = logging.getLogger(__name__)
 
-creator_file = "signalflowgrapher/gui/main_window.ui"
+creator_file = "src/main/python/signalflowgrapher/gui/main_window.ui"
 main_window_ui, x = uic.loadUiType(creator_file)
 
 

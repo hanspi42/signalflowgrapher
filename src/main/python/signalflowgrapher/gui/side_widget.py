@@ -27,7 +27,7 @@ from PyQt5 import QtCore
 import logging
 logger = logging.getLogger(__name__)
 
-creator_file = "signalflowgrapher/gui/side_widget.ui"
+creator_file = "src/main/python/signalflowgrapher/gui/side_widget.ui"
 side_widget_ui, x = uic.loadUiType(creator_file)
 
 
