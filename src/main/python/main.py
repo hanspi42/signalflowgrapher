@@ -6,14 +6,14 @@ import PyQt5
 import logging
 import logging.config
 import argparse
-from os import path, getcwd
+from os import path
 import sys
 
 if __name__ == '__main__':
     
     # Init logger
     logger = logging.getLogger(__name__)
-    logging.config.fileConfig('src/main/python/signalflowgrapher/ressources/logging.conf',
+    logging.config.fileConfig('src/main/python/signalflowgrapher/resources/logging.conf',
                               disable_existing_loggers=False)
     logger.info("Starting application")
 
@@ -32,11 +32,12 @@ if __name__ == '__main__':
     
     # Instantiate ApplicationContext
     appctxt = ApplicationContext()
+    print(appctxt.get_resource('test.txt'))
     app = QApplication([])
 
     # Set language by command line argument
     if (args.language):
-        language_file = "src/main/python/signalflowgrapher/ressources/translations/%s.qm" \
+        language_file = "src/main/python/signalflowgrapher/resources/translations/%s.qm" \
                         % (args.language)
         if (path.exists(language_file)):
             logger.debug("Using translation file: %s", language_file)

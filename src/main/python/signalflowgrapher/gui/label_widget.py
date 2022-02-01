@@ -3,8 +3,6 @@ from signalflowgrapher.gui.graph_item import GraphItem
 from signalflowgrapher.model.model import PositionedNodeAddedEvent, \
     PositionedNodeMovedEvent, CurvedBranchTransformedEvent, LabeledObject, \
     LabelMovedEvent, LabelChangedTextEvent
-import os
-
 
 class LabelWidget(QLabel, GraphItem):
     def __init__(self,
@@ -17,10 +15,10 @@ class LabelWidget(QLabel, GraphItem):
         self.__owner = owner
         self.__owner_widget = owner_widget
         font_database = QFontDatabase()
-
         # Build absolute path to prevent problems on macOS
-        path = os.path.join(os.path.dirname(__file__),
-                            "../ressources/fonts/lmroman8-regular.otf")
+        # path = os.path.join(os.path.dirname(__file__),
+        #                     "../resources/fonts/lmroman8-regular.otf")
+        path = "src/main/python/signalflowgrapher/resources/fonts/lmroman8-regular.otf"
         font_id = font_database.addApplicationFont(path)
         if (font_id == -1):
             raise IOError("Font could not be loaded")

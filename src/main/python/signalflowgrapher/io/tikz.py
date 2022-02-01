@@ -26,7 +26,7 @@ class TikZExport(object):
         write_file(path, content)
 
         # Copy style to same folder if not existing
-        source_path = "src/main/python/signalflowgrapher/ressources/tikz/sfgstyle.tex"
+        source_path = "src/main/python/signalflowgrapher/resources/tikz/sfgstyle.tex"
         target_path = join(dirname(path), "sfgstyle.tex")
         if (not isfile(target_path)):
             try:
@@ -50,10 +50,10 @@ class TikZExport(object):
             logger.debug("File %s already existing, do not copy", target_path)
 
     def __get_prefix(self):
-        return read_file("src/main/python/signalflowgrapher/ressources/tikz/prefix.tex")
+        return read_file("src/main/python/signalflowgrapher/resources/tikz/prefix.tex")
 
     def __get_suffix(self):
-        return read_file("src/main/python/signalflowgrapher/ressources/tikz/suffix.tex")
+        return read_file("src/main/python/signalflowgrapher/resources/tikz/suffix.tex")
 
     def __generate_tikz(self, nodes: Set[Node], branches: Set[Branch]):
         # Generate comment headers and call export for branches and nodes

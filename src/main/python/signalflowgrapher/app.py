@@ -11,7 +11,7 @@ from os import path
 def run(argv):
     # Init logger
     logger = logging.getLogger(__name__)
-    logging.config.fileConfig('signalflowgrapher/ressources/logging.conf',
+    logging.config.fileConfig('signalflowgrapher/resources/logging.conf',
                               disable_existing_loggers=False)
     logger.info("Starting application")
 
@@ -31,7 +31,7 @@ def run(argv):
 
     # Set language by command line argument
     if (args.language):
-        language_file = "signalflowgrapher/ressources/translations/%s.qm" \
+        language_file = "signalflowgrapher/resources/translations/%s.qm" \
                         % (args.language)
         if (path.exists(language_file)):
             logger.debug("Using translation file: %s", language_file)
