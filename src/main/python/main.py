@@ -10,7 +10,6 @@ from os import path, getcwd
 import sys
 
 if __name__ == '__main__':
-    appctxt = ApplicationContext()       # 1. Instantiate ApplicationContext
     
     # Init logger
     logger = logging.getLogger(__name__)
@@ -30,6 +29,9 @@ if __name__ == '__main__':
     PyQt5.QtWidgets.QApplication.setAttribute(
         QtCore.Qt.AA_UseHighDpiPixmaps,
         True)
+    
+    # Instantiate ApplicationContext
+    appctxt = ApplicationContext()
     app = QApplication([])
 
     # Set language by command line argument
@@ -47,5 +49,7 @@ if __name__ == '__main__':
 
     window = MainWindows.main_window()
     window.show()
-    exit_code = appctxt.app.exec()       # 2. Invoke appctxt.app.exec()
+
+    # Invoke appctxt.app.exec()
+    exit_code = appctxt.app.exec()       
     sys.exit(exit_code)
