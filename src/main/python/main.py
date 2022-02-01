@@ -32,7 +32,6 @@ if __name__ == '__main__':
     
     # Instantiate ApplicationContext
     appctxt = ApplicationContext()
-    print(appctxt.get_resource('test.txt'))
     app = QApplication([])
 
     # Set language by command line argument
