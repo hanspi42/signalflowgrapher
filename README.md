@@ -14,7 +14,7 @@ The first version checed in was the result of a bachelor thesis at the Universit
 
 ## Installation with installer
 
-Download the installer from ...
+Download the installer from the latest release: https://github.com/hanspi42/signalflowgrapher/releases
 
 ## Run in a Python environment
 
