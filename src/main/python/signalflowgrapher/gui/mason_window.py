@@ -1,10 +1,12 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
+from fbs_runtime.application_context import get_application_context
 from PyQt5.Qt import QDialog, QApplication
 from PyQt5 import uic
 from signalflow_algorithms.algorithms.mason import MasonResult
 from sympy.printing.lambdarepr import lambdarepr
 
-creator_file = ApplicationContext().get_resource("mason_window.ui")
+appctxt = get_application_context(ApplicationContext)
+creator_file = appctxt.get_resource("mason_window.ui")
 mason_window_ui, x = uic.loadUiType(creator_file)
 
 
