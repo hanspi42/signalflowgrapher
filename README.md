@@ -44,27 +44,17 @@ For the managment of the dependencies, a virtual enviromnent is used.
 
 ### Restore dependencies
 
-- Open the `src` directory in a terminal or an anaconda terminal
-- Run `pip install -r requirements.txt`
+- Go to the the `signalflowgrapher` directory in a terminal or an anaconda terminal
+- Run `pip install -r requirements/base.txt`
 
 ### Run application from terminal
 
-- Open the `src` directory in a terminal or an anaconda terminal
-- Run `python -m signalflowgrapher`
-- Run `python -m signalflowgrapher --language de_CH` for using the application with german translations
-
-### Run application from IDE
-
-- Make sure the IDE's kernel runs in the `src` directory
-- In the kernel, run the following lines:
-```
-from signalflowgrapher import app
-app.run('')
-```
+- Go to the the `signalflowgrapher` directory in a terminal or an anaconda terminal
+- Use `python .\src\main\python\main.py` to start the application
 
 ### Run unit tests and format tests
 
-- Open the `src` directory in a terminal or an anaconda terminal
+- Go to the `signalflowgrapher\src\main\python` directory in a terminal or an anaconda terminal
 - Run `python -m unittest`
 - Run `flake8 -v`
 
