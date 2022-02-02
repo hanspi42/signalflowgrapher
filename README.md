@@ -1,8 +1,8 @@
 # SignalFlowGrapher
 
-## Version 0.5
+## Version 1.0
 
-Intended for use from the autumn term of 2021 onwards.
+Intended for use from the spring term of 2022 onwards. This version will have installers for Windows, MacOS and Linux.
 
 Please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
 
@@ -12,11 +12,15 @@ This package is distributed under the Artistic License 2.0, which you find in th
 ## Authors of Version 0.2
 The first version checed in was the result of a bachelor thesis at the University of Applied Sciences and Arts Northwestern Switzerland, https://www.fhnw.ch/en/. Students: Simon Näf and Nicolai Wassermann. Advisors: Dominik Gruntz and Hanspeter Schmid. Contact author: hanspeter.schmid@fhnw.ch
 
-## Installation instructions
+## Installation with installer
+
+Download the installer from ...
+
+## Run in a Python environment
 
 ### Installation of plain Python or of Anaconda
 
-- Get the latest version of Python from https://www.python.org/ or of Anaconda from https://www.anaconda.com/products/individual
+- Get the latest version of Python from https://www.python.org/ or of Anaconda from https://www.anaconda.com/products/individual 
 
 ### Get the code
 
