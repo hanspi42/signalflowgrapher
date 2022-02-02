@@ -2,7 +2,7 @@
     "app_name": "SFGrapher",
     "author": "Hanspeter Schmid",
     "main_module": "src/main/python/main.py",
-    "version": "0.5.0",
+    "version": "1.0.0",
 	"hidden_imports": ["dependency_injector.errors",
 	                   "dependency_injector.wiring",
                        "six"]

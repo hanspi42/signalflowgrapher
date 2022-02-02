@@ -1,11 +1,13 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
+from fbs_runtime.application_context import get_application_context
 from PyQt5.Qt import Qt, QFont, QFontDatabase, QLabel, QPoint
 from signalflowgrapher.gui.graph_item import GraphItem
 from signalflowgrapher.model.model import PositionedNodeAddedEvent, \
     PositionedNodeMovedEvent, CurvedBranchTransformedEvent, LabeledObject, \
     LabelMovedEvent, LabelChangedTextEvent
 
-roman_font = ApplicationContext().get_resource("lmroman8-regular.otf")
+appctxt = get_application_context(ApplicationContext)
+roman_font = appctxt.get_resource("lmroman8-regular.otf")
 
 class LabelWidget(QLabel, GraphItem):
     def __init__(self,

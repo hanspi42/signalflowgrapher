@@ -1,4 +1,5 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
+from fbs_runtime.application_context import get_application_context
 from typing import Set
 from signalflowgrapher.model.model import Branch, Node
 from signalflowgrapher.io.file import write_file, read_file
@@ -10,9 +11,10 @@ from sympy.abc import _clash
 import logging
 logger = logging.getLogger(__name__)
 
-tex_sfgstyle = ApplicationContext().get_resource("sfgstyle.tex")
-tex_prefix = ApplicationContext().get_resource("prefix.tex")
-tex_suffix = ApplicationContext().get_resource("suffix.tex")
+appctxt = get_application_context(ApplicationContext)
+tex_sfgstyle = appctxt.get_resource("sfgstyle.tex")
+tex_prefix = appctxt.get_resource("prefix.tex")
+tex_suffix = appctxt.get_resource("suffix.tex")
 
 class TikZExport(object):
     def __init__(self):
