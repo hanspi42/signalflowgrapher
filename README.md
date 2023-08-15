@@ -16,6 +16,8 @@ The first version checed in was the result of a bachelor thesis at the Universit
 
 Download the installer from the latest release: https://github.com/hanspi42/signalflowgrapher/releases
 
+Unfortunately we can only provide an unsigned installer. If you do not wish to accept that risk (or if your system's policy does not allow you), you can always run it in a Python environent, as described below.
+
 ## Run in a Python environment
 
 ### Installation of plain Python or of Anaconda
@@ -24,33 +26,31 @@ Download the installer from the latest release: https://github.com/hanspi42/sign
 
 ### Get the code
 
-- Clone or download from https://github.com/hanspi42/signalflowgrapher
-
-### Create and activate virtual environment with Python
-
-For the managment of the dependencies, a virtual enviromnent is used.
-- Open the `src` directory in a terminal
-- Create virtual environment using the command `python -m venv signalflowgrapher`
-- On Windows run `signalflowgrapher\Scripts\activate.bat` or `signalflowgrapher\Scripts\Activate.ps1`
-- On Unix or MacOS run `source signalflowgrapher/bin/activate`
+- Clone or download from https://github.com/hanspi42/signalflowgrapher, e.g. using `git clone https://github.com/hanspi42/signalflowgrapher`.
 
 ### Create and activate virtual environment with Anaconda
 
-For the managment of the dependencies, a virtual enviromnent is used.
-- Open the `src` directory in an anaconda terminal
-- Create virtual environment using command `conda create -n sfg`
+This is the prefered way to install it.
+
+- Open an anaconda prompt.
+- Open the `signalflowgrapher` directory in an anaconda terminal
+- Create virtual environment using command `conda-env create --name sfg --file requirements\sfg.yml`
 - Activate virtual environment using the command `conda activate sfg`
-- Install pip with `conda install pip`
-
-### Restore dependencies
-
-- Go to the the `signalflowgrapher` directory in a terminal or an anaconda terminal
-- Run `pip install -r requirements/base.txt`
 
 ### Run application from terminal
 
 - Go to the the `signalflowgrapher` directory in a terminal or an anaconda terminal
 - Use `python .\src\main\python\main.py` to start the application
+
+### Create and activate virtual environment with Python
+
+Instead of creating the virtual environent with Anaconda, you can also do the following (but I have not tested it):
+- Open the `src` directory in a terminal
+- Create virtual environment using the command `python -m venv signalflowgrapher`
+- On Windows run `signalflowgrapher\Scripts\activate.bat` or `signalflowgrapher\Scripts\Activate.ps1`
+- On Unix or MacOS run `source signalflowgrapher/bin/activate`
+- Go to the the `signalflowgrapher` directory in a terminal or an anaconda terminal
+- Run `pip install -r requirements/base.txt`
 
 ### Run unit tests and format tests
 
