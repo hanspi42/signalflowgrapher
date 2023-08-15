@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from signalflowgrapher.model.model import CurvedBranch, PositionedNode
-from signalflow_algorithms.algorithms.graph_operations \
-    import CombineParallelOperation, InvertPathOperation, \
-    ScalePathOperation
+from signalflow_algorithms.algorithms.graph_operations import (
+    CombineParallelOperation, InvertPathOperation, ScalePathOperation)
 from typing import List
 
 

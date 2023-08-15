@@ -1,17 +1,16 @@
-from signalflow_algorithms.algorithms.graph_operations import \
-    ChainingOperation, EliminateNodeOperation, CombineParallelOperation, \
-    EliminateSelfLoopOperation, InvertPathOperation, ScalePathOperation
+from signalflow_algorithms.algorithms.graph_operations import (
+    ChainingOperation, EliminateNodeOperation, CombineParallelOperation,
+    EliminateSelfLoopOperation, InvertPathOperation, ScalePathOperation)
 from signalflowgrapher.model.model import CurvedBranch, Model, PositionedNode
-from signalflowgrapher.commands.change_branch_weight_command import \
-    ChangeBranchWeightCommand
-from signalflowgrapher.commands.remove_branch_command import \
-    RemoveBranchCommand
-from signalflowgrapher.commands.command_handler import \
-    ScriptCommand, CommandHandler
-from signalflowgrapher.commands.create_branch_command import \
-    CreateBranchCommand
-from signalflowgrapher.controllers.main_controller import \
-    MainController
+from signalflowgrapher.commands.change_branch_weight_command import (
+    ChangeBranchWeightCommand)
+from signalflowgrapher.commands.remove_branch_command import (
+    RemoveBranchCommand)
+from signalflowgrapher.commands.command_handler import (
+    ScriptCommand, CommandHandler)
+from signalflowgrapher.commands.create_branch_command import (
+    CreateBranchCommand)
+from signalflowgrapher.controllers.main_controller import MainController
 from typing import List
 import logging
 logger = logging.getLogger(__name__)

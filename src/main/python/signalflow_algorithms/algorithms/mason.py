@@ -3,8 +3,8 @@ from sympy import Expr, Mul, Symbol, Integer, Add, Pow
 from sympy.parsing.sympy_parser import parse_expr
 from signalflow_algorithms.algorithms.graph import Graph, Branch, Node
 from signalflow_algorithms.algorithms.johnson import simple_cycles
-from signalflow_algorithms.algorithms.loop_group import \
-    LoopGroup, find_loop_groups
+from signalflow_algorithms.algorithms.loop_group import (
+    LoopGroup, find_loop_groups)
 from signalflow_algorithms.algorithms.find_paths import find_paths
 from operator import attrgetter
 from sympy.abc import _clash

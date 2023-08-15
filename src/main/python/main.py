@@ -1,18 +1,12 @@
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
-from PyQt5.QtWidgets import QApplication
-from PyQt5 import QtCore
-import PyQt5
-# Configure PyQt
-PyQt5.QtWidgets.QApplication.setAttribute(
-    QtCore.Qt.AA_EnableHighDpiScaling, True)
-PyQt5.QtWidgets.QApplication.setAttribute(
-    QtCore.Qt.AA_UseHighDpiPixmaps, True)
-from signalflowgrapher.containers import MainWindows
 import logging
 import logging.config
 import argparse
 from os import path
 import sys
+from fbs_runtime.application_context.PyQt5 import ApplicationContext
+from PyQt5.QtWidgets import QApplication
+from PyQt5 import QtCore
+from signalflowgrapher.containers import MainWindows
 
 if __name__ == '__main__':
     # Instantiate ApplicationContext
@@ -33,10 +27,11 @@ if __name__ == '__main__':
     app = QApplication([])
 
     # Set language by command line argument.  This is not done through the
-    # Application context yet because it anyway only works on the command line
+    # application context yet because it anyway only works on the command line
     if (args.language):
-        language_file = "src/main/python/signalflowgrapher/resources/translations/%s.qm" \
-                        % (args.language)
+        language_file = (
+            "src/main/python/signalflowgrapher/resources/translations/%s.qm"
+            % (args.language))
         if (path.exists(language_file)):
             logger.debug("Using translation file: %s", language_file)
             translator = QtCore.QTranslator()
@@ -50,5 +45,9 @@ if __name__ == '__main__':
     window.show()
 
     # Invoke appctxt.app.exec()
-    exit_code = appctxt.app.exec()       
+    exit_code = appctxt.app.exec()
     sys.exit(exit_code)
+
+# Review comments 08/23: There was a "Configure PyQt" here that has been moved
+# to # main_window.py, mainly to make it possible to get this file flake8
+# clean.

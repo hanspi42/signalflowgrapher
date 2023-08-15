@@ -1,25 +1,25 @@
 from PyQt5 import QtCore, QtGui
-from PyQt5.Qt import Qt, QPoint, QMouseEvent, QRubberBand, QRect, QSize, \
-    QResizeEvent
+from PyQt5.Qt import (
+    Qt, QPoint, QMouseEvent, QRubberBand, QRect, QSize, QResizeEvent)
 from PyQt5.QtWidgets import QWidget
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
-from signalflowgrapher.gui.branch_widget import \
-    BranchWidget, Spline1HandleWidget, Spline2HandleWidget, \
-    SplineHandleWidgetMoveEvent, SplineHandleWidgetPressEvent, \
-    SplineHandleWidgetReleaseEvent, WidgetClickEvent
+from signalflowgrapher.gui.branch_widget import (
+    BranchWidget, Spline1HandleWidget, Spline2HandleWidget,
+    SplineHandleWidgetMoveEvent, SplineHandleWidgetPressEvent,
+    SplineHandleWidgetReleaseEvent, WidgetClickEvent)
 from signalflowgrapher.commands.command_handler import CommandHandler
-from signalflowgrapher.model.model import \
-    Model, CurvedBranchAddedEvent, CurvedBranchRemovedEvent, \
-    CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent, \
-    LabelChangedTextEvent, LabelMovedEvent, \
-    LabeledObject, PositionedNodeAddedEvent, \
-    PositionedNodeMovedEvent, PositionedNodeRemovedEvent
+from signalflowgrapher.model.model import (
+    Model, CurvedBranchAddedEvent, CurvedBranchRemovedEvent,
+    CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent,
+    LabelChangedTextEvent, LabelMovedEvent,
+    LabeledObject, PositionedNodeAddedEvent,
+    PositionedNodeMovedEvent, PositionedNodeRemovedEvent)
 from signalflowgrapher.gui.node_widget import NodeWidget
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.gui.label_widget import LabelWidget
-from signalflowgrapher.gui.graph_item import \
-    WidgetMoveEvent, WidgetPressEvent, WidgetReleaseEvent, GraphItem
+from signalflowgrapher.gui.graph_item import (
+    WidgetMoveEvent, WidgetPressEvent, WidgetReleaseEvent, GraphItem)
 from signalflowgrapher.common.observable import ValueObservable
 import logging
 logger = logging.getLogger(__name__)
@@ -61,13 +61,11 @@ class GraphField(QWidget):
 
     def on_ctrl_press(self):
         self.__grid = NoneGrid()
-        # self.__grid_widget.hide()
 
     def on_ctrl_release(self):
         self.__grid = FixedGrid(self.__grid_size)
         self.__grid.set_offset(self.__grid_offset)
         self.__grid_widget.lower()
-        # self.__grid_widget.show()
 
     def __selection_changed(self):
         self.selection.set(tuple(self.__widget_model_map.get(widget)

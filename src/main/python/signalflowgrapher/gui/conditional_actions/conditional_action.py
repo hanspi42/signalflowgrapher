@@ -1,5 +1,5 @@
-from signalflowgrapher.gui.conditional_actions.selection_condition \
-    import SelectionCondition
+from signalflowgrapher.gui.conditional_actions.selection_condition import (
+    SelectionCondition)
 from typing import List, Callable, Any
 from PyQt5.Qt import QLineEdit, QWidget, QPushButton
 from PyQt5.QtCore import pyqtSignal

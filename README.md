@@ -1,8 +1,8 @@
 # SignalFlowGrapher
 
-## Version 1.0
+## Version 1.1 dev
 
-Intended for use from the spring term of 2022 onwards. This version will have installers for Windows, MacOS and Linux.
+Intended for use from the autumn term of 2023 onwards. This version does not yet have installers for Windows, MacOS and Linux.
 
 Please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
 
@@ -14,7 +14,7 @@ The first version checed in was the result of a bachelor thesis at the Universit
 
 ## Installation with installer
 
-Download the installer from the latest release: https://github.com/hanspi42/signalflowgrapher/releases
+Download the installer from the latest release (1.0): https://github.com/hanspi42/signalflowgrapher/releases
 
 Unfortunately we can only provide an unsigned installer. If you do not wish to accept that risk (or if your system's policy does not allow you), you can always run it in a Python environent, as described below.
 

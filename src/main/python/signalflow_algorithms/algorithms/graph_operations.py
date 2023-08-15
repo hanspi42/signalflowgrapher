@@ -11,9 +11,8 @@ class ChainingOperation(object):
     def __init__(self):
         super().__init__()
 
-    def get_nodes_in_order(self, branch_1: Branch, branch_2: Branch) -> (Node,
-                                                                         Node,
-                                                                         Node):
+    def get_nodes_in_order(self, branch_1: Branch, branch_2: Branch) -> (
+            Node, Node, Node):
         """
         Get the involved nodes in the right order
         returns the three nodes, the middle node should be removed,

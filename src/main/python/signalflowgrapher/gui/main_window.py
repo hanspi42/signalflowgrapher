@@ -4,20 +4,29 @@ from PyQt5.QtWidgets import QMainWindow
 from PyQt5.Qt import QCoreApplication, QDockWidget, QFileDialog, QMessageBox
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.controllers.io_controller import IOController
-from signalflowgrapher.gui.conditional_actions.conditional_action import \
-    ConditionalAction
-from signalflowgrapher.gui.conditional_actions.selection_condition import \
-    MinNumNodesOrBranchesSelected
+from signalflowgrapher.gui.conditional_actions.conditional_action import (
+    ConditionalAction)
+from signalflowgrapher.gui.conditional_actions.selection_condition import (
+    MinNumNodesOrBranchesSelected)
 from PyQt5.QtCore import Qt
 from PyQt5 import uic
+import PyQt5
 import ntpath
 import logging
 from PyQt5 import QtCore
 logger = logging.getLogger(__name__)
 
+# Configure PyQt for high-DPI displays
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_EnableHighDpiScaling, True)
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_UseHighDpiPixmaps, True)
+
+
 appctxt = get_application_context(ApplicationContext)
 creator_file = appctxt.get_resource("main_window.ui")
 main_window_ui, x = uic.loadUiType(creator_file)
+
 
 class MainWindow(QMainWindow, main_window_ui):
     def __init__(self,
@@ -235,11 +244,13 @@ class MainWindow(QMainWindow, main_window_ui):
         # Create and set about text
         box = QMessageBox()
         box.setWindowTitle("About")
-        box.setText("<h1>SFGrapher v1.0.0</h1>Initially Developed at the University"
-                    " of Applied Sciences and Arts Northwestern"
-                    " Switzerland (FHNW) by Nicolai Wassermann"
-                    " and Simon Näf, supervised by "
-                    " Prof. Dr. Hanspeter Schmid and Prof. Dr. Dominik Gruntz"
-                    " <br><br> Maintained by Hanspeter Schmid"
-                    " <br>on <a href='https://github.com/hanspi42/signalflowgrapher/'>https://github.com/hanspi42/signalflowgrapher/</a>")
+        box.setText(
+            "<h1>SFGrapher v1.0.0</h1>Initially Developed at the University"
+            " of Applied Sciences and Arts Northwestern"
+            " Switzerland (FHNW) by Nicolai Wassermann"
+            " and Simon Näf, supervised by "
+            " Prof. Dr. Hanspeter Schmid and Prof. Dr. Dominik Gruntz"
+            " <br><br> Maintained by Hanspeter Schmid <br>on "
+            "<a href='https://github.com/hanspi42/signalflowgrapher/'>"
+            "https://github.com/hanspi42/signalflowgrapher/</a>")
         box.exec()

@@ -12,6 +12,7 @@ class JSONExport(object):
     """
     JSONExport allows to write json to file.
     """
+
     def __init__(self):
         super().__init__()
 
@@ -28,6 +29,7 @@ class JSONImport(object):
     """
     JSONImport allows to read json from file.
     """
+
     def __init__(self):
         super().__init__()
 
@@ -54,6 +56,7 @@ class JSONValidator(object):
     """
     Validator for validation of json schema of graph.
     """
+
     def __init__(self):
         super().__init__()
         self.__graph_schema = {
