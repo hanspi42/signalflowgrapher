@@ -11,8 +11,8 @@
 from collections import defaultdict
 from typing import List
 from signalflow_algorithms.algorithms.graph import Graph, Branch
-from signalflow_algorithms.algorithms.tarjan import \
-    strongly_connected_components
+from signalflow_algorithms.algorithms.tarjan import (
+    strongly_connected_components)
 
 
 def simple_cycles(g: Graph) -> List[List[Branch]]:

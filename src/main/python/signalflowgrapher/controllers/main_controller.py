@@ -1,24 +1,23 @@
 from typing import List
-from signalflowgrapher.model.model import \
-    CurvedBranch, LabeledObject, Model, PositionedNode
+from signalflowgrapher.model.model import (
+    CurvedBranch, LabeledObject, Model, PositionedNode)
 from signalflowgrapher.commands.create_node_command import CreateNodeCommand
 from signalflowgrapher.commands.remove_node_command import RemoveNodeCommand
 from signalflowgrapher.commands.move_node_command import MoveNodeCommand
-from signalflowgrapher.commands.command_handler \
-    import ScriptCommand, CommandHandler
-from signalflowgrapher.commands.remove_branch_command \
-    import RemoveBranchCommand
-from signalflowgrapher.commands.create_branch_command \
-    import CreateBranchCommand
-from signalflowgrapher.commands.transform_branch_command \
-    import TransformBranchCommand
+from signalflowgrapher.commands.command_handler import (
+    ScriptCommand, CommandHandler)
+from signalflowgrapher.commands.remove_branch_command import (
+    RemoveBranchCommand)
+from signalflowgrapher.commands.create_branch_command import (
+    CreateBranchCommand)
+from signalflowgrapher.commands.transform_branch_command import (
+    TransformBranchCommand)
 import math
-from signalflowgrapher.common.geometry \
-    import rotate, move, distance, collinear
-from signalflowgrapher.commands.change_node_name_command \
-    import ChangeNodeNameCommand
-from signalflowgrapher.commands.change_branch_weight_command \
-    import ChangeBranchWeightCommand
+from signalflowgrapher.common.geometry import rotate, move, distance, collinear
+from signalflowgrapher.commands.change_node_name_command import (
+    ChangeNodeNameCommand)
+from signalflowgrapher.commands.change_branch_weight_command import (
+    ChangeBranchWeightCommand)
 from signalflowgrapher.commands.move_label_command import MoveLabelCommand
 import logging
 logger = logging.getLogger(__name__)

@@ -1,11 +1,13 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QPainterPath, QRegion, QCursor
-from PyQt5.Qt import QColor, QMouseEvent, QPainterPathStroker, \
-    QPen, QPoint, QPointF, QSizePolicy, QMargins, QRect
-from signalflowgrapher.gui.graph_item \
-    import GraphItem, WidgetClickEvent, WidgetEvent
-from signalflowgrapher.model.model import CurvedBranch, PositionedNode, \
-    CurvedBranchTransformedEvent, PositionedNodeMovedEvent, GraphMovedEvent
+from PyQt5.Qt import (
+    QColor, QMouseEvent, QPainterPathStroker, QPen, QPoint, QPointF,
+    QSizePolicy, QMargins, QRect)
+from signalflowgrapher.gui.graph_item import (
+    GraphItem, WidgetClickEvent, WidgetEvent)
+from signalflowgrapher.model.model import (
+    CurvedBranch, PositionedNode, CurvedBranchTransformedEvent,
+    PositionedNodeMovedEvent, GraphMovedEvent)
 import math
 from signalflowgrapher.gui.geometry import rotate_pointF, rotate_point
 

@@ -1,5 +1,4 @@
-from signalflow_algorithms.algorithms.graph import \
-    Graph, Node, Branch
+from signalflow_algorithms.algorithms.graph import Graph, Node, Branch
 from signalflow_algorithms.common.json_dict import JSONDict
 from signalflowgrapher.common.observable import ObjectObservable
 from typing import Dict, List
@@ -11,6 +10,7 @@ class LabeledObject(JSONDict, abc.ABC):
     """
     Object with an attached label that has a relative position.
     """
+
     def __init__(self, dx, dy, *args):
         self._dx = dx
         self._dy = dy
@@ -57,6 +57,7 @@ class CurvedBranch(LabeledObject, Branch):
     """
     Branch with start node, end node that can be curved using the splines.
     """
+
     def __init__(self, start_node, end_node, spline1_x,
                  spline1_y, spline2_x, spline2_y,
                  label_dx, label_dy, weight: str = "", *args):
@@ -165,6 +166,7 @@ class PositionedNode(LabeledObject, Node):
     """
     A Node with label and position.
     """
+
     def __init__(self,
                  graph: 'ObservableGraph',
                  x: int,

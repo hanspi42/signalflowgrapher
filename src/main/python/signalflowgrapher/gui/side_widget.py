@@ -1,29 +1,29 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from fbs_runtime.application_context import get_application_context
-from signalflowgrapher.gui.sympy_expression_validator import \
-    SympyExpressionValidator
+from signalflowgrapher.gui.sympy_expression_validator import (
+    SympyExpressionValidator)
 from signalflowgrapher.gui.mason_window import MasonWindow
 from signalflowgrapher.gui.graph_field import GraphField
-from signalflowgrapher.model.model import \
-    Model, CurvedBranch, LabelChangedTextEvent, PositionedNode
+from signalflowgrapher.model.model import (
+    Model, CurvedBranch, LabelChangedTextEvent, PositionedNode)
 from signalflowgrapher.controllers.main_controller import MainController
-from signalflowgrapher.controllers.operation_controller import \
-    OperationController
+from signalflowgrapher.controllers.operation_controller import (
+    OperationController)
 from signalflowgrapher.controllers.io_controller import IOController
-from signalflowgrapher.gui.conditional_actions.selection_condition \
-    import SpecificNumBranchesSelected, SpecificNumNodesSelected, \
-    MaxNumNodesSelected, SubsequentBranchesSelected, \
-    MinNumNodesOrBranchesSelected, TwoParallelBranchesSelected, \
-    BranchIsSelfLoop, MinNumNodesSelected, PathHasIndependentStartVar, \
-    AllNodesScalable, SelectedBranchesWeighted, BranchesNextToNodesWeighted, \
-    NeighbourBranchesWeighted, NodesHaveNoSelfLoops, \
-    AllBranchesWeighted, MiddleNodeHasNumBranches
-from signalflowgrapher.gui.conditional_actions.conditional_action \
-    import ConditionalQLineEdit, ConditionalQPushButton
+from signalflowgrapher.gui.conditional_actions.selection_condition import (
+    SpecificNumBranchesSelected, SpecificNumNodesSelected,
+    MaxNumNodesSelected, SubsequentBranchesSelected,
+    MinNumNodesOrBranchesSelected, TwoParallelBranchesSelected,
+    BranchIsSelfLoop, MinNumNodesSelected, PathHasIndependentStartVar,
+    AllNodesScalable, SelectedBranchesWeighted, BranchesNextToNodesWeighted,
+    NeighbourBranchesWeighted, NodesHaveNoSelfLoops,
+    AllBranchesWeighted, MiddleNodeHasNumBranches)
+from signalflowgrapher.gui.conditional_actions.conditional_action import (
+    ConditionalQLineEdit, ConditionalQPushButton)
 from PyQt5 import uic
-from PyQt5.Qt import \
-    QFileDialog, QMessageBox, QWidget, QCoreApplication, \
-    QLineEdit, QInputDialog, Qt, QKeyEvent
+from PyQt5.Qt import (
+    QFileDialog, QMessageBox, QWidget, QCoreApplication,
+    QLineEdit, QInputDialog, Qt, QKeyEvent)
 from PyQt5.QtGui import QValidator
 from PyQt5 import QtCore
 import logging
@@ -67,8 +67,9 @@ class SideWidget(QWidget, side_widget_ui):
                 self.__set_text_edit_color(state, self.branch_weight))
 
         def label_event_handler(sel, event):
-            if isinstance(event, LabelChangedTextEvent) and \
-               len(sel) > 0 and sel[0] is event.labeled_obj:
+            if (
+                    isinstance(event, LabelChangedTextEvent) and
+                    len(sel) > 0 and sel[0] is event.labeled_obj):
                 # Set value and cursor
                 if isinstance(event.labeled_obj, PositionedNode):
                     pos = self.node_name.cursorPosition()

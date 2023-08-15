@@ -16,6 +16,7 @@ tex_sfgstyle = appctxt.get_resource("sfgstyle.tex")
 tex_prefix = appctxt.get_resource("prefix.tex")
 tex_suffix = appctxt.get_resource("suffix.tex")
 
+
 class TikZExport(object):
     def __init__(self):
         super().__init__()
@@ -121,4 +122,4 @@ class TikZExport(object):
         else:
             latex_notation = "$%s$" % latex(parse_expr(name,
                                                        local_dict=_clash))
-        return(latex_notation)
+        return (latex_notation)
