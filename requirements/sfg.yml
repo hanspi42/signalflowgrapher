@@ -1,0 +1,24 @@
+name: sfg
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - attrs
+  - autopep8
+  - coverage
+  - entrypoints
+  - flake8
+  - jsonschema
+  - mccabe
+  - mpmath
+  - pip
+  - pycodestyle
+  - pyflakes
+  - pyrsistent
+  - six
+  - sympy=1.12
+  - pip:
+    - dependency-injector
+    - PyQt5
+    - PyQt5-sip
+    - fbs

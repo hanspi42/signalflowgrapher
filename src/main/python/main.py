@@ -1,7 +1,13 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import QApplication
-from signalflowgrapher.containers import MainWindows
 from PyQt5 import QtCore
+import PyQt5
+# Configure PyQt
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_EnableHighDpiScaling, True)
+PyQt5.QtWidgets.QApplication.setAttribute(
+    QtCore.Qt.AA_UseHighDpiPixmaps, True)
+from signalflowgrapher.containers import MainWindows
 import logging
 import logging.config
 import argparse
