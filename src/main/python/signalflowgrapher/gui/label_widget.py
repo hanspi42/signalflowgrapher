@@ -8,7 +8,7 @@ from signalflowgrapher.model.model import (
     LabelMovedEvent, LabelChangedTextEvent)
 
 appctxt = get_application_context(ApplicationContext)
-roman_font = appctxt.get_resource("ZillaSlab-Regular.ttf")
+roman_font = appctxt.get_resource("HeptaSlab-Regular.ttf")
 
 
 class LabelWidget(QLabel, GraphItem):
@@ -26,7 +26,7 @@ class LabelWidget(QLabel, GraphItem):
         if (font_id == -1):
             raise IOError("Font could not be loaded")
         font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
-        font = QFont(font_name, 16)
+        font = QFont(font_name, 14)
         self.setFont(font)
         self.adjustSize()
         self.__reposition()
