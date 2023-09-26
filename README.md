@@ -20,6 +20,8 @@ Unfortunately we can only provide an unsigned installer. If you do not wish to a
 
 ## Run in a Python environment
 
+For MacOS on ARM processors, please read this: https://github.com/hanspi42/signalflowgrapher/issues/48#issue-1906889457
+
 ### Installation of plain Python or of Anaconda
 
 - Get the latest version of Python from https://www.python.org/ or of Anaconda from https://www.anaconda.com/products/individual 
