@@ -20,7 +20,7 @@ Unfortunately we can only provide an unsigned installer. If you do not wish to a
 
 ## Run in a Python environment
 
-For MacOS on ARM processors, please read this: https://github.com/hanspi42/signalflowgrapher/issues/48#issue-1906889457
+For MacOS on ARM processors, use an use an x86_64 Python installation (read this: https://github.com/hanspi42/signalflowgrapher/issues/48#issue-1906889457).
 
 ### Installation of plain Python or of Anaconda
 
