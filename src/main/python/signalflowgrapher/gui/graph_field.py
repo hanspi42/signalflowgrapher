@@ -398,6 +398,12 @@ class GraphField(QWidget):
                 self.__add_node(node)
             for branch in event.branches:
                 self.__add_branch(branch)
+
+            grid_offset_ = self.__model.get_grid_position()
+            self.__grid_offset = QPoint(grid_offset_[0], grid_offset_[1])
+            self.__grid.set_offset(self.__grid_offset)
+            self.__grid_widget.set_offset(self.__grid_offset)
+            self.__grid_widget.repaint()
             return
         if isinstance(event, GraphMovedEvent):
             for widget in self.__model_widget_map.values():
