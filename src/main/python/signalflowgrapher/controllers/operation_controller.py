@@ -130,7 +130,7 @@ class OperationController(object):
                 branch, new_weight, self.__model.graph))
             branch.weight = new_weight
 
-        cmds.append(RemoveBranchCommand(self.__model.graph, self_loop))
+        cmds.append(RemoveBranchCommand(self.__model.graph, self_loop, self.__model))
 
         # Remove self loop
         self_loop.remove()
@@ -172,9 +172,9 @@ class OperationController(object):
 
                 # Append commands
                 cmds.append(RemoveBranchCommand(
-                    self.__model.graph, affected_branch))
+                    self.__model.graph, affected_branch, self.__model))
                 cmds.append(CreateBranchCommand(
-                    self.__model.graph, new_branch))
+                    self.__model.graph, new_branch, self.__model))
 
                 # Remove affected branch
                 affected_branch.remove()
@@ -191,10 +191,10 @@ class OperationController(object):
                 branch_to_invert.label_dy,
                 operation.get_new_branch_weight(branch_to_invert))
             cmds.append(RemoveBranchCommand(
-                self.__model.graph, branch_to_invert))
+                self.__model.graph, branch_to_invert, self.__model))
             branch_to_invert.remove()
             cmds.append(CreateBranchCommand(
-                self.__model.graph, inverted_branch))
+                self.__model.graph, inverted_branch, self.__model))
 
         self.__command_handler.add_command(ScriptCommand(cmds))
 
