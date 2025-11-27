@@ -46,6 +46,12 @@
     <addaction name="separator"/>
     <addaction name="action_remove_branch_or_node"/>
    </widget>
+   <widget class="QMenu" name="menu_view">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="action_center_graph"/>
+   </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
      <string>Help</string>
@@ -54,6 +60,7 @@
    </widget>
    <addaction name="file_menu"/>
    <addaction name="menu_edit"/>
+   <addaction name="menu_view"/> 
    <addaction name="menu_help"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -155,6 +162,14 @@
    </property>
    <property name="shortcut">
     <string>DEL</string>
+   </property>
+  </action>
+  <action name="action_center_graph">
+   <property name="text">
+    <string>Center Graph</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
    </property>
   </action>
  </widget>
