@@ -22,3 +22,21 @@ def parse_weight(weight: str, branch) -> "Expr":
             f"Invalid expression '{weight}' in branch "
             f"{branch.start.name} → {branch.end.name}"
         ) from e
+    
+def parse_factor(factor: str) -> "Expr":
+    """
+    Safely parse a string into a SymPy expression (for factors).
+
+    Args:
+        factor: The string to parse.
+
+    Returns:
+        sympy.Expr: Parsed SymPy expression.
+
+    Raises:
+        ValueError: If parsing fails.
+    """
+    try:
+        return parse_expr(factor, local_dict=_clash)
+    except Exception as e:
+        raise ValueError(f"Invalid expression '{factor}' as factor used") from e

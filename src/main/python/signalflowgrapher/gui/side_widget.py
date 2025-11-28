@@ -151,6 +151,7 @@ class SideWidget(QWidget, side_widget_ui):
             save_tikz
         ))
 
+        # Graph operations
         self.__conditional_actions.append(ConditionalQPushButton(
             [SpecificNumBranchesSelected(2),
              SubsequentBranchesSelected(),
@@ -158,15 +159,14 @@ class SideWidget(QWidget, side_widget_ui):
              SelectedBranchesWeighted()],
             self.btn_chaining_rule,
             lambda sel, *args:
-                self.__operation_controller.chain_branches(sel[0], sel[1])
+                self.safe_execute(self.__operation_controller.chain_branches, sel[0], sel[1])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
             [TwoParallelBranchesSelected(),
              SelectedBranchesWeighted()],
             self.btn_combine_parallel,
-            lambda sel, *args:
-                self.__operation_controller.combine_parallel(sel[0], sel[1])
+            lambda sel, *args: self.safe_execute(self.__operation_controller.combine_parallel, sel[0], sel[1])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -181,7 +181,7 @@ class SideWidget(QWidget, side_widget_ui):
              BranchesNextToNodesWeighted()],
             self.btn_eliminate_node,
             lambda sel, *args:
-                self.__operation_controller.eliminate_node(sel[0])
+                self.safe_execute(self.__operation_controller.eliminate_node, sel[0])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -189,8 +189,8 @@ class SideWidget(QWidget, side_widget_ui):
              SelectedBranchesWeighted(),
              BranchIsSelfLoop()],
             self.btn_eliminate_self_loop,
-            lambda sel, *args:
-                self.__operation_controller.eliminate_self_loop(sel[0])
+            lambda sel, *args: 
+                self.safe_execute(self.__operation_controller.eliminate_self_loop, sel[0])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -199,7 +199,7 @@ class SideWidget(QWidget, side_widget_ui):
              NeighbourBranchesWeighted(),
              SelectedBranchesWeighted()],
             self.btn_invert_path,
-            lambda sel, *args: self.__operation_controller.invert_path(sel)
+            lambda sel, *args: self.safe_execute(self.__operation_controller.invert_path, sel)
         ))
 
         def scale_path(sel, *args):
@@ -209,7 +209,7 @@ class SideWidget(QWidget, side_widget_ui):
                 QCoreApplication.translate("side_widget", "Scale factor"),
                 QCoreApplication.translate("side_widget", "Scale factor"))
             if (ok):
-                self.__operation_controller.scale_path(sel, text)
+                self.safe_execute(self.__operation_controller.scale_path, sel, text)
 
         self.__conditional_actions.append(ConditionalQPushButton(
             [MinNumNodesSelected(1), AllNodesScalable(),
@@ -217,6 +217,23 @@ class SideWidget(QWidget, side_widget_ui):
             self.btn_scale_path,
             scale_path
         ))
+
+    # Helper method to catch exceptions and show error messages
+    def safe_execute(self, func, *args):
+        try:
+            func(*args)
+        except ValueError as e:  # SymPy parse errors
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Invalid SymPy expression")
+            msg.setText(str(e))
+            msg.exec_()
+        except Exception as e:  # Other unexpected errors
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Error")
+            msg.setText(f"An unexpected error occurred:\n{str(e)}")
+            msg.exec_()
 
     def eventFilter(self, target, event):
         # Stop processing of event if Ctrl + Z or
