@@ -239,12 +239,21 @@ class SideWidget(QWidget, side_widget_ui):
         sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 
     def __show_mason(self, sel, text):
-        # Generate mason result
-        mason_result = self.__io_controller.generate_mason(
-            self.__model.graph,
-            sel[0],
-            sel[1]
-        )
+        # Generate mason result and catch illegal sympy expressions in branchweights
+        try:
+            mason_result = self.__io_controller.generate_mason(
+                self.__model.graph,
+                sel[0],
+                sel[1]
+            )
+
+        except Exception as e:
+            msg = QMessageBox(self)
+            msg.setIcon(QMessageBox.Critical)
+            msg.setWindowTitle("Invalid SymPy expression")
+            msg.setText(str(e))
+            msg.exec_()
+            return
 
         # Pass content and open window
         window = MasonWindow()
