@@ -40,8 +40,8 @@ class TestOperationController(TestCase):
 
         operation.get_nodes_in_order.assert_called_once_with(branch_1,
                                                              branch_2)
-        self.main_controller.remove_nodes_and_branches.called_once_with([n2])
-        operation.get_new_weight.called_once_with(branch_1,
+        self.main_controller.remove_nodes_and_branches.assert_called_once_with([n2])
+        operation.get_new_weight.assert_called_once_with(branch_1,
                                                   branch_2)
         self.main_controller.create_branch_auto_pos.assert_called_once_with(
             n1, n3, "New Weight")
@@ -66,8 +66,8 @@ class TestOperationController(TestCase):
 
         operation.get_nodes_in_order.assert_called_once_with(branch_1,
                                                              branch_2)
-        self.main_controller.remove_nodes_and_branches.called_once_with([n2])
-        operation.get_new_weight.called_once_with(branch_1,
+        self.main_controller.remove_nodes_and_branches.assert_called_once_with([n2])
+        operation.get_new_weight.assert_called_once_with(branch_1,
                                                   branch_2)
         self.main_controller.create_branch_auto_pos.assert_not_called()
         self.main_controller.create_self_loop.assert_called_once_with(
@@ -94,9 +94,9 @@ class TestOperationController(TestCase):
                    MagicMock(return_value=operation)):
             self.controller.combine_parallel(branch_1, branch_2)
 
-        self.main_controller.remove_nodes_and_branches.called_once_with(
+        self.main_controller.remove_nodes_and_branches.assert_called_once_with(
             [branch_1, branch_2])
-        operation.get_new_weight.called_once_with(branch_1,
+        operation.get_new_weight.assert_called_once_with(branch_1,
                                                   branch_2)
         self.main_controller.create_branch_auto_pos.assert_called_once_with(
             n1, n2, "New Weight")
@@ -121,9 +121,9 @@ class TestOperationController(TestCase):
                    MagicMock(return_value=operation)):
             self.controller.combine_parallel(branch_1, branch_2)
 
-        self.main_controller.remove_nodes_and_branches.called_once_with(
+        self.main_controller.remove_nodes_and_branches.assert_called_once_with(
             [branch_1, branch_2])
-        operation.get_new_weight.called_once_with(branch_1,
+        operation.get_new_weight.assert_called_once_with(branch_1,
                                                   branch_2)
         self.main_controller.create_self_loop.assert_called_once_with(
             n1, "New Weight")
@@ -186,7 +186,7 @@ class TestOperationController(TestCase):
                    MagicMock(return_value=operation)):
             self.controller.eliminate_node(n1)
 
-        self.main_controller.remove_nodes_and_branches.called_once_with(
+        self.main_controller.remove_nodes_and_branches.assert_called_once_with(
             [n1])
 
         self.main_controller.create_self_loop.assert_any_call(n2, "Weight 1")
