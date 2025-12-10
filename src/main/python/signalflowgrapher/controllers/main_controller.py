@@ -33,7 +33,7 @@ class MainController:
         logger.debug("Create new node at position (%s,%s)", x_pos, y_pos)
         node = PositionedNode(self.__model.graph, x_pos, y_pos, 0, 30)
 
-        command = CreateNodeCommand(self.__model.graph, node)
+        command = CreateNodeCommand(self.__model.graph, node, self.__model)
         self.__command_handler.add_command(command)
 
     def remove_nodes_and_branches(self, nodes_and_branches: List):
@@ -47,7 +47,7 @@ class MainController:
         for node_or_branch in nodes_and_branches:
             if isinstance(node_or_branch, CurvedBranch):
                 cmds.append(RemoveBranchCommand(
-                    self.__model.graph, node_or_branch))
+                    self.__model.graph, node_or_branch, self.__model))
                 node_or_branch.remove()
 
         # Remove nodes with connected branches
@@ -58,10 +58,10 @@ class MainController:
                     node_or_branch.ingoing)
                 for branch in connected_branches:
                     cmds.append(RemoveBranchCommand(
-                        self.__model.graph, branch))
+                        self.__model.graph, branch, self.__model))
                     branch.remove()
                 cmds.append(RemoveNodeCommand(
-                    self.__model.graph, node_or_branch))
+                    self.__model.graph, node_or_branch, self.__model))
                 node_or_branch.remove()
 
         self.__command_handler.add_command(ScriptCommand(cmds))
@@ -159,7 +159,7 @@ class MainController:
                               spline1_y, spline2_x, spline2_y,
                               label_dx, label_dy, weight)
         self.__command_handler.add_command(
-            CreateBranchCommand(self.__model.graph, branch))
+            CreateBranchCommand(self.__model.graph, branch, self.__model))
 
     def create_branch_auto_pos(self,
                                start_node: PositionedNode,

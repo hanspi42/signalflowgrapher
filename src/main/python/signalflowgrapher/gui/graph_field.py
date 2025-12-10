@@ -67,6 +67,41 @@ class GraphField(QWidget):
         self.__grid.set_offset(self.__grid_offset)
         self.__grid_widget.lower()
 
+    def center_graph(self):
+        """Center the whole graph inside the view."""
+
+        # Compute bounding box of all widgets
+        if not self.__model_widget_map:
+            return  # Nothing to center
+
+        widgets = list(self.__model_widget_map.values())
+
+        min_x = min(w.x() for w in widgets)
+        max_x = max(w.x() + w.width() for w in widgets)
+        min_y = min(w.y() for w in widgets)
+        max_y = max(w.y() + w.height() for w in widgets)
+
+        graph_width = max_x - min_x
+        graph_height = max_y - min_y
+
+        # Center position inside viewport
+        viewport_center_x = self.width() // 2
+        viewport_center_y = self.height() // 2
+
+        graph_center_x = min_x + graph_width // 2
+        graph_center_y = min_y + graph_height // 2
+
+        dx = viewport_center_x - graph_center_x
+        dy = viewport_center_y - graph_center_y
+
+        # Move graph and update grid offset
+        self.__model.move_graph_relative(dx, dy)
+        self.__grid_offset += QtCore.QPoint(dx, dy)
+        self.__grid.set_offset(self.__grid_offset)
+        self.__grid_widget.set_offset(self.__grid_offset)
+        self.__grid_widget.repaint()
+
+
     def __selection_changed(self):
         self.selection.set(tuple(self.__widget_model_map.get(widget)
                                  for widget in self.__selection))
@@ -398,6 +433,12 @@ class GraphField(QWidget):
                 self.__add_node(node)
             for branch in event.branches:
                 self.__add_branch(branch)
+
+            grid_offset_ = self.__model.get_grid_position()
+            self.__grid_offset = QPoint(grid_offset_[0], grid_offset_[1])
+            self.__grid.set_offset(self.__grid_offset)
+            self.__grid_widget.set_offset(self.__grid_offset)
+            self.__grid_widget.repaint()
             return
         if isinstance(event, GraphMovedEvent):
             for widget in self.__model_widget_map.values():

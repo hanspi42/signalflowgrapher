@@ -365,7 +365,9 @@ class Model(ObjectObservable):
     def __init__(self):
         super().__init__()
         self.__graph: ObservableGraph = None
-
+        self.__gridpos_x = 0
+        self.__gridpos_y = 0
+        
     @property
     def graph(self) -> ObservableGraph:
         """
@@ -407,7 +409,23 @@ class Model(ObjectObservable):
         for branch in branches:
             branch.transform(dx, dy, dx, dy)
 
+        self.__gridpos_x += dx
+        self.__gridpos_y += dy
+
         self._notify(GraphMovedEvent(nodes, branches, dx, dy))
+
+    def set_grid_position(self, grid_pos):
+        """
+        Set the grid position of the graph.
+        """
+        self.__gridpos_x, self.__gridpos_y = grid_pos
+
+
+    def get_grid_position(self):
+        """
+        Get the current grid position of the graph.
+        """
+        return self.__gridpos_x, self.__gridpos_y
 
     def __handle_model_change(self, event):
         self._notify(event)

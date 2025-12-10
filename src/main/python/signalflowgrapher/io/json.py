@@ -16,12 +16,15 @@ class JSONExport(object):
     def __init__(self):
         super().__init__()
 
-    def write_as_json(self, data: JSONDict, path: str):
+    def write_as_json(self, data: JSONDict, grid_pos, path: str):
         """
         Write data to file at path.
         """
+        data_dict = data.to_dict()
+        data_dict["grid_pos"] = grid_pos
+
         logger.info("Write json to file %s", path)
-        json_data = json.dumps(data.to_dict(), indent=4)
+        json_data = json.dumps(data_dict, indent=4)
         write_file(path, json_data)
 
 
@@ -67,24 +70,12 @@ class JSONValidator(object):
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {
-                                "type": "string"
-                            },
-                            "label_dx": {
-                                "type": "integer"
-                            },
-                            "label_dy": {
-                                "type": "integer"
-                            },
-                            "name": {
-                                "type": "string"
-                            },
-                            "x": {
-                                "type": "integer"
-                            },
-                            "y": {
-                                "type": "integer"
-                            }
+                            "id": {"type": "string"},
+                            "label_dx": {"type": "integer"},
+                            "label_dy": {"type": "integer"},
+                            "name": {"type": "string"},
+                            "x": {"type": "integer"},
+                            "y": {"type": "integer"}
                         },
                         "required": [
                             "id",
@@ -101,36 +92,16 @@ class JSONValidator(object):
                     "items": {
                         "type": "object",
                         "properties": {
-                            "id": {
-                                "type": "string"
-                            },
-                            "weight": {
-                                "type": "string"
-                            },
-                            "start": {
-                                "type": "string"
-                            },
-                            "end": {
-                                "type": "string"
-                            },
-                            "label_dx": {
-                                "type": "number"
-                            },
-                            "label_dy": {
-                                "type": "number"
-                            },
-                            "spline1_x": {
-                                "type": "number"
-                            },
-                            "spline1_y": {
-                                "type": "number"
-                            },
-                            "spline2_x": {
-                                "type": "number"
-                            },
-                            "spline2_y": {
-                                "type": "number"
-                            }
+                            "id": {"type": "string"},
+                            "weight": {"type": "string"},
+                            "start": {"type": "string"},
+                            "end": {"type": "string"},
+                            "label_dx": {"type": "number"},
+                            "label_dy": {"type": "number"},
+                            "spline1_x": {"type": "number"},
+                            "spline1_y": {"type": "number"},
+                            "spline2_x": {"type": "number"},
+                            "spline2_y": {"type": "number"}
                         },
                         "required": [
                             "id",
@@ -145,13 +116,19 @@ class JSONValidator(object):
                             "spline2_y"
                         ]
                     }
+                },
+                "grid": {
+                    "type": "array",
+                    "items": {"type": "integer"},
+                    "minItems": 2,
+                    "maxItems": 2
                 }
             },
             "required": [
                 "nodes",
                 "branches"
             ]
-        }
+        } #grid is optional for backward compatibility
 
     def validate_json(self, data: Any):
         """

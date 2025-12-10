@@ -73,6 +73,7 @@ class MainWindow(QMainWindow, main_window_ui):
         self.action_open.triggered.connect(self.__open)
         self.action_new.triggered.connect(self.__new)
         self.action_exit.triggered.connect(lambda: self.close())
+        self.action_center_graph.triggered.connect(self.__center_graph)
         self.action_about.triggered.connect(self.__about)
 
         self.__conditional_actions.append(ConditionalAction(
@@ -239,6 +240,9 @@ class MainWindow(QMainWindow, main_window_ui):
             "Model change in graph field detected by main window")
         for action in self.__conditional_actions:
             action.handle_model_change(event)
+
+    def __center_graph(self):
+        self.__graph_field.center_graph()
 
     def __about(self):
         # Create and set about text

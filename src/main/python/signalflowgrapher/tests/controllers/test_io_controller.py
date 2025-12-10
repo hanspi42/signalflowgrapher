@@ -36,7 +36,7 @@ class TestIOController(TestCase):
             controller.save_graph("Path to save graph to")
 
         json_export.write_as_json.assert_called_once_with(
-            model.graph,
+            model.graph, model.get_grid_position(),
             "Path to save graph to")
         command_handler.reset.assert_called_once()
 

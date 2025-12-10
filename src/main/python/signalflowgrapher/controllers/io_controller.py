@@ -27,7 +27,7 @@ class IOController(object):
         """Save graph as json under the given path"""
         logger.info("Save graph to path: %s", path)
         export = JSONExport()
-        export.write_as_json(self.__model.graph, path)
+        export.write_as_json(self.__model.graph, self.__model.get_grid_position(), path)
         self.__command_handler.reset()
 
     def new_graph(self):
@@ -42,6 +42,13 @@ class IOController(object):
         logger.info("Load graph from path: %s", path)
         json_import = JSONImport()
         dict = json_import.read_from_json(path)
+        
+        # extract grid position; default to (0,0) for backward compatibility
+        grid_pos = tuple(dict.get("grid_pos", (0, 0)))
+        if "grid_pos" in dict:
+            del dict["grid_pos"]
+
+        self.__model.set_grid_position(grid_pos)
         graph = ObservableGraph.from_dict(dict)
         self.__model.graph = graph
         self.__command_handler.reset()

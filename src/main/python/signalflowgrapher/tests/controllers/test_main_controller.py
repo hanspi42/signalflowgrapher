@@ -38,7 +38,7 @@ class TestMainController(TestCase):
                 self.controller.create_node(10, 20)
 
         node.assert_called_once_with(self.model.graph, 10, 20, 0, 30)
-        command.assert_called_once_with(self.model.graph, node())
+        command.assert_called_once_with(self.model.graph, node(), self.model)
         self.command_handler.add_command.assert_called_once_with(command())
 
     def test_remove_nodes_and_branches(self):
@@ -235,7 +235,7 @@ class TestMainController(TestCase):
                                        12,
                                        "Weight Test")
         command.assert_called_once_with(self.model.graph,
-                                        branch())
+                                        branch(), self.model)
 
     def test_create_branch_auto_pos(self):
         start_node = MagicMock(PositionedNode)
@@ -267,7 +267,7 @@ class TestMainController(TestCase):
                                        30,
                                        "Weight Test")
         command.assert_called_once_with(self.model.graph,
-                                        branch())
+                                        branch(), self.model)
 
     def test_create_branch_auto_pos_near_branch(self):
         existing_branch = MagicMock(CurvedBranch)
@@ -309,7 +309,7 @@ class TestMainController(TestCase):
                                        30,
                                        "Weight Test")
         command.assert_called_once_with(self.model.graph,
-                                        branch())
+                                        branch(), self.model)
 
     def test_create_branch_auto_pos_same_line(self):
         existing_branch = MagicMock(CurvedBranch)
@@ -351,7 +351,7 @@ class TestMainController(TestCase):
                                        30,
                                        "Weight Test")
         command.assert_called_once_with(self.model.graph,
-                                        branch())
+                                        branch(), self.model)
 
     def test_create_self_loop(self):
         start_node = MagicMock(PositionedNode)
@@ -393,7 +393,7 @@ class TestMainController(TestCase):
         self.assertEqual("Weight Test", call[8])
 
         command.assert_called_once_with(self.model.graph,
-                                        branch())
+                                        branch(), self.model)
 
     def test_create_self_loop_existing_loop(self):
         start_node = MagicMock(PositionedNode)
@@ -424,4 +424,4 @@ class TestMainController(TestCase):
         self.assertEqual("Weight Test", call[8])
 
         command.assert_called_once_with(self.model.graph,
-                                        branch())
+                                        branch(), self.model)
