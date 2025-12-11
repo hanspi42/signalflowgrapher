@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui
 from PyQt5.Qt import (
     Qt, QPoint, QMouseEvent, QRubberBand, QRect, QSize, QResizeEvent)
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox
 from PyQt5.QtCore import QTimer
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
@@ -556,41 +556,55 @@ class GraphField(QWidget):
 
     def paste_from_clipboard(self):
         text = QApplication.clipboard().text()
-        if not text:
-            return
+        if not text.strip():
+            return  # clipboard empty
 
+        # Parse JSON
         try:
             data = json.loads(text)
         except Exception:
-            logger.exception("Invalid clipboard data")
-            return
-
-        # Reset paste offset if new content was copied
-        if text != getattr(self, "_last_paste_data", None):
-            self._paste_offset_count = 0
-            self._last_paste_data = text
-
-        # Increment offset before paste
-        self._paste_offset_count += 1
-        dx = 30 * self._paste_offset_count
-        dy = 30 * self._paste_offset_count
+            return  # invalid JSON
 
         nodes_data = data.get("nodes", [])
         branches_data = data.get("branches", [])
 
-        # Create mapping old_node_id → new_node
+        if not nodes_data:
+            return  # no nodes, nothing to paste
+
+
+        # Check mouse inside GraphField
+        global_pos = QtGui.QCursor.pos()
+        local_pos = self.mapFromGlobal(global_pos)
+        if not self.rect().contains(local_pos):
+            QMessageBox.warning(self, "Paste error",
+                                        "Mouse pointer is outside the graph area.")
+            return
+
+        mouse_x, mouse_y = local_pos.x(), local_pos.y()
+
+        # Snap to grid
+        grid_x = (mouse_x // self.__grid_size) * self.__grid_size
+        grid_y = (mouse_y // self.__grid_size) * self.__grid_size
+
+        # Compute bounding box of copied nodes
+        min_x = min(n["x"] for n in nodes_data)
+        min_y = min(n["y"] for n in nodes_data)
+
+        # Offset so min_x/min_y lands at nearest grid cell
+        dx = grid_x - min_x
+        dy = grid_y - min_y
+
         id_map = {}
         new_branches = []
 
         self.__command_handler.start_script()
-
         try:
             # Paste nodes
             for nd in nodes_data:
-                x = nd["x"] + dx
-                y = nd["y"] + dy
+                new_x = nd["x"] + dx
+                new_y = nd["y"] + dy
 
-                new_node = self.__controller.create_node(x, y)
+                new_node = self.__controller.create_node(new_x, new_y)
 
                 # Restore node name if present
                 name = nd.get("name")
@@ -610,7 +624,6 @@ class GraphField(QWidget):
                 start_node = id_map[sid]
                 end_node = id_map[eid]
 
-                # Branch label and spline offsets
                 s1x = bd.get("spline1_x", 0) + dx
                 s1y = bd.get("spline1_y", 0) + dy
                 s2x = bd.get("spline2_x", 0) + dx
@@ -619,28 +632,23 @@ class GraphField(QWidget):
                 label_dy = bd.get("label_dy", 0)
                 weight = bd.get("weight", "")
 
-                # Create branch with manual positions
                 branch = self.__controller.create_branch(
                     start_node, end_node,
                     s1x, s1y, s2x, s2y,
                     label_dx, label_dy,
                     weight
                 )
-
                 new_branches.append(branch)
 
         finally:
             self.__command_handler.end_script()
 
-        
+        # Select pasted items
         self.__clear_selection()
-        # Select nodes
-        for new_node in id_map.values():
-            widget = self.__model_widget_map.get(new_node)
+        for node in id_map.values():
+            widget = self.__model_widget_map.get(node)
             if widget:
                 self.__add_selection(widget)
-        
-        # Select branches
         for branch in new_branches:
             widget = self.__model_widget_map.get(branch)
             if widget:
