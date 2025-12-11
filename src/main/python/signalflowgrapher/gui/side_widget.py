@@ -194,7 +194,8 @@ class SideWidget(QWidget, side_widget_ui):
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
-            [PathHasIndependentStartVar(),
+            [SpecificNumBranchesSelected(1),
+             PathHasIndependentStartVar(),
              SubsequentBranchesSelected(),
              NeighbourBranchesWeighted(),
              SelectedBranchesWeighted()],
