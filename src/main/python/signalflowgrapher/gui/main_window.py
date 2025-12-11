@@ -75,6 +75,9 @@ class MainWindow(QMainWindow, main_window_ui):
         self.action_exit.triggered.connect(lambda: self.close())
         self.action_center_graph.triggered.connect(self.__center_graph)
         self.action_about.triggered.connect(self.__about)
+        self.action_copy.triggered.connect(self.__copy)
+        self.action_cut.triggered.connect(self.__cut)
+        self.action_paste.triggered.connect(self.__paste)
 
         self.__conditional_actions.append(ConditionalAction(
             [MinNumNodesOrBranchesSelected(1)],
@@ -240,6 +243,24 @@ class MainWindow(QMainWindow, main_window_ui):
             "Model change in graph field detected by main window")
         for action in self.__conditional_actions:
             action.handle_model_change(event)
+    
+    def __copy(self):
+        try:
+            self.__graph_field.copy_to_clipboard()
+        except Exception:
+            logger.exception("Copy failed")
+
+    def __cut(self):
+        try:
+            self.__graph_field.cut_to_clipboard()
+        except Exception:
+            logger.exception("Cut failed")
+
+    def __paste(self):
+        try:
+            self.__graph_field.paste_from_clipboard()
+        except Exception:
+            logger.exception("Paste failed")
 
     def __center_graph(self):
         self.__graph_field.center_graph()

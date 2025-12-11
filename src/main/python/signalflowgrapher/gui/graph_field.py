@@ -1,7 +1,8 @@
 from PyQt5 import QtCore, QtGui
 from PyQt5.Qt import (
     Qt, QPoint, QMouseEvent, QRubberBand, QRect, QSize, QResizeEvent)
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtCore import QTimer
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
 from signalflowgrapher.gui.branch_widget import (
@@ -14,13 +15,14 @@ from signalflowgrapher.model.model import (
     CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent,
     LabelChangedTextEvent, LabelMovedEvent,
     LabeledObject, PositionedNodeAddedEvent,
-    PositionedNodeMovedEvent, PositionedNodeRemovedEvent)
+    PositionedNodeMovedEvent, PositionedNodeRemovedEvent, PositionedNode, CurvedBranch)
 from signalflowgrapher.gui.node_widget import NodeWidget
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.gui.label_widget import LabelWidget
 from signalflowgrapher.gui.graph_item import (
     WidgetMoveEvent, WidgetPressEvent, WidgetReleaseEvent, GraphItem)
 from signalflowgrapher.common.observable import ValueObservable
+import json
 import logging
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,9 @@ class GraphField(QWidget):
         self.__grid_offset = QPoint()
         self.__rubber_band: QRubberBand = QRubberBand(
             QRubberBand.Rectangle, self)
+        
+        self._last_paste_data = None
+        self._paste_offset_count = 0 
 
         self.setMinimumSize(800, 600)
 
@@ -515,3 +520,128 @@ class GraphField(QWidget):
         # Resize grid
         self.__grid_widget.resize(self.size())
         super().resizeEvent(event)
+
+    def copy_to_clipboard(self):
+        selection = [self.__widget_model_map[w] for w in self.__selection]
+
+        selected_nodes = []
+        selected_branches = []
+
+        # Collect nodes
+        for m in selection:
+            if isinstance(m, PositionedNode):
+                selected_nodes.append(m)
+
+        selected_node_ids = {n.id.hex for n in selected_nodes}
+
+        # Collect branches whose endpoints are fully selected
+        for m in selection:
+            if isinstance(m, CurvedBranch):
+                if m.start.id.hex in selected_node_ids and \
+                m.end.id.hex in selected_node_ids:
+                    selected_branches.append(m)
+
+        data = {
+            "nodes": [n.to_dict() for n in selected_nodes],
+            "branches": [b.to_dict() for b in selected_branches]
+        }
+
+        QApplication.clipboard().setText(json.dumps(data))
+
+
+    def cut_to_clipboard(self):
+        self.copy_to_clipboard()
+        models = [self.__widget_model_map[w] for w in self.__selection]
+        self.__controller.remove_nodes_and_branches(models)
+
+    def paste_from_clipboard(self):
+        text = QApplication.clipboard().text()
+        if not text:
+            return
+
+        try:
+            data = json.loads(text)
+        except Exception:
+            logger.exception("Invalid clipboard data")
+            return
+
+        # Reset paste offset if new content was copied
+        if text != getattr(self, "_last_paste_data", None):
+            self._paste_offset_count = 0
+            self._last_paste_data = text
+
+        # Increment offset before paste
+        self._paste_offset_count += 1
+        dx = 30 * self._paste_offset_count
+        dy = 30 * self._paste_offset_count
+
+        nodes_data = data.get("nodes", [])
+        branches_data = data.get("branches", [])
+
+        # Create mapping old_node_id → new_node
+        id_map = {}
+        new_branches = []
+
+        self.__command_handler.start_script()
+
+        try:
+            # Paste nodes
+            for nd in nodes_data:
+                x = nd["x"] + dx
+                y = nd["y"] + dy
+
+                new_node = self.__controller.create_node(x, y)
+
+                # Restore node name if present
+                name = nd.get("name")
+                if name:
+                    self.__controller.set_node_name(new_node, name)
+
+                id_map[nd["id"]] = new_node
+
+            # Paste branches
+            for bd in branches_data:
+                sid = bd["start"]
+                eid = bd["end"]
+
+                if sid not in id_map or eid not in id_map:
+                    continue  # skip branches if nodes not pasted
+
+                start_node = id_map[sid]
+                end_node = id_map[eid]
+
+                # Branch label and spline offsets
+                s1x = bd.get("spline1_x", 0) + dx
+                s1y = bd.get("spline1_y", 0) + dy
+                s2x = bd.get("spline2_x", 0) + dx
+                s2y = bd.get("spline2_y", 0) + dy
+                label_dx = bd.get("label_dx", 0)
+                label_dy = bd.get("label_dy", 0)
+                weight = bd.get("weight", "")
+
+                # Create branch with manual positions
+                branch = self.__controller.create_branch(
+                    start_node, end_node,
+                    s1x, s1y, s2x, s2y,
+                    label_dx, label_dy,
+                    weight
+                )
+
+                new_branches.append(branch)
+
+        finally:
+            self.__command_handler.end_script()
+
+        
+        self.__clear_selection()
+        # Select nodes
+        for new_node in id_map.values():
+            widget = self.__model_widget_map.get(new_node)
+            if widget:
+                self.__add_selection(widget)
+        
+        # Select branches
+        for branch in new_branches:
+            widget = self.__model_widget_map.get(branch)
+            if widget:
+                self.__add_selection(widget)

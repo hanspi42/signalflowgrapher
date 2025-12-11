@@ -42,6 +42,10 @@
     <addaction name="action_undo"/>
     <addaction name="action_redo"/>
     <addaction name="separator"/>
+    <addaction name="action_copy"/>
+    <addaction name="action_cut"/>
+    <addaction name="action_paste"/>
+    <addaction name="separator"/>
     <addaction name="action_select_all"/>
     <addaction name="separator"/>
     <addaction name="action_remove_branch_or_node"/>
@@ -172,6 +176,30 @@
     <string>Ctrl+Shift+C</string>
    </property>
   </action>
+    <action name="action_copy">
+     <property name="text">
+        <string>Copy</string>
+     </property>
+     <property name="shortcut">
+        <string>Ctrl+C</string>
+     </property>
+    </action>
+    <action name="action_cut">
+     <property name="text">
+        <string>Cut</string>
+     </property>
+     <property name="shortcut">
+        <string>Ctrl+X</string>
+     </property>
+    </action>
+    <action name="action_paste">
+     <property name="text">
+        <string>Paste</string>
+     </property>
+     <property name="shortcut">
+        <string>Ctrl+V</string>
+     </property>    
+    </action>
  </widget>
  <resources/>
  <connections/>
