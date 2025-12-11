@@ -130,7 +130,7 @@
     <string>Select All</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+    <string>Ctrl+Shift+A</string>
    </property>
   </action>
   <action name="action_exit">
@@ -165,7 +165,7 @@
     <string>Remove Node(s) or Branch(es)</string>
    </property>
    <property name="shortcut">
-    <string>DEL</string>
+    <string>Ctrl+Shift+DEL</string>
    </property>
   </action>
   <action name="action_center_graph">
@@ -173,7 +173,7 @@
     <string>Center Graph</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+C</string>
+    <string>Alt+C</string>
    </property>
   </action>
     <action name="action_copy">
@@ -181,7 +181,7 @@
         <string>Copy</string>
      </property>
      <property name="shortcut">
-        <string>Ctrl+C</string>
+        <string>Ctrl+Shift+C</string>
      </property>
     </action>
     <action name="action_cut">
@@ -189,7 +189,7 @@
         <string>Cut</string>
      </property>
      <property name="shortcut">
-        <string>Ctrl+X</string>
+        <string>Ctrl+Shift+X</string>
      </property>
     </action>
     <action name="action_paste">
@@ -197,7 +197,7 @@
         <string>Paste</string>
      </property>
      <property name="shortcut">
-        <string>Ctrl+V</string>
+        <string>Ctrl+Shift+V</string>
      </property>    
     </action>
  </widget>
