@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QWidget
-from PyQt5.Qt import Qt, QPoint, QPointF, QMouseEvent
-from PyQt5 import QtCore, QtGui
+from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Qt, QPoint, QPointF
+from PySide6.QtGui import QMouseEvent, QCursor
 from signalflowgrapher.model.model import GraphMovedEvent
 from signalflowgrapher.common.observable import ObjectObservable
 
@@ -13,7 +13,7 @@ class GraphItem(QWidget, ObjectObservable):
         super().__init__(*args, **kwargs)
         self._selected = False
         self._selection_number = 0
-        self.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.PointingHandCursor))
         self._mouse_press_pos = None
         self._mouse_move_pos = None
 
@@ -55,7 +55,7 @@ class GraphItem(QWidget, ObjectObservable):
     def mouseMoveEvent(self, event):
         # Move is only triggered with left mouse button pressed
         if event.buttons() == Qt.LeftButton:
-            self.setCursor(QtGui.QCursor(QtCore.Qt.ClosedHandCursor))
+            self.setCursor(QCursor(Qt.ClosedHandCursor))
             global_position = event.globalPos()
             diff = global_position - self._mouse_move_pos
 
@@ -69,7 +69,7 @@ class GraphItem(QWidget, ObjectObservable):
         super(GraphItem, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event, notify=True):
-        self.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.setCursor(QCursor(Qt.PointingHandCursor))
         if notify:
             self._notify(
                 WidgetReleaseEvent(self, self._mouse_press_pos, event))

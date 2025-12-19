@@ -1,8 +1,7 @@
-from PyQt5 import QtCore, QtGui
-from PyQt5.Qt import (
-    Qt, QPoint, QMouseEvent, QRubberBand, QRect, QSize, QResizeEvent)
-from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox
-from PyQt5.QtCore import QTimer
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt, QPoint, QTimer, QRect, QSize
+from PySide6.QtGui import QMouseEvent, QCursor
+from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
 from signalflowgrapher.gui.branch_widget import (
@@ -128,7 +127,7 @@ class GraphField(QWidget):
         if self.__mouse_press_pos is not None:
             self.__command_handler.end_script()
         self.__mouse_press_pos = None
-        self.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.setCursor(QtGui.QCursor(Qt.ArrowCursor))
 
         if self.__rubber_band.isVisible():
             self.__rubber_band.hide()
@@ -154,7 +153,7 @@ class GraphField(QWidget):
                     else:
                         self.__remove_selection(widget)
             else:
-                self.setCursor(QtGui.QCursor(QtCore.Qt.ClosedHandCursor))
+                self.setCursor(QtGui.QCursor(Qt.ClosedHandCursor))
                 self.__grid_offset += diff
                 self.__grid.set_offset(self.__grid_offset)
                 self.__grid_widget.set_offset(self.__grid_offset)

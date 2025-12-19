@@ -1,11 +1,11 @@
-from PyQt5.Qt import QValidator
-from PyQt5.QtCore import pyqtSignal
+from PySide6.QtGui import QValidator
+from PySide6.QtCore import Signal
 from sympy.parsing.sympy_parser import parse_expr, TokenError
 from sympy.abc import _clash
 
 
 class SympyExpressionValidator(QValidator):
-    validationChanged = pyqtSignal(QValidator.State)
+    validationChanged = Signal(QValidator.State)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

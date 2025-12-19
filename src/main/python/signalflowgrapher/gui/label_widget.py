@@ -1,17 +1,20 @@
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
-from fbs_runtime.application_context import get_application_context
-from PyQt5.Qt import Qt, QFont, QFontDatabase, QLabel, QPoint
+from importlib import resources
+from PySide6.QtWidgets import QLabel
+from PySide6.QtGui import QFont, QFontDatabase
+from PySide6.QtCore import Qt, QPoint
 from signalflowgrapher.gui.graph_item import GraphItem
 from signalflowgrapher.model.model import (
     PositionedNodeAddedEvent, PositionedNodeMovedEvent,
     CurvedBranchTransformedEvent, LabeledObject,
-    LabelMovedEvent, LabelChangedTextEvent)
+    LabelMovedEvent, LabelChangedTextEvent
+)
 
-appctxt = get_application_context(ApplicationContext)
-roman_font = appctxt.get_resource("HeptaSlab-Regular.ttf")
+# Load font using importlib.resources
+with resources.path("signalflowgrapher.resources", "HeptaSlab-Regular.ttf") as font_path:
+    roman_font = str(font_path)
 
 
-class LabelWidget(QLabel, GraphItem):
+class LabelWidget(QLabel):
     def __init__(self,
                  str,
                  owner: LabeledObject,

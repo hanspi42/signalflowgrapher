@@ -1,34 +1,37 @@
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
-from fbs_runtime.application_context import get_application_context
-from PyQt5.QtWidgets import QMainWindow
-from PyQt5.Qt import QCoreApplication, QDockWidget, QFileDialog, QMessageBox
+from importlib import resources
+import ntpath
+import logging
+
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QDockWidget,
+    QFileDialog,
+    QMessageBox,
+    QApplication,
+)
+from PySide6.QtCore import Qt, QCoreApplication
+from PySide6 import QtCore
+from PySide6 import QtUiTools, QtWidgets
+from PySide6.QtCore import QFile
+
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.controllers.io_controller import IOController
 from signalflowgrapher.gui.conditional_actions.conditional_action import (
     ConditionalAction)
 from signalflowgrapher.gui.conditional_actions.selection_condition import (
     MinNumNodesOrBranchesSelected)
-from PyQt5.QtCore import Qt
-from PyQt5 import uic
-import PyQt5
-import ntpath
-import logging
-from PyQt5 import QtCore
+from signalflowgrapher.gui.ui.ui_main_window import Ui_MainWindow
+
 logger = logging.getLogger(__name__)
 
-# Configure PyQt for high-DPI displays
-PyQt5.QtWidgets.QApplication.setAttribute(
-    QtCore.Qt.AA_EnableHighDpiScaling, True)
-PyQt5.QtWidgets.QApplication.setAttribute(
-    QtCore.Qt.AA_UseHighDpiPixmaps, True)
+# Configure Qt for high-DPI displays
+QApplication.setAttribute(
+    QtCore.Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
+QApplication.setAttribute(
+    QtCore.Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
 
 
-appctxt = get_application_context(ApplicationContext)
-creator_file = appctxt.get_resource("main_window.ui")
-main_window_ui, x = uic.loadUiType(creator_file)
-
-
-class MainWindow(QMainWindow, main_window_ui):
+class MainWindow(QMainWindow):
     def __init__(self,
                  graph_field,
                  side_widget,
@@ -36,8 +39,11 @@ class MainWindow(QMainWindow, main_window_ui):
                  io_controller: IOController,
                  command_handler,
                  *args, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
-        self.setupUi(self)
+        super().__init__(*args, **kwargs)
+
+        # Load UI from generated class
+        self._ui = Ui_MainWindow()
+        self._ui.setupUi(self)
 
         self.__command_handler = command_handler
         self.__graph_field = graph_field
@@ -47,10 +53,13 @@ class MainWindow(QMainWindow, main_window_ui):
         self.setCentralWidget(graph_field)
         self.__conditional_actions = []
 
-        dock = QDockWidget(QCoreApplication.translate("main_window",
-                                                      "Operations"), self)
+        # Dock widget
+        dock = QDockWidget(
+            QCoreApplication.translate("main_window", "Operations"), self)
         dock.setWidget(side_widget)
-        dock.setFeatures(dock.DockWidgetMovable | dock.DockWidgetFloatable)
+        dock.setFeatures(
+            QDockWidget.DockWidgetMovable |
+            QDockWidget.DockWidgetFloatable)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
         # Observe can_undo and can_redo on command handler
@@ -65,24 +74,24 @@ class MainWindow(QMainWindow, main_window_ui):
             self.__handle_selection_change)
 
         # Connect triggers to methods
-        self.action_redo.triggered.connect(self.__command_handler.redo)
-        self.action_undo.triggered.connect(self.__command_handler.undo)
-        self.action_save.triggered.connect(self.__save)
-        self.action_save_as.triggered.connect(self.__save_as)
-        self.action_select_all.triggered.connect(self.__select_all)
-        self.action_open.triggered.connect(self.__open)
-        self.action_new.triggered.connect(self.__new)
-        self.action_exit.triggered.connect(lambda: self.close())
-        self.action_center_graph.triggered.connect(self.__center_graph)
-        self.action_about.triggered.connect(self.__about)
-        self.action_copy.triggered.connect(self.__copy)
-        self.action_cut.triggered.connect(self.__cut)
-        self.action_paste.triggered.connect(self.__paste)
+        self._ui.action_redo.triggered.connect(self.__command_handler.redo)
+        self._ui.action_undo.triggered.connect(self.__command_handler.undo)
+        self._ui.action_save.triggered.connect(self.__save)
+        self._ui.action_save_as.triggered.connect(self.__save_as)
+        self._ui.action_select_all.triggered.connect(self.__select_all)
+        self._ui.action_open.triggered.connect(self.__open)
+        self._ui.action_new.triggered.connect(self.__new)
+        self._ui.action_exit.triggered.connect(lambda: self.close())
+        self._ui.action_center_graph.triggered.connect(self.__center_graph)
+        self._ui.action_about.triggered.connect(self.__about)
+        self._ui.action_copy.triggered.connect(self.__copy)
+        self._ui.action_cut.triggered.connect(self.__cut)
+        self._ui.action_paste.triggered.connect(self.__paste)
 
         self.__conditional_actions.append(ConditionalAction(
             [MinNumNodesOrBranchesSelected(1)],
-            self.action_remove_branch_or_node,
-            self.action_remove_branch_or_node.triggered,
+            self._ui.action_remove_branch_or_node,
+            self._ui.action_remove_branch_or_node.triggered,
             lambda sel, *args:
             self.__main_controller.remove_nodes_and_branches(sel)
         ))
@@ -92,19 +101,19 @@ class MainWindow(QMainWindow, main_window_ui):
 
     def keyPressEvent(self, event):
         # Pass ctrl key press event to graph field
-        if event.key() == Qt.Key_Control:
+        if event.key() == Qt.Key.Key_Control:
             self.__graph_field.on_ctrl_press()
 
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.__graph_field.on_esc_press()
 
     def keyReleaseEvent(self, event):
         # Pass ctrl key release event to graph field
-        if event.key() == Qt.Key_Control:
+        if event.key() == Qt.Key.Key_Control:
             self.__graph_field.on_ctrl_release()
 
     def changeEvent(self, event):
-        if event.type() == QtCore.QEvent.ActivationChange:
+        if event.type() == QtCore.QEvent.Type.ActivationChange:
             # Manually execute release events if window loses isActive
             if not self.isActiveWindow() and self.__graph_field:
                 logger.debug("MainWindows lost isActive")

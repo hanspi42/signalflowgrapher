@@ -1,5 +1,5 @@
 import abc
-from PyQt5.Qt import QPoint
+from PySide6.QtCore import QPoint
 from signalflowgrapher.gui.graph_item import GraphItem
 
 

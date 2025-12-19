@@ -1,7 +1,6 @@
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 from signalflowgrapher.containers import MainWindows
-from PyQt5 import QtCore
-import PyQt5
+from PySide6 import QtCore
 import logging
 import logging.config
 import argparse
@@ -20,13 +19,10 @@ def run(argv):
     parser.add_argument('--language', type=str, help='Optional language name')
     args = parser.parse_args()
 
-    # Configure PyQt and initialise application
-    PyQt5.QtWidgets.QApplication.setAttribute(
-        QtCore.Qt.AA_EnableHighDpiScaling,
-        True)
-    PyQt5.QtWidgets.QApplication.setAttribute(
-        QtCore.Qt.AA_UseHighDpiPixmaps,
-        True)
+    # Configure PySide6 and initialise application
+    QApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication([])
 
     # Set language by command line argument
@@ -44,4 +40,4 @@ def run(argv):
 
     window = MainWindows.main_window()
     window.show()
-    app.exec_()
+    app.exec()

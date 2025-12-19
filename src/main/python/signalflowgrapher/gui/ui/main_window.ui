@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>33</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">
@@ -64,7 +64,7 @@
    </widget>
    <addaction name="file_menu"/>
    <addaction name="menu_edit"/>
-   <addaction name="menu_view"/> 
+   <addaction name="menu_view"/>
    <addaction name="menu_help"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -165,7 +165,7 @@
     <string>Remove Node(s) or Branch(es)</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+DEL</string>
+    <string>Ctrl+Shift+Del</string>
    </property>
   </action>
   <action name="action_center_graph">
@@ -176,30 +176,30 @@
     <string>Alt+C</string>
    </property>
   </action>
-    <action name="action_copy">
-     <property name="text">
-        <string>Copy</string>
-     </property>
-     <property name="shortcut">
-        <string>Ctrl+Shift+C</string>
-     </property>
-    </action>
-    <action name="action_cut">
-     <property name="text">
-        <string>Cut</string>
-     </property>
-     <property name="shortcut">
-        <string>Ctrl+Shift+X</string>
-     </property>
-    </action>
-    <action name="action_paste">
-     <property name="text">
-        <string>Paste</string>
-     </property>
-     <property name="shortcut">
-        <string>Ctrl+Shift+V</string>
-     </property>    
-    </action>
+  <action name="action_copy">
+   <property name="text">
+    <string>Copy</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+C</string>
+   </property>
+  </action>
+  <action name="action_cut">
+   <property name="text">
+    <string>Cut</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+X</string>
+   </property>
+  </action>
+  <action name="action_paste">
+   <property name="text">
+    <string>Paste</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+V</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

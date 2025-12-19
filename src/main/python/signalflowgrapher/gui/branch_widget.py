@@ -1,8 +1,6 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QPainterPath, QRegion, QCursor
-from PyQt5.Qt import (
-    QColor, QMouseEvent, QPainterPathStroker, QPen, QPoint, QPointF,
-    QSizePolicy, QMargins, QRect)
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QMargins
+from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtGui import QPainter, QPainterPath, QPainterPathStroker, QRegion, QCursor, QPen, QColor, QMouseEvent
 from signalflowgrapher.gui.graph_item import (
     GraphItem, WidgetClickEvent, WidgetEvent)
 from signalflowgrapher.model.model import (
