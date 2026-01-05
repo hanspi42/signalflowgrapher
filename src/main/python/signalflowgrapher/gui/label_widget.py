@@ -16,12 +16,11 @@ with resources.path("signalflowgrapher.resources", "HeptaSlab-Regular.ttf") as f
 
 class LabelWidget(QLabel):
     def __init__(self,
-                 str,
+                 text: str,
                  owner: LabeledObject,
                  owner_widget: GraphItem,
-                 parent=None,
-                 flags=Qt.WindowFlags()):
-        super().__init__(str, parent=parent, flags=flags)
+                 parent=None):
+        super().__init__(text, parent=parent)
         self.__owner = owner
         self.__owner_widget = owner_widget
         font_database = QFontDatabase()
@@ -48,14 +47,33 @@ class LabelWidget(QLabel):
         Select this widget. This changes the widget style.
         """
         self.setStyleSheet("QLabel {color: blue}")
-        return super().select(number)
+        self.__owner_widget.select(number)   # ← Delegation statt super()
 
     def unselect(self):
         """
         Unselect this widget. This changes the widget style.
         """
         self.setStyleSheet("")
-        return super().unselect()
+        self.__owner_widget.unselect()        # ← Delegation statt super()
+
+    def observe(self, *args, **kwargs):
+        return self.__owner_widget.observe(*args, **kwargs)
+    
+    def graph_moved_event(self, event):
+        # Delegiere ans Owner-Widget
+        self.__owner_widget.graph_moved_event(event)
+        self.__reposition()
+   
+
+    
+    def mousePressEvent(self, event):
+        event.ignore()  # Qt sucht sich das Widget darunter
+    def mouseMoveEvent(self, event):
+        event.ignore()
+    def mouseReleaseEvent(self, event):
+        event.ignore()
+
+
 
     def node_added_event(self, event: PositionedNodeAddedEvent):
         """

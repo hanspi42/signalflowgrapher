@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPainter, QPen, QColor, QRegion
 from PySide6.QtWidgets import QWidget, QSizePolicy
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, QRect
 from signalflowgrapher.gui.graph_item import GraphItem
 from signalflowgrapher.model.model import (
     PositionedNode, PositionedNodeMovedEvent)

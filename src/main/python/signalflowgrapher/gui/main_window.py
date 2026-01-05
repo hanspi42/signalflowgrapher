@@ -65,9 +65,9 @@ class MainWindow(QMainWindow):
         # Observe can_undo and can_redo on command handler
         # to enable/disable und and redo buttons
         self.__command_handler.can_undo.observe(
-            lambda old, new: self.action_undo.setDisabled(not new))
+            lambda old, new: self._ui.action_undo.setDisabled(not new))
         self.__command_handler.can_redo.observe(
-            lambda old, new: self.action_redo.setDisabled(not new))
+            lambda old, new: self._ui.action_redo.setDisabled(not new))
 
         # Observe selection changes
         self.__graph_field.selection.observe(
@@ -206,11 +206,9 @@ class MainWindow(QMainWindow):
         else:
             # Ask if there are unsaved changes
             box = QMessageBox()
-            box.addButton(QCoreApplication.translate("main_window", "Yes"),
-                          box.YesRole)
-            no_button = box.addButton(QCoreApplication.translate("main_window",
-                                                                 "No"),
-                                      box.NoRole)
+            box.setStandardButtons(QMessageBox.StandardButton.Yes |
+                               QMessageBox.StandardButton.No)
+            no_button = box.button(QMessageBox.StandardButton.No)
             box.setDefaultButton(no_button)
             box.setWindowTitle(QCoreApplication.translate("main_window",
                                                           "Unsaved changes"))
