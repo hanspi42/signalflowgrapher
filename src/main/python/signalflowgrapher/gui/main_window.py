@@ -24,12 +24,6 @@ from signalflowgrapher.gui.ui.ui_main_window import Ui_MainWindow
 
 logger = logging.getLogger(__name__)
 
-# Configure Qt for high-DPI displays
-QApplication.setAttribute(
-    QtCore.Qt.ApplicationAttribute.AA_EnableHighDpiScaling, True)
-QApplication.setAttribute(
-    QtCore.Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True)
-
 
 class MainWindow(QMainWindow):
     def __init__(self,

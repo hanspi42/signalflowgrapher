@@ -19,10 +19,6 @@ def run(argv):
     parser.add_argument('--language', type=str, help='Optional language name')
     args = parser.parse_args()
 
-    # Configure PySide6 and initialise application
-    QApplication.setHighDpiScaleFactorRoundingPolicy(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
-    QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication([])
 
     # Set language by command line argument
