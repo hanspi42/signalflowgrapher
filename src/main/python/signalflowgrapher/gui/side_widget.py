@@ -270,7 +270,7 @@ class SideWidget(QWidget):
 
         sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 
-    def __show_mason(self, sel, text):
+    def __show_mason(self, sel):
         # Generate mason result and catch illegal sympy expressions in branchweights
         try:
             mason_result = self.__io_controller.generate_mason(
