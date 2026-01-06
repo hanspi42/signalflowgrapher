@@ -7,12 +7,9 @@ from PySide6.QtWidgets import (
     QDockWidget,
     QFileDialog,
     QMessageBox,
-    QApplication,
 )
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6 import QtCore
-from PySide6 import QtUiTools, QtWidgets
-from PySide6.QtCore import QFile
 
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.controllers.io_controller import IOController

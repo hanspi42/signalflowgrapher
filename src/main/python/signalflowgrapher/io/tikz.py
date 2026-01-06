@@ -4,9 +4,7 @@ from signalflowgrapher.io.file import write_file, read_file
 from os.path import dirname, join, isfile
 from shutil import copyfile
 from sympy import latex
-from sympy.parsing.sympy_parser import parse_expr
 from signalflow_algorithms.common.utils import parse_weight, parse_nodename
-from sympy.abc import _clash
 from importlib import resources
 import logging
 logger = logging.getLogger(__name__)

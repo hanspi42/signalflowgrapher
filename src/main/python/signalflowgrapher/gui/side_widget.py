@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6.QtGui import QValidator, QKeyEvent
-from PySide6 import QtCore, QtUiTools
+from PySide6 import QtCore
 
 from signalflowgrapher.gui.sympy_expression_validator import (
     SympyExpressionValidator)

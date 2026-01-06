@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QMouseEvent, QCursor
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
@@ -61,13 +61,6 @@ class GraphField(QWidget):
 
         self.setMinimumSize(800, 600)
 
-    # Qt6 helpers
-    def _gpos(self, event: QMouseEvent) -> QPoint:
-        return event.globalPosition().toPoint()
-
-    def _pos(self, event: QMouseEvent) -> QPoint:
-        return event.position().toPoint()
-
     def on_esc_press(self):
         self.__clear_selection()
 
@@ -121,7 +114,7 @@ class GraphField(QWidget):
     def mousePressEvent(self, event: QMouseEvent):
         logger.debug("MousePressEvent")
         if event.button() == Qt.LeftButton:
-            self.__mouse_press_pos = self._gpos(event)
+            self.__mouse_press_pos = event.globalPosition().toPoint()
             self.__command_handler.start_script()
 
             if event.modifiers() == Qt.AltModifier:
@@ -143,18 +136,18 @@ class GraphField(QWidget):
 
     def mouseDoubleClickEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
-            grid_pos = self.__grid.get_grid_position(self._pos(event))
+            grid_pos = self.__grid.get_grid_position(event.position().toPoint())
             self.__controller.create_node(grid_pos.x(), grid_pos.y())
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.__mouse_press_pos is not None:
 
-            global_position = self._gpos(event)
+            global_position = event.globalPosition().toPoint()
             diff = global_position - self.__mouse_press_pos
             if self.__rubber_band.isVisible():
                 self.__rubber_band.setGeometry(
                     QRect(self.mapFromGlobal(self.__mouse_press_pos),
-                        self._pos(event)).normalized())
+                        event.position().toPoint()).normalized())
                 # Add to selection if inside rubber band remove otherwise
                 for widget in self.__model_widget_map.values():
                     if self.__rubber_band.geometry().contains(
