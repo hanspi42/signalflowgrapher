@@ -1,5 +1,5 @@
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtCore import Qt, QPoint, QTimer, QRect, QSize
+from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QMouseEvent, QCursor
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
@@ -14,7 +14,8 @@ from signalflowgrapher.model.model import (
     CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent,
     LabelChangedTextEvent, LabelMovedEvent,
     LabeledObject, PositionedNodeAddedEvent,
-    PositionedNodeMovedEvent, PositionedNodeRemovedEvent, PositionedNode, CurvedBranch)
+    PositionedNodeMovedEvent, PositionedNodeRemovedEvent,
+    PositionedNode, CurvedBranch)
 from signalflowgrapher.gui.node_widget import NodeWidget
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.gui.label_widget import LabelWidget
@@ -59,6 +60,13 @@ class GraphField(QWidget):
         self._paste_offset_count = 0 
 
         self.setMinimumSize(800, 600)
+
+    # Qt6 helpers
+    def _gpos(self, event: QMouseEvent) -> QPoint:
+        return event.globalPosition().toPoint()
+
+    def _pos(self, event: QMouseEvent) -> QPoint:
+        return event.position().toPoint()
 
     def on_esc_press(self):
         self.__clear_selection()
@@ -112,13 +120,14 @@ class GraphField(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent):
         logger.debug("MousePressEvent")
-        if event.buttons() == Qt.LeftButton:
-            self.__mouse_press_pos = event.globalPos()
+        if event.button() == Qt.LeftButton:
+            self.__mouse_press_pos = self._gpos(event)
             self.__command_handler.start_script()
 
             if event.modifiers() == Qt.AltModifier:
                 self.__rubber_band.setGeometry(
-                    QRect(self.__mouse_press_pos, QSize()))
+                    QRect(self.mapFromGlobal(self.__mouse_press_pos), QSize())
+                )
                 self.__rubber_band.show()
                 self.__clear_selection()
 
@@ -127,24 +136,25 @@ class GraphField(QWidget):
         if self.__mouse_press_pos is not None:
             self.__command_handler.end_script()
         self.__mouse_press_pos = None
-        self.setCursor(QtGui.QCursor(Qt.ArrowCursor))
+        self.setCursor(QCursor(Qt.ArrowCursor))
 
         if self.__rubber_band.isVisible():
             self.__rubber_band.hide()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent):
-        if event.buttons() == Qt.LeftButton:
-            grid_pos = self.__grid.get_grid_position(event.pos())
+        if event.button() == Qt.LeftButton:
+            grid_pos = self.__grid.get_grid_position(self._pos(event))
             self.__controller.create_node(grid_pos.x(), grid_pos.y())
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.__mouse_press_pos is not None:
-            global_position = event.globalPos()
+
+            global_position = self._gpos(event)
             diff = global_position - self.__mouse_press_pos
             if self.__rubber_band.isVisible():
                 self.__rubber_band.setGeometry(
                     QRect(self.mapFromGlobal(self.__mouse_press_pos),
-                          event.pos()).normalized())
+                        self._pos(event)).normalized())
                 # Add to selection if inside rubber band remove otherwise
                 for widget in self.__model_widget_map.values():
                     if self.__rubber_band.geometry().contains(
@@ -153,7 +163,7 @@ class GraphField(QWidget):
                     else:
                         self.__remove_selection(widget)
             else:
-                self.setCursor(QtGui.QCursor(Qt.ClosedHandCursor))
+                self.setCursor(QCursor(Qt.ClosedHandCursor))
                 self.__grid_offset += diff
                 self.__grid.set_offset(self.__grid_offset)
                 self.__grid_widget.set_offset(self.__grid_offset)
@@ -201,7 +211,7 @@ class GraphField(QWidget):
                 self.__command_handler.end_script()
 
                 # Do not modify selection after move
-                if not event.press_pos == event.mouse_event.globalPos():
+                if not event.press_pos == event.mouse_event.globalPosition().toPoint():
                     return
 
                 if event.mouse_event.modifiers() == Qt.ControlModifier:
@@ -463,7 +473,7 @@ class GraphField(QWidget):
         self.__model_widget_map[node] = widget
         self.__widget_model_map[widget] = node
         widget.show()
-        self.__initalize_label(node)
+        self.__initalize_label(node) ###
         self.__clear_selection()
         self.__add_selection(widget)
 

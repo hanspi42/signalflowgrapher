@@ -99,9 +99,9 @@ class WidgetPressEvent(WidgetClickEvent):
 
 
 class WidgetReleaseEvent(WidgetClickEvent):
-    def __init__(self, press_pos: QPoint,
+    def __init__(self, widget: GraphItem, press_pos: QPoint,
                  mouse_event: QMouseEvent, *args, **kwargs):
-        super().__init__(press_pos, mouse_event, *args, **kwargs)
+        super().__init__(widget, press_pos, mouse_event, *args, **kwargs)
 
 
 class WidgetMoveEvent(object):

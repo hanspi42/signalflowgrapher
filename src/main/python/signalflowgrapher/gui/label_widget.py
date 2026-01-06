@@ -60,19 +60,8 @@ class LabelWidget(QLabel):
         return self.__owner_widget.observe(*args, **kwargs)
     
     def graph_moved_event(self, event):
-        # Delegiere ans Owner-Widget
-        self.__owner_widget.graph_moved_event(event)
         self.__reposition()
    
-
-    
-    def mousePressEvent(self, event):
-        event.ignore()  # Qt sucht sich das Widget darunter
-    def mouseMoveEvent(self, event):
-        event.ignore()
-    def mouseReleaseEvent(self, event):
-        event.ignore()
-
 
 
     def node_added_event(self, event: PositionedNodeAddedEvent):
