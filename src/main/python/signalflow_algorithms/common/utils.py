@@ -40,3 +40,21 @@ def parse_factor(factor: str) -> "Expr":
         return parse_expr(factor, local_dict=_clash)
     except Exception as e:
         raise ValueError(f"Invalid expression '{factor}' as factor used") from e
+
+def parse_nodename(nodename: str) -> "Expr":
+    """
+    Safely parse a string into a SymPy expression (for node names).
+
+    Args:
+        nodename: The string to parse.
+
+    Returns:
+        sympy.Expr: Parsed SymPy expression.
+
+    Raises:
+        ValueError: If parsing fails.
+    """
+    try:
+        return parse_expr(nodename, local_dict=_clash)
+    except Exception as e:
+        raise ValueError(f"Invalid expression '{nodename}' as node name used") from e

@@ -145,6 +145,12 @@ class SideWidget(QWidget):
             if result[0]:
                 try:
                     self.__io_controller.generate_tikz(result[0])
+                except ValueError as e:
+                    msg = QMessageBox(self)
+                    msg.setIcon(QMessageBox.Critical)
+                    msg.setWindowTitle("Invalid SymPy expression")
+                    msg.setText(str(e))
+                    msg.exec_()
                 except Exception:
                     logger.exception("Exception while saving tikz")
                     box = QMessageBox()

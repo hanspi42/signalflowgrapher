@@ -5,6 +5,7 @@ from os.path import dirname, join, isfile
 from shutil import copyfile
 from sympy import latex
 from sympy.parsing.sympy_parser import parse_expr
+from signalflow_algorithms.common.utils import parse_weight, parse_nodename
 from sympy.abc import _clash
 from importlib import resources
 import logging
@@ -89,7 +90,7 @@ class TikZExport(object):
                         % (index,
                            node.label_dx,
                            node.label_dy,
-                           self.__latex_name(node.name)))
+                           self.__latex_name_node(node.name)))
         return code
 
     def __get_branches_code(self, branches: Set[Branch], nodes: Set[Node]):
@@ -112,13 +113,19 @@ class TikZExport(object):
             code.append("\\node[ArrowName] at"
                         "($ (middle_%s) + (%s, %s) $) {%s};\n"
                         % (index, branch.label_dx,
-                           branch.label_dy, self.__latex_name(branch.weight)))
+                           branch.label_dy, self.__latex_name_branch(branch.weight, branch)))
         return code
 
-    def __latex_name(self, name: str) -> str:
+    def __latex_name_node(self, name: str) -> str:
         if name == "":
             latex_notation = ""
         else:
-            latex_notation = "$%s$" % latex(parse_expr(name,
-                                                       local_dict=_clash))
+            latex_notation = "$%s$" % latex(parse_nodename(name))
+        return (latex_notation)
+
+    def __latex_name_branch(self, weight: str, branch) -> str:
+        if weight == "":
+            latex_notation = ""
+        else:
+            latex_notation = "$%s$" % latex(parse_weight(weight, branch))
         return (latex_notation)
