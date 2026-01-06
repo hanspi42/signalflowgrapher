@@ -140,7 +140,6 @@ class LabelWidget(QLabel, ObjectObservable):
         if notify:
             self._notify(WidgetPressEvent(self, event))
 
-        QLabel.mousePressEvent(self, event)
 
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
@@ -153,7 +152,6 @@ class LabelWidget(QLabel, ObjectObservable):
             )
             self._mouse_move_pos = global_pos
 
-        QLabel.mouseMoveEvent(self, event)
 
     def mouseReleaseEvent(self, event, notify=True):
         self.setCursor(QCursor(Qt.PointingHandCursor))
@@ -163,7 +161,6 @@ class LabelWidget(QLabel, ObjectObservable):
                 WidgetReleaseEvent(self, self._mouse_press_pos, event)
             )
 
-        QLabel.mouseReleaseEvent(self, event)
 
 
 # Review Comments 08/23: Font changed to one that is more readable on screen.
