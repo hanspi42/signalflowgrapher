@@ -1,12 +1,17 @@
 from importlib import resources
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QFont, QFontDatabase
-from PySide6.QtCore import Qt, QPoint
-from signalflowgrapher.gui.graph_item import GraphItem
+from PySide6.QtGui import QFont, QFontDatabase, QCursor
+from PySide6.QtCore import Qt, QPoint, QPointF
+from signalflowgrapher.common.observable import ObjectObservable
 from signalflowgrapher.model.model import (
     PositionedNodeAddedEvent, PositionedNodeMovedEvent,
     CurvedBranchTransformedEvent, LabeledObject,
-    LabelMovedEvent, LabelChangedTextEvent
+    LabelMovedEvent, LabelChangedTextEvent,
+    GraphMovedEvent
+)
+
+from signalflowgrapher.gui.graph_item import (
+    WidgetPressEvent, WidgetMoveEvent, WidgetReleaseEvent
 )
 
 # Load font using importlib.resources
@@ -14,15 +19,27 @@ with resources.path("signalflowgrapher.resources", "HeptaSlab-Regular.ttf") as f
     roman_font = str(font_path)
 
 
-class LabelWidget(QLabel):
+class LabelWidget(QLabel, ObjectObservable):
     def __init__(self,
                  text: str,
                  owner: LabeledObject,
-                 owner_widget: GraphItem,
-                 parent=None):
-        super().__init__(text, parent=parent)
+                 owner_widget,
+                 parent=None,
+                 flags=Qt.WindowFlags()):
+        QLabel.__init__(self, text, parent=parent, flags=flags)
+        ObjectObservable.__init__(self)
+
+        # --- was in GraphItem ---
+        self._selected = False
+        self._selection_number = 0
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+        self._mouse_press_pos = None
+        self._mouse_move_pos = None
+
+        # --- LabelWidget-specific ---
         self.__owner = owner
         self.__owner_widget = owner_widget
+
         font_database = QFontDatabase()
         font_id = font_database.addApplicationFont(roman_font)
         if (font_id == -1):
@@ -33,6 +50,36 @@ class LabelWidget(QLabel):
         self.adjustSize()
         self.__reposition()
 
+    # Selection
+    @property
+    def selected(self):
+        return self._selected
+    
+    def get_selection_number(self):
+        return self._selection_number
+    
+    def select(self, number):
+        self._selected = True
+        self._selection_number = number
+        self.setStyleSheet("QLabel { color: blue; }")
+
+    def unselect(self):
+        self._selected = False
+        self.setStyleSheet("")
+    
+
+    # Position / movement
+    def get_center(self) -> QPointF:
+        return QPointF(self.x() + self.width() / 2,
+                       self.y() + self.height() / 2)
+    
+    def move_relative(self, dx, dy):
+        pos = self.pos()
+        self.move(QPoint(pos.x() + dx, pos.y() + dy))
+
+    def graph_moved_event(self, event: GraphMovedEvent):
+        self.move_relative(event.dx, event.dy)
+    
     def __reposition(self):
         """
         Reposition on parent widget based on own size and owner position.
@@ -42,28 +89,7 @@ class LabelWidget(QLabel):
                    int(center.y() + self.__owner.label_dy - self.height() / 2))
         self.move(p)
 
-    def select(self, number):
-        """
-        Select this widget. This changes the widget style.
-        """
-        self.setStyleSheet("QLabel {color: blue}")
-        self.__owner_widget.select(number)   # ← Delegation statt super()
-
-    def unselect(self):
-        """
-        Unselect this widget. This changes the widget style.
-        """
-        self.setStyleSheet("")
-        self.__owner_widget.unselect()        # ← Delegation statt super()
-
-    def observe(self, *args, **kwargs):
-        return self.__owner_widget.observe(*args, **kwargs)
-    
-    def graph_moved_event(self, event):
-        self.__reposition()
-   
-
-
+    # Model events
     def node_added_event(self, event: PositionedNodeAddedEvent):
         """
         Triggered after node has been added.
@@ -103,7 +129,42 @@ class LabelWidget(QLabel):
         the label is placed centered on the position.
         """
         if self.__owner is event.labeled_obj:
+            self.adjustSize()
             self.__reposition()
+
+    # Mouse handling (was in GraphItem)
+    def mousePressEvent(self, event, notify=True):
+        self._mouse_press_pos = event.globalPos()
+        self._mouse_move_pos = self._mouse_press_pos
+
+        if notify:
+            self._notify(WidgetPressEvent(self, event))
+
+        QLabel.mousePressEvent(self, event)
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton:
+            self.setCursor(QCursor(Qt.ClosedHandCursor))
+            global_pos = event.globalPos()
+            diff = global_pos - self._mouse_move_pos
+
+            self._notify(
+                WidgetMoveEvent(self, diff.x(), diff.y())
+            )
+            self._mouse_move_pos = global_pos
+
+        QLabel.mouseMoveEvent(self, event)
+
+    def mouseReleaseEvent(self, event, notify=True):
+        self.setCursor(QCursor(Qt.PointingHandCursor))
+
+        if notify:
+            self._notify(
+                WidgetReleaseEvent(self, self._mouse_press_pos, event)
+            )
+
+        QLabel.mouseReleaseEvent(self, event)
+
 
 # Review Comments 08/23: Font changed to one that is more readable on screen.
 # Source: https://fonts.google.com/specimen/Zilla+Slab
