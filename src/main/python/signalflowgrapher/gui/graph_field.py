@@ -592,8 +592,8 @@ class GraphField(QWidget):
         mouse_x, mouse_y = local_pos.x(), local_pos.y()
 
         # Snap to grid
-        grid_x = (mouse_x // self.__grid_size) * self.__grid_size
-        grid_y = (mouse_y // self.__grid_size) * self.__grid_size
+        grid_x = int(self.__grid_size*round((mouse_x-self.__grid_offset.x()-2) / self.__grid_size))
+        grid_y =int(self.__grid_size*round((mouse_y-self.__grid_offset.y()-2) / self.__grid_size))
 
         # Compute bounding box of copied nodes
         min_x = min(n["x"] for n in nodes_data)
