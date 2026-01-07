@@ -268,10 +268,11 @@ class MainWindow(QMainWindow):
         box = QMessageBox()
         box.setWindowTitle("About")
         box.setText(
-            "<h1>SFGrapher v1.0.0</h1>Initially Developed at the University"
+            "<h1>SFGrapher v2.0-dev</h1>Initially Developed at the University"
             " of Applied Sciences and Arts Northwestern"
             " Switzerland (FHNW) by Nicolai Wassermann"
-            " and Simon Näf, supervised by "
+            " and Simon Näf, updated and ported to QT6 by"
+            " Michael Saladin, supervised by "
             " Prof. Dr. Hanspeter Schmid and Prof. Dr. Dominik Gruntz"
             " <br><br> Maintained by Hanspeter Schmid <br>on "
             "<a href='https://github.com/hanspi42/signalflowgrapher/'>"

@@ -1,6 +1,9 @@
 # SignalFlowGrapher
 
-## Version 1.1 dev
+## Version 2.0 dev
+Documentation will be added at the end of January.
+
+
 
 Intended for use from the autumn term of 2023 onwards. This version does not yet have installers for Windows, MacOS and Linux.
 
