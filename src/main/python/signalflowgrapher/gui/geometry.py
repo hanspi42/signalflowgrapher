@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QPoint, QPointF
+from PySide6.QtCore import QPoint, QPointF
 from signalflowgrapher.common.geometry import rotate
 
 

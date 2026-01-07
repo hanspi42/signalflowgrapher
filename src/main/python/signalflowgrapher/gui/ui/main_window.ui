@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>33</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">
@@ -42,6 +42,10 @@
     <addaction name="action_undo"/>
     <addaction name="action_redo"/>
     <addaction name="separator"/>
+    <addaction name="action_copy"/>
+    <addaction name="action_cut"/>
+    <addaction name="action_paste"/>
+    <addaction name="separator"/>
     <addaction name="action_select_all"/>
     <addaction name="separator"/>
     <addaction name="action_remove_branch_or_node"/>
@@ -60,7 +64,7 @@
    </widget>
    <addaction name="file_menu"/>
    <addaction name="menu_edit"/>
-   <addaction name="menu_view"/> 
+   <addaction name="menu_view"/>
    <addaction name="menu_help"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -126,7 +130,7 @@
     <string>Select All</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+A</string>
+    <string>Ctrl+Shift+A</string>
    </property>
   </action>
   <action name="action_exit">
@@ -161,7 +165,7 @@
     <string>Remove Node(s) or Branch(es)</string>
    </property>
    <property name="shortcut">
-    <string>DEL</string>
+    <string>Ctrl+Shift+Del</string>
    </property>
   </action>
   <action name="action_center_graph">
@@ -169,7 +173,31 @@
     <string>Center Graph</string>
    </property>
    <property name="shortcut">
+    <string>Alt+C</string>
+   </property>
+  </action>
+  <action name="action_copy">
+   <property name="text">
+    <string>Copy</string>
+   </property>
+   <property name="shortcut">
     <string>Ctrl+Shift+C</string>
+   </property>
+  </action>
+  <action name="action_cut">
+   <property name="text">
+    <string>Cut</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+X</string>
+   </property>
+  </action>
+  <action name="action_paste">
+   <property name="text">
+    <string>Paste</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+V</string>
    </property>
   </action>
  </widget>

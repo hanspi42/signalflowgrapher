@@ -1,7 +1,7 @@
-from PyQt5 import QtCore, QtGui
-from PyQt5.Qt import (
-    Qt, QPoint, QMouseEvent, QRubberBand, QRect, QSize, QResizeEvent)
-from PyQt5.QtWidgets import QWidget
+from PySide6 import QtCore, QtGui
+from PySide6.QtCore import Qt, QPoint, QRect, QSize
+from PySide6.QtGui import QMouseEvent, QCursor
+from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
 from signalflowgrapher.gui.branch_widget import (
@@ -14,13 +14,15 @@ from signalflowgrapher.model.model import (
     CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent,
     LabelChangedTextEvent, LabelMovedEvent,
     LabeledObject, PositionedNodeAddedEvent,
-    PositionedNodeMovedEvent, PositionedNodeRemovedEvent)
+    PositionedNodeMovedEvent, PositionedNodeRemovedEvent,
+    PositionedNode, CurvedBranch)
 from signalflowgrapher.gui.node_widget import NodeWidget
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.gui.label_widget import LabelWidget
 from signalflowgrapher.gui.graph_item import (
     WidgetMoveEvent, WidgetPressEvent, WidgetReleaseEvent, GraphItem)
 from signalflowgrapher.common.observable import ValueObservable
+import json
 import logging
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,9 @@ class GraphField(QWidget):
         self.__grid_offset = QPoint()
         self.__rubber_band: QRubberBand = QRubberBand(
             QRubberBand.Rectangle, self)
+        
+        self._last_paste_data = None
+        self._paste_offset_count = 0 
 
         self.setMinimumSize(800, 600)
 
@@ -108,13 +113,14 @@ class GraphField(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent):
         logger.debug("MousePressEvent")
-        if event.buttons() == Qt.LeftButton:
-            self.__mouse_press_pos = event.globalPos()
+        if event.button() == Qt.LeftButton:
+            self.__mouse_press_pos = event.globalPosition().toPoint()
             self.__command_handler.start_script()
 
             if event.modifiers() == Qt.AltModifier:
                 self.__rubber_band.setGeometry(
-                    QRect(self.__mouse_press_pos, QSize()))
+                    QRect(self.mapFromGlobal(self.__mouse_press_pos), QSize())
+                )
                 self.__rubber_band.show()
                 self.__clear_selection()
 
@@ -123,24 +129,25 @@ class GraphField(QWidget):
         if self.__mouse_press_pos is not None:
             self.__command_handler.end_script()
         self.__mouse_press_pos = None
-        self.setCursor(QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.setCursor(QCursor(Qt.ArrowCursor))
 
         if self.__rubber_band.isVisible():
             self.__rubber_band.hide()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent):
-        if event.buttons() == Qt.LeftButton:
-            grid_pos = self.__grid.get_grid_position(event.pos())
+        if event.button() == Qt.LeftButton:
+            grid_pos = self.__grid.get_grid_position(event.position().toPoint())
             self.__controller.create_node(grid_pos.x(), grid_pos.y())
 
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.__mouse_press_pos is not None:
-            global_position = event.globalPos()
+
+            global_position = event.globalPosition().toPoint()
             diff = global_position - self.__mouse_press_pos
             if self.__rubber_band.isVisible():
                 self.__rubber_band.setGeometry(
                     QRect(self.mapFromGlobal(self.__mouse_press_pos),
-                          event.pos()).normalized())
+                        event.position().toPoint()).normalized())
                 # Add to selection if inside rubber band remove otherwise
                 for widget in self.__model_widget_map.values():
                     if self.__rubber_band.geometry().contains(
@@ -149,7 +156,7 @@ class GraphField(QWidget):
                     else:
                         self.__remove_selection(widget)
             else:
-                self.setCursor(QtGui.QCursor(QtCore.Qt.ClosedHandCursor))
+                self.setCursor(QCursor(Qt.ClosedHandCursor))
                 self.__grid_offset += diff
                 self.__grid.set_offset(self.__grid_offset)
                 self.__grid_widget.set_offset(self.__grid_offset)
@@ -197,7 +204,7 @@ class GraphField(QWidget):
                 self.__command_handler.end_script()
 
                 # Do not modify selection after move
-                if not event.press_pos == event.mouse_event.globalPos():
+                if not event.press_pos == event.mouse_event.globalPosition().toPoint():
                     return
 
                 if event.mouse_event.modifiers() == Qt.ControlModifier:
@@ -459,7 +466,7 @@ class GraphField(QWidget):
         self.__model_widget_map[node] = widget
         self.__widget_model_map[widget] = node
         widget.show()
-        self.__initalize_label(node)
+        self.__initalize_label(node) ###
         self.__clear_selection()
         self.__add_selection(widget)
 
@@ -515,3 +522,136 @@ class GraphField(QWidget):
         # Resize grid
         self.__grid_widget.resize(self.size())
         super().resizeEvent(event)
+
+    def copy_to_clipboard(self):
+        selection = [self.__widget_model_map[w] for w in self.__selection]
+
+        selected_nodes = []
+        selected_branches = []
+
+        # Collect nodes
+        for m in selection:
+            if isinstance(m, PositionedNode):
+                selected_nodes.append(m)
+
+        selected_node_ids = {n.id.hex for n in selected_nodes}
+
+        # Collect branches whose endpoints are fully selected
+        for m in selection:
+            if isinstance(m, CurvedBranch):
+                if m.start.id.hex in selected_node_ids and \
+                m.end.id.hex in selected_node_ids:
+                    selected_branches.append(m)
+
+        data = {
+            "nodes": [n.to_dict() for n in selected_nodes],
+            "branches": [b.to_dict() for b in selected_branches]
+        }
+
+        QApplication.clipboard().setText(json.dumps(data))
+
+
+    def cut_to_clipboard(self):
+        self.copy_to_clipboard()
+        models = [self.__widget_model_map[w] for w in self.__selection]
+        self.__controller.remove_nodes_and_branches(models)
+
+    def paste_from_clipboard(self):
+        text = QApplication.clipboard().text()
+        if not text.strip():
+            return  # clipboard empty
+
+        # Parse JSON
+        try:
+            data = json.loads(text)
+        except Exception:
+            return  # invalid JSON
+
+        nodes_data = data.get("nodes", [])
+        branches_data = data.get("branches", [])
+
+        if not nodes_data:
+            return  # no nodes, nothing to paste
+
+
+        # Check mouse inside GraphField
+        global_pos = QtGui.QCursor.pos()
+        local_pos = self.mapFromGlobal(global_pos)
+        if not self.rect().contains(local_pos):
+            QMessageBox.warning(self, "Paste error",
+                                        "Mouse pointer is outside the graph area.")
+            return
+
+        mouse_x, mouse_y = local_pos.x(), local_pos.y()
+
+        # Snap to grid
+        grid_x = int(self.__grid_size*round((mouse_x-self.__grid_offset.x()-2) / self.__grid_size))
+        grid_y =int(self.__grid_size*round((mouse_y-self.__grid_offset.y()-2) / self.__grid_size))
+
+        # Compute bounding box of copied nodes
+        min_x = min(n["x"] for n in nodes_data)
+        min_y = min(n["y"] for n in nodes_data)
+
+        # Offset so min_x/min_y lands at nearest grid cell
+        dx = grid_x - min_x
+        dy = grid_y - min_y
+
+        id_map = {}
+        new_branches = []
+
+        self.__command_handler.start_script()
+        try:
+            # Paste nodes
+            for nd in nodes_data:
+                new_x = nd["x"] + dx
+                new_y = nd["y"] + dy
+
+                new_node = self.__controller.create_node(new_x, new_y)
+
+                # Restore node name if present
+                name = nd.get("name")
+                if name:
+                    self.__controller.set_node_name(new_node, name)
+
+                id_map[nd["id"]] = new_node
+
+            # Paste branches
+            for bd in branches_data:
+                sid = bd["start"]
+                eid = bd["end"]
+
+                if sid not in id_map or eid not in id_map:
+                    continue  # skip branches if nodes not pasted
+
+                start_node = id_map[sid]
+                end_node = id_map[eid]
+
+                s1x = bd.get("spline1_x", 0) + dx
+                s1y = bd.get("spline1_y", 0) + dy
+                s2x = bd.get("spline2_x", 0) + dx
+                s2y = bd.get("spline2_y", 0) + dy
+                label_dx = bd.get("label_dx", 0)
+                label_dy = bd.get("label_dy", 0)
+                weight = bd.get("weight", "")
+
+                branch = self.__controller.create_branch(
+                    start_node, end_node,
+                    s1x, s1y, s2x, s2y,
+                    label_dx, label_dy,
+                    weight
+                )
+                new_branches.append(branch)
+
+        finally:
+            self.__command_handler.end_script()
+
+        # Select pasted items
+        self.__clear_selection()
+        for node in id_map.values():
+            widget = self.__model_widget_map.get(node)
+            if widget:
+                self.__add_selection(widget)
+        for branch in new_branches:
+            widget = self.__model_widget_map.get(branch)
+            if widget:
+                self.__add_selection(widget)

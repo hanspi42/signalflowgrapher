@@ -1,8 +1,8 @@
 from signalflowgrapher.gui.conditional_actions.selection_condition import (
     SelectionCondition)
 from typing import List, Callable, Any
-from PyQt5.Qt import QLineEdit, QWidget, QPushButton
-from PyQt5.QtCore import pyqtSignal
+from PySide6.QtWidgets import QLineEdit, QWidget, QPushButton
+from PySide6.QtCore import Signal
 
 
 class ConditionalAction(object):
@@ -13,7 +13,7 @@ class ConditionalAction(object):
     def __init__(self,
                  conditions: List[SelectionCondition],
                  control: QWidget,
-                 signal: pyqtSignal,
+                 signal: Signal,
                  action: Callable,
                  activate_action: Callable = None,
                  deactivate_action: Callable = None,

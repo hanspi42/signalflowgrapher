@@ -27,7 +27,8 @@ class ValueObservable(object):
 class ObjectObservable(object):
     """Class for observing object, allows receiving of different events"""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
         self.__observers = []
 
     def observe(self, observer):

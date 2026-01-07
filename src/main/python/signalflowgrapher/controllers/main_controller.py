@@ -28,13 +28,14 @@ class MainController:
         self.__model = model
         self.__command_handler = command_handler
 
-    def create_node(self, x_pos: int, y_pos: int):
+    def create_node(self, x_pos: int, y_pos: int) -> PositionedNode:
         """Create a new node at the given coordinates."""
         logger.debug("Create new node at position (%s,%s)", x_pos, y_pos)
         node = PositionedNode(self.__model.graph, x_pos, y_pos, 0, 30)
 
         command = CreateNodeCommand(self.__model.graph, node, self.__model)
         self.__command_handler.add_command(command)
+        return node
 
     def remove_nodes_and_branches(self, nodes_and_branches: List):
         """Remove all nodes and branches in the given list."""
@@ -145,7 +146,7 @@ class MainController:
                       spline1_x: int, spline1_y: int,
                       spline2_x: int, spline2_y: int,
                       label_dx: int, label_dy: int,
-                      weight: str = ""):
+                      weight: str = "") -> CurvedBranch:
         """Create branch between the given
            nodes with the given spline positions
         """
@@ -160,6 +161,7 @@ class MainController:
                               label_dx, label_dy, weight)
         self.__command_handler.add_command(
             CreateBranchCommand(self.__model.graph, branch, self.__model))
+        return branch
 
     def create_branch_auto_pos(self,
                                start_node: PositionedNode,

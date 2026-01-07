@@ -1,19 +1,17 @@
-from fbs_runtime.application_context.PyQt5 import ApplicationContext
-from fbs_runtime.application_context import get_application_context
-from PyQt5.Qt import QDialog, QApplication
-from PyQt5 import uic
+from PySide6.QtWidgets import QDialog, QApplication
 from signalflow_algorithms.algorithms.mason import MasonResult
+from signalflowgrapher.gui.ui.ui_mason_window import Ui_Dialog as Ui_MasonWindow
 from sympy.printing.lambdarepr import lambdarepr
 
-appctxt = get_application_context(ApplicationContext)
-creator_file = appctxt.get_resource("mason_window.ui")
-mason_window_ui, x = uic.loadUiType(creator_file)
 
-
-class MasonWindow(QDialog, mason_window_ui):
+class MasonWindow(QDialog):
     def __init__(self):
-        super(MasonWindow, self).__init__()
-        self.setupUi(self)
+        super().__init__()
+
+        # Load UI from generated class
+        self._ui = Ui_MasonWindow()
+        self._ui.setupUi(self)
+        
 
     def set_content(self, interim_res: MasonResult):
         # Build strings based on mason result
@@ -94,10 +92,10 @@ class MasonWindow(QDialog, mason_window_ui):
         QApplication.clipboard().setText(combined_output)
 
         # Set combined output to text browser
-        self.txt_brw_output.setPlainText(combined_output)
+        self._ui.txt_brw_output.setPlainText(combined_output)
 
         # Set evalulated result to text browser
-        self.txt_brw_eval.setPlainText(t_evaluated_str)
+        self._ui.txt_brw_eval.setPlainText(t_evaluated_str)
 
     def __get_symbols_str_from_interim_res(self,
                                            expressions,

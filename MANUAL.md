@@ -45,3 +45,22 @@ To familiarize yourself with signal-flow graphs, you can
   - Nodes are selected after creation by double-click.
   - Branches are selected after creation by button, but after ctrl-click creation the last node is selected.
   - Ctrl still disables locking to the grid, but the grid now keeps being displayed. 
+
+## Changes V2.0-dev
+- Ported to QT6
+  - no high-DPI related issues anymore and automatic size ajustment
+- Bugfixes
+  - nodes outside the grid after reopening
+  - Nodes displaced after undo/redo during grid movement
+  - Added errorhandling for illegal branch weights for generate Mason and TikZ and for all graphoperations
+  - Change keyboard shortcuts for graph manipulations to resolve the overlaps with the shortcuts for text fields
+- Added features
+  - added "Center Graph"-functionality
+  - added copy, cut and paste functionality
+- Changed Shortcuts for graph manipulations
+  - Copy Ctrl+Shift+C
+  - Cut Ctrl+Shift+X
+  - Paste Ctrl+Shift+V
+  - Select All Ctrl+Shift+A
+  - Remove Node(s) or Branche(s) Ctrl+Shift+Del
+ 

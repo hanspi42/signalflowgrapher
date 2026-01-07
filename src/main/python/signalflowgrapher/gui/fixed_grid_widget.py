@@ -1,6 +1,6 @@
-from PyQt5.Qt import QPoint
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QPaintEvent, QPainter, QPen, QColor
+from PySide6.QtCore import QPoint
+from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QPaintEvent, QPainter, QPen, QColor
 
 
 class FixedGridWidget(QWidget):
