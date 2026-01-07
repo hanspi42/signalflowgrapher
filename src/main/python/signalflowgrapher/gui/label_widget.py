@@ -45,7 +45,7 @@ class LabelWidget(QLabel, ObjectObservable):
         if (font_id == -1):
             raise IOError("Font could not be loaded")
         font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
-        font = QFont(font_name, 14)
+        font = QFont(font_name, 13)
         self.setFont(font)
         self.adjustSize()
         self.__reposition()
