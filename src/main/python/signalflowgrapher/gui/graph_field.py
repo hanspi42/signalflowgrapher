@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import Qt, QPoint, QRect, QSize
-from PySide6.QtGui import QMouseEvent, QCursor
+from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
