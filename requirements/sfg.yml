@@ -2,7 +2,7 @@ name: sfg
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.13
   - attrs
   - autopep8
   - coverage
@@ -15,10 +15,8 @@ dependencies:
   - pycodestyle
   - pyflakes
   - pyrsistent
+  - pyside6
   - six
-  - sympy=1.12
+  - sympy
   - pip:
     - dependency-injector
-    - PyQt5
-    - PyQt5-sip
-    - fbs
