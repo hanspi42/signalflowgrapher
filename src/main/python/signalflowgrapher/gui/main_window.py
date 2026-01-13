@@ -1,4 +1,3 @@
-from importlib import resources
 import ntpath
 import logging
 
@@ -196,29 +195,28 @@ class MainWindow(QMainWindow):
 
     def __ask_for_continue_if_unsaved_changes(self):
         if not self.__command_handler.can_undo.get():
-            # Continue if there are no unsaved changes
+            # Exit; there are no unsaved changes.
             return True
         else:
-            # Ask if there are unsaved changes
+            # Ask if the user wants to discard unsaved changes
             box = QMessageBox()
-            box.setStandardButtons(QMessageBox.StandardButton.Yes |
-                               QMessageBox.StandardButton.No)
+            box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             no_button = box.button(QMessageBox.StandardButton.No)
             box.setDefaultButton(no_button)
-            box.setWindowTitle(QCoreApplication.translate("main_window",
-                                                          "Unsaved changes"))
+            box.setWindowTitle(QCoreApplication.translate(
+                "main_window", "Unsaved changes"))
             box.setText(QCoreApplication.translate(
                 "main_window",
-                "Do you really want to continue "
-                "without saving changes?"))
+                "Do you really want to exit without saving changes?"))
             box.setIcon(box.Icon.Question)
             response = box.exec()
 
-            if (response == 1):
-                # Do not continue because user wants to stop
-                return False
-            else:
+            if (response == QMessageBox.StandardButton.Yes):
+                # User wants to exit
                 return True
+            else:
+                return False
 
     def __set_title(self):
         # Set window title
