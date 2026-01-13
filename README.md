@@ -3,7 +3,17 @@
 ## Version 2.0 dev
 Documentation will be added at the end of January.
 
+If you want to try this development version, you can do this as follows:
+- Clone or download this repository.
+- If you do not have it yet, download Miniforge from https://conda-forge.org/download/ and install it.
+- Open a miniforge prompt.
+- `cd` to the top directory of this repository.
+- Build a python environment with `conda env create --file=requirements/sfg.yml`.
+- Activate the evironment with `conda activate sfg`.
+- `cd src/main/python`.
+- Start the signalflowgrapher with `python main.py`.
 
+## Old README, to be updated, follows ...
 
 Intended for use from the autumn term of 2023 onwards. This version does not yet have installers for Windows, MacOS and Linux.
 
