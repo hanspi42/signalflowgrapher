@@ -1,5 +1,7 @@
 # SignalFlowGrapher
 
+<img width="1220" height="860" alt="SFGrapher" src="https://github.com/user-attachments/assets/9186c224-5ff4-4209-8240-3a01c367d51d" />
+
 ## Version 2.0 dev
 Documentation will be added at the end of January.
 
