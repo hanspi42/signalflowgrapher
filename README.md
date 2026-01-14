@@ -36,9 +36,6 @@ To install the dependencies, you can use either Miniforge or Python environments
 ### Run application from terminal
 - Use `python .\src\main\python\main.py` to start the application
 
-
-**Note regarding macOS:** For MacOS on ARM processors, use an use an x86_64 Python installation (read this: https://github.com/hanspi42/signalflowgrapher/issues/48#issue-1906889457).
-
 ## User manual and tips
 
 ### Manual
