@@ -52,8 +52,8 @@ There is none yet, but to familiarize yourself with signal-flow graphs, you can
 
 ## For Developers
 
-### Documentation
-Developer documentation for V2.0 will be added soon.
+### Developer documentation
+See more details in [Developer documentation for V2.0](DEVDOCU.md).
 
 
 ### Run unit tests and format tests
