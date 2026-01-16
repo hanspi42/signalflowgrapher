@@ -55,9 +55,6 @@ class GraphField(QWidget):
         self.__grid_offset = QPoint()
         self.__rubber_band: QRubberBand = QRubberBand(
             QRubberBand.Rectangle, self)
-        
-        self._last_paste_data = None
-        self._paste_offset_count = 0 
 
         self.setMinimumSize(800, 600)
 
