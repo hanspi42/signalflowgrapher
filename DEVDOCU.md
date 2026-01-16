@@ -1,7 +1,8 @@
 # Developer Documentation for V2.0
 
 ## The Existing Application Structure
-image
+<img width="4484" height="6524" alt="Klassendiagramm drawio" src="https://github.com/user-attachments/assets/fc1df77d-18cf-41a4-a87c-2e434fd297f7" />
+
 
 This class diagram provides an overview of the existing application structure. Because the dependencies are very complex, the diagram was simplified:
 - All attributes and methods were omitted.
@@ -35,13 +36,15 @@ The bug caused nodes in the Signalflow graph to lose their grid alignment after 
 ```
 2. Add grid position to the model:
 
-image
+<img width="1564" height="776" alt="Klassendiagramm_Model drawio" src="https://github.com/user-attachments/assets/7bad6655-6b06-4caf-914d-29367fc9be71" />
+
 
 3. Add grid position handling as shown below 
+<img width="6364" height="2448" alt="Sequenzdiagramm_load_nachUpgrade drawio" src="https://github.com/user-attachments/assets/2c65d5f5-6df9-46c0-bb1b-f57991ca8905" />
 
-image
+<img width="4388" height="1288" alt="Sequenzdiagramm_save_nachUpgrade drawio" src="https://github.com/user-attachments/assets/0e5e714b-a2c6-44eb-a3b5-08d4367fa3e7" />
 
-image
+
 
 ### Undo-Redo Issues
 This bug affects the undo‑redo functionality of the Signalflowgrapher. When a user deletes a node and then undoes the deletion, the node is restored at the wrong position if the grid was moved between the delete and the undo. This happens because grid moves only shift the positions of nodes that are currently visible; deleted nodes are invisible and therefore not updated.
@@ -92,7 +95,8 @@ To fix this, a error‑handling strategy was added to show clear messages to use
 
 These helpers are used throughout the relevant classes, ensuring that any invalid SymPy expression triggers a helpful error dialog. In the SideWidget class, the exception is caught and displayed to the user in a QMessageBox, indicating exactly which node or branch contains the bad expression. As shown below: 
 
-image
+<img width="1171" height="813" alt="sympy_error_box" src="https://github.com/user-attachments/assets/d44a38da-ff46-4fc4-81f3-112c29a831d9" />
+
 
 ### Conflicting Keyboard Shortcuts
 In V1.0 of the Signalflow Grapher, keyboard shortcuts conflicted because selecting a node or branch automatically focused the name or weight text field. Consequently, global shortcuts like `Del` and `Ctrl+A` were captured by the text field, preventing actions such as deleting a selected node (the Del key erased the text instead).
@@ -102,7 +106,8 @@ To fix this while still allowing inline editing, the shortcuts were changed to `
 
 ### Invert Path Problem
 
-image
+<img width="493" height="276" alt="invert_path" src="https://github.com/user-attachments/assets/9be39c75-a2a9-4223-90b2-0391b630711e" />
+
 
 When the user hovers over the "Invert Path" button, the tooltip (see above) says that only a single branch should be selected. If multiple branches are selected, the button remains enabled, allowing a click that causes errors.
 
@@ -135,7 +140,8 @@ This new feature adds copy, cut, and paste actions for nodes and branches in the
 
 The involved classes and their new/updated methods are illustrated below, with the new additions highlighted in green.
 
-image
+<img width="3684" height="2044" alt="UML_copy_paste drawio" src="https://github.com/user-attachments/assets/a346e18b-8fef-4daa-905b-a5b1dcfa5f87" />
+
 
 ## Porting to Qt6
 For Qt6 you can use either PyQt6 or PySide6 as the binding. Pyside6 was chosen for this project, because it is backed by the Qt Company.
@@ -145,9 +151,10 @@ For Qt6 you can use either PyQt6 or PySide6 as the binding. Pyside6 was chosen f
 - **High‑DPI handling** is now automatic in Qt6; no manual scaling code is needed. Scaling works dynamically across monitors, though minor raster‑line thickness artifacts appear at uncommon scaling factors (25 %/75 %). They do not affect functionality.
 - **.ui files** are no longer loaded at runtime. Instead, they are converted to Python code with the command `pyside6-uic main_window.ui -o ui_main_window.py`. ⚠️ Only the .ui files should be edited, not the generated classes!
 - **Mouse‑position API** changed: `QMouseEvent.pos()` / `globalPos()` (returning `QPoint` with integer coordinates) are replaced by `position()` / `globalPosition()` (returning `QPointF` with floats). The code now calls `.toPoint()` where integer coordinates are required.
-- **Multiple inheritance** of Qt widgets that worked indirectly in PyQt5 fails in PySide6/Qt6. The `LabelWidget` class was refactored to drop inheritance from `GraphItem` and instead incorporate its methods/attributes directly, while now inheriting from `ObjectObservable`.
+- **Multiple inheritance** of Qt widgets that worked indirectly in PyQt5 fails in PySide6/Qt6. The `LabelWidget` class was refactored to drop inheritance from `GraphItem` and instead incorporate its methods/attributes directly, while now inheriting from `ObjectObservable`. As shown below:
 
-image
+    <img width="2768" height="1776" alt="UML_pyside6_labelwidget drawio" src="https://github.com/user-attachments/assets/97a93855-1ba4-4d0e-a60d-bf4e49dd5343" />
+
 
 - **load non‑Python assets** The original fbs tool does not support PySide6 (except in a paid version). The V2.0 uses `importlib.resources` (standard library since Python 3.7) to load non‑Python assets. Publishing on PyPI would be an alternative in the future, allowing users to simply install via pip.
 - **Miscellaneous changes:** `.exec_()` becomes `.exec()`, and Qt enumerations are now scoped (e.g., `Qt.Key_Control` → `Qt.Key.Key_Control`).
