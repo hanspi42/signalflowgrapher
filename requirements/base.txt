@@ -1,0 +1,15 @@
+attrs
+autopep8
+coverage
+entrypoints
+flake8
+jsonschema
+mccabe
+mpmath
+pycodestyle
+pyflakes
+pyrsistent
+PySide6
+six
+sympy
+dependency-injector
