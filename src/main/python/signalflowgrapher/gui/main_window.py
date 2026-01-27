@@ -1,9 +1,11 @@
 import ntpath
 import logging
+import platform
 
 # Disable dark mode
 import os
-os.environ["QT_QPA_PLATFORM"] = "windows:darkmode=0"
+if platform.system() == 'Windows':
+    os.environ["QT_QPA_PLATFORM"] = "windows:darkmode=0"
 
 from PySide6.QtWidgets import (
     QMainWindow,
