@@ -22,6 +22,7 @@ class JSONExport(object):
         """
         data_dict = data.to_dict()
         data_dict["grid_pos"] = grid_pos
+        data_dict["version"] = "2.0"
 
         logger.info("Write json to file %s", path)
         json_data = json.dumps(data_dict, indent=4)
@@ -122,6 +123,9 @@ class JSONValidator(object):
                     "items": {"type": "integer"},
                     "minItems": 2,
                     "maxItems": 2
+                },
+                "version": {
+                    "type": "string"
                 }
             },
             "required": [
