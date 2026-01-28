@@ -29,7 +29,7 @@ class FixedGridWidget(QWidget):
         if scheme == Qt.ColorScheme.Dark:
             color = '#444444'
         else:
-            color = '#aaaaaa'
+            color = '#cccccc'
         pen.setColor(color)
         painter = QPainter()
         painter.begin(self)

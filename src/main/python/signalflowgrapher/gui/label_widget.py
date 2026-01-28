@@ -63,7 +63,6 @@ class LabelWidget(QLabel, ObjectObservable):
         else:
             pal.setBrush(QPalette.WindowText, pal.text())
 
-        self.setAutoFillBackground(True)
         self.setPalette(pal)
 
     def get_selection_number(self):
@@ -77,7 +76,6 @@ class LabelWidget(QLabel, ObjectObservable):
     def unselect(self):
         self._selected = False
         self.setSelected(False)
-    
 
     # Position / movement
     def get_center(self) -> QPointF:
@@ -151,7 +149,6 @@ class LabelWidget(QLabel, ObjectObservable):
         if notify:
             self._notify(WidgetPressEvent(self, event))
 
-
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
@@ -162,7 +159,6 @@ class LabelWidget(QLabel, ObjectObservable):
                 WidgetMoveEvent(self, diff.x(), diff.y())
             )
             self._mouse_move_pos = global_pos
-
 
     def mouseReleaseEvent(self, event, notify=True):
         self.setCursor(QCursor(Qt.PointingHandCursor))
