@@ -55,27 +55,17 @@ class LabelWidget(QLabel, ObjectObservable):
     def selected(self):
         return self._selected
 
-    def setSelected(self, selected: bool):
-        pal = self.palette()
-
-        if selected:
-            pal.setBrush(QPalette.WindowText, pal.highlight())
-        else:
-            pal.setBrush(QPalette.WindowText, pal.text())
-
-        self.setPalette(pal)
-
     def get_selection_number(self):
         return self._selection_number
     
     def select(self, number):
         self._selected = True
         self._selection_number = number
-        self.setSelected(True)
+        self.setForegroundRole(QPalette.Highlight)
 
     def unselect(self):
         self._selected = False
-        self.setSelected(False)
+        self.setForegroundRole(QPalette.WindowText)
 
     # Position / movement
     def get_center(self) -> QPointF:
