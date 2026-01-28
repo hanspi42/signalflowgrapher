@@ -1,4 +1,4 @@
-from PySide6.QtGui import QPainter, QPen, QColor, QRegion
+from PySide6.QtGui import QPainter, QPen, QRegion
 from PySide6.QtWidgets import QSizePolicy
 from PySide6.QtCore import Qt, QPointF, QRect
 from signalflowgrapher.gui.graph_item import GraphItem
@@ -25,13 +25,15 @@ class NodeWidget(GraphItem):
 
         pen = QPen()
         pen.setWidth(self.__circle_width)
+        if self.selected:
+            pen.setColor(self.palette().highlight().color())
+        else:
+            pen.setColor(self.palette().text().color())
 
         painter.setPen(pen)
         width = 2 * self.__radius
         height = width
-        q = QColor()
-        q.setNamedColor("white")
-        painter.setBrush(q)
+        painter.setBrush(self.palette().window())
         painter.drawEllipse(
             self.__circle_width,
             self.__circle_width,
@@ -39,15 +41,12 @@ class NodeWidget(GraphItem):
             height)
 
         if self.selected:
-            color = QColor()
-            color.setNamedColor("blue")
-            pen.setColor(color)
+            pen.setColor(self.palette().highlight().color())
             painter.setPen(pen)
-            painter.setBrush(color)
+            painter.setBrush(self.palette().highlight())
             rect = QRect(0, 0, self.__size, self.__size)
-            painter.drawText(rect,
-                             Qt.AlignCenter,
-                             str(self.get_selection_number()))
+            painter.drawText(
+                rect, Qt.AlignCenter, str(self.get_selection_number()))
 
         painter.end()
 

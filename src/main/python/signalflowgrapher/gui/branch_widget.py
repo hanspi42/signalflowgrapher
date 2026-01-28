@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QMargins
 from PySide6.QtWidgets import QSizePolicy
-from PySide6.QtGui import QPainter, QPainterPath, QPainterPathStroker, QRegion, QCursor, QPen, QColor, QMouseEvent
+from PySide6.QtGui import (
+    QPainter, QPainterPath, QPainterPathStroker, QRegion, QCursor, QPen,
+    QMouseEvent)
 from signalflowgrapher.gui.graph_item import (
     GraphItem, WidgetClickEvent, WidgetEvent)
 from signalflowgrapher.model.model import (
@@ -186,15 +188,12 @@ class BranchWidget(GraphItem):
         return [handle1, handle2]
 
     def paintEvent(self, QPaintEvent):
-        pen_color = QColor()
-        if self.selected:
-            pen_color.setNamedColor("blue")
-        else:
-            pen_color.setNamedColor("black")
-
         pen = QPen()
         pen.setWidth(self.__pen_width)
-        pen.setColor(pen_color)
+        if self.selected:
+            pen.setColor(self.palette().highlight().color())
+        else:
+            pen.setColor(self.palette().text().color())
 
         painter = QPainter()
         painter.begin(self)
@@ -204,7 +203,10 @@ class BranchWidget(GraphItem):
 
         pen.setWidth(1)
         painter.setPen(pen)
-        painter.setBrush(pen_color)  # Use same color as pen for brush
+        if self.selected:
+            painter.setBrush(self.palette().highlight())
+        else:
+            painter.setBrush(self.palette().text())
 
         painter.drawPath(self.__arrow)
         painter.end()
@@ -468,6 +470,7 @@ class SplineHandleWidget(GraphItem):
 
     def paintEvent(self, QPaintEvent):
         pen = QPen()
+        pen.setColor(self.palette().text().color())
         pen.setWidth(self.__circle_width)
         painter = QPainter()
         painter.begin(self)
@@ -478,8 +481,7 @@ class SplineHandleWidget(GraphItem):
         painter.drawPath(self.line_path)
 
         # Paint circle
-        q = QColor(Qt.white)
-        painter.setBrush(q)
+        painter.setBrush(self.palette().window())
         painter.drawEllipse(self.__handle_pos, self.__radius, self.__radius)
         painter.end()
 

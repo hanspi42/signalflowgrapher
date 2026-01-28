@@ -1,16 +1,11 @@
-from importlib import resources
 import logging
 
 from PySide6.QtWidgets import (
-    QWidget,
-    QFileDialog,
-    QMessageBox,
-    QLineEdit,
-    QInputDialog,
+    QWidget, QFileDialog, QMessageBox, QLineEdit, QInputDialog,
+    QApplication
 )
 from PySide6.QtCore import Qt, QCoreApplication
-from PySide6.QtGui import QValidator, QKeyEvent
-from PySide6 import QtCore
+from PySide6.QtGui import QValidator, QKeyEvent, QPalette
 
 from signalflowgrapher.gui.sympy_expression_validator import (
     SympyExpressionValidator)
@@ -35,7 +30,6 @@ from signalflowgrapher.gui.conditional_actions.conditional_action import (
 from signalflowgrapher.gui.ui.ui_side_widget import Ui_Form as Ui_SideWidget
 
 logger = logging.getLogger(__name__)
-
 
 
 class SideWidget(QWidget):
@@ -176,7 +170,8 @@ class SideWidget(QWidget):
              SelectedBranchesWeighted()],
             self._ui.btn_chaining_rule,
             lambda sel, *args:
-                self.safe_execute(self.__operation_controller.chain_branches, sel[0], sel[1])
+                self.safe_execute(
+                    self.__operation_controller.chain_branches, sel[0], sel[1])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -184,7 +179,9 @@ class SideWidget(QWidget):
              SelectedBranchesWeighted()],
             self._ui.btn_combine_parallel,
             lambda sel, *args:
-                self.safe_execute(self.__operation_controller.combine_parallel, sel[0], sel[1])
+                self.safe_execute(
+                    self.__operation_controller.combine_parallel, sel[0],
+                    sel[1])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -200,7 +197,8 @@ class SideWidget(QWidget):
              BranchesNextToNodesWeighted()],
             self._ui.btn_eliminate_node,
             lambda sel, *args:
-                self.safe_execute(self.__operation_controller.eliminate_node, sel[0])
+                self.safe_execute(
+                    self.__operation_controller.eliminate_node, sel[0])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -209,7 +207,8 @@ class SideWidget(QWidget):
              BranchIsSelfLoop()],
             self._ui.btn_eliminate_self_loop,
             lambda sel, *args:
-                self.safe_execute(self.__operation_controller.eliminate_self_loop, sel[0])
+                self.safe_execute(
+                    self.__operation_controller.eliminate_self_loop, sel[0])
         ))
 
         self.__conditional_actions.append(ConditionalQPushButton(
@@ -230,7 +229,8 @@ class SideWidget(QWidget):
                 QCoreApplication.translate("side_widget", "Scale factor"),
                 QCoreApplication.translate("side_widget", "Scale factor"))
             if (ok):
-                self.safe_execute(self.__operation_controller.scale_path, sel, text)
+                self.safe_execute(
+                    self.__operation_controller.scale_path, sel, text)
 
         self.__conditional_actions.append(ConditionalQPushButton(
             [MinNumNodesSelected(1), AllNodesScalable(),
@@ -270,9 +270,13 @@ class SideWidget(QWidget):
 
     def __set_text_edit_color(self, state, sender: QLineEdit):
         if state == QValidator.Acceptable:
-            color = '#c4df9b'  # green
+            scheme = QApplication.instance().styleHints().colorScheme()
+            if scheme == Qt.ColorScheme.Dark:
+                color = '#4a6428'  # dark green
+            else:
+                color = '#c4df9b'  # light green
         else:
-            color = QtCore.Qt.BackgroundRole
+            color = QPalette.Window
 
         sender.setStyleSheet('QLineEdit { background-color: %s }' % color)
 

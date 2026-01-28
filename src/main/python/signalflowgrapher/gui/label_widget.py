@@ -1,6 +1,6 @@
 from importlib import resources
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QFont, QFontDatabase, QCursor
+from PySide6.QtGui import QFont, QFontDatabase, QCursor, QPalette
 from PySide6.QtCore import Qt, QPoint, QPointF
 from signalflowgrapher.common.observable import ObjectObservable
 from signalflowgrapher.model.model import (
@@ -54,18 +54,29 @@ class LabelWidget(QLabel, ObjectObservable):
     @property
     def selected(self):
         return self._selected
-    
+
+    def setSelected(self, selected: bool):
+        pal = self.palette()
+
+        if selected:
+            pal.setBrush(QPalette.WindowText, pal.highlight())
+        else:
+            pal.setBrush(QPalette.WindowText, pal.text())
+
+        self.setAutoFillBackground(True)
+        self.setPalette(pal)
+
     def get_selection_number(self):
         return self._selection_number
     
     def select(self, number):
         self._selected = True
         self._selection_number = number
-        self.setStyleSheet("QLabel { color: blue; }")
+        self.setSelected(True)
 
     def unselect(self):
         self._selected = False
-        self.setStyleSheet("")
+        self.setSelected(False)
     
 
     # Position / movement
@@ -160,8 +171,3 @@ class LabelWidget(QLabel, ObjectObservable):
             self._notify(
                 WidgetReleaseEvent(self, self._mouse_press_pos, event)
             )
-
-
-
-# Review Comments 08/23: Font changed to one that is more readable on screen.
-# Source: https://fonts.google.com/specimen/Zilla+Slab

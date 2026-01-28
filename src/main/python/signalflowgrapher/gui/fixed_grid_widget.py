@@ -1,6 +1,6 @@
-from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QWidget
-from PySide6.QtGui import QPaintEvent, QPainter, QPen, QColor
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtWidgets import QWidget, QApplication
+from PySide6.QtGui import QPaintEvent, QPainter, QPen
 
 
 class FixedGridWidget(QWidget):
@@ -8,7 +8,6 @@ class FixedGridWidget(QWidget):
         super().__init__(*args, **kwargs)
         self.__grid_size = size
         self.__pen_width = 1
-        self.__line_color = QColor(192, 192, 192, 255)
         self.__offset = QPoint(0, 0)
 
         # Disable the widgets to ignore all events
@@ -26,7 +25,12 @@ class FixedGridWidget(QWidget):
         # Init painter
         pen = QPen()
         pen.setWidth(self.__pen_width)
-        pen.setColor(self.__line_color)
+        scheme = QApplication.instance().styleHints().colorScheme()
+        if scheme == Qt.ColorScheme.Dark:
+            color = '#444444'
+        else:
+            color = '#aaaaaa'
+        pen.setColor(color)
         painter = QPainter()
         painter.begin(self)
         painter.setPen(pen)
