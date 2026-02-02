@@ -2,16 +2,14 @@
 
 <img width="1220" height="860" alt="SFGrapher" src="https://github.com/user-attachments/assets/9186c224-5ff4-4209-8240-3a01c367d51d" />
 
-## Version 2.0 dev
-If you want to try this development version, you can do this as follows:
-
+## Version 2.0.0
 
 This version does not have installers yet. Please follow the steps in the section [Getting started](##Getting-started).
 
 Please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue on github, https://github.com/hanspi42/signalflowgrapher/issues
 
 ## Getting started
-Clone or download from https://github.com/hanspi42/signalflowgrapher, e.g. using git clone https://github.com/hanspi42/signalflowgrapher.
+Clone or download from https://github.com/hanspi42/signalflowgrapher, e.g. using `git clone https://github.com/hanspi42/signalflowgrapher`.
 
 ### Install Dependencies
 To install the dependencies, you can use either Miniforge or Python environments.
