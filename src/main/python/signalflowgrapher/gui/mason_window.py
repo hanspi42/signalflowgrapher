@@ -38,7 +38,7 @@ class MasonWindow(QDialog):
             .subs(interim_res.determinant) \
             .subs(interim_res.paths) \
             .subs(interim_res.loops)
-        full_res = non_simplified.simplify()
+        full_res = non_simplified
 
         free_symbols = set()
         for _, _L in interim_res.loops:
@@ -90,7 +90,7 @@ class MasonWindow(QDialog):
         combined_output += '\nT=' + str(interim_res.transfer_function[0][0])
         combined_output += '.subs(transfer_function).subs(numerator)'
         combined_output += '.subs(denominator).subs(determinant).subs(paths)'
-        combined_output += '.subs(loops).simplify()'
+        combined_output += '.subs(loops)'
         combined_output += '\ndisplay(T)'
 
         # Set combined output to clipboard
