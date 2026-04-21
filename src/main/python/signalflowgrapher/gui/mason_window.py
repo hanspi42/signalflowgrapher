@@ -46,7 +46,7 @@ class MasonWindow(QDialog):
             free_symbols.update(_L.free_symbols)
         free_symbols.update(non_simplified.free_symbols)
 
-        t_evaluated_str = str(full_res)
+        t_evaluated_str = str(non_simplified)
 
         # Combine all symbols to be on top for combined output, except the
         # symbols of the forward paths
