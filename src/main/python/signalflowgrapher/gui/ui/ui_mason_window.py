@@ -16,7 +16,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QDialog, QDialogButtonBox,
-    QFormLayout, QLabel, QSizePolicy, QSpacerItem,
+    QFormLayout, QLabel, QPushButton, QSizePolicy, QSpacerItem,
     QTextBrowser, QVBoxLayout, QWidget)
 
 class Ui_Dialog(object):
@@ -53,6 +53,11 @@ class Ui_Dialog(object):
         self.txt_brw_eval.setEnabled(True)
 
         self.formLayout.setWidget(1, QFormLayout.ItemRole.FieldRole, self.txt_brw_eval)
+
+        self.btn_simplify = QPushButton(Dialog)
+        self.btn_simplify.setObjectName(u"btn_simplify")
+
+        self.formLayout.setWidget(2, QFormLayout.ItemRole.FieldRole, self.btn_simplify)
 
 
         self.verticalLayout.addLayout(self.formLayout)
@@ -91,5 +96,6 @@ class Ui_Dialog(object):
         self.label_output.setText(QCoreApplication.translate("Dialog", u"Output", None))
         self.label_t_eval.setText(QCoreApplication.translate("Dialog", u"Evaluated Output", None))
         self.label_message.setText(QCoreApplication.translate("Dialog", u"The output has been copied to the clipboard", None))
+        self.btn_simplify.setText(QCoreApplication.translate("Dialog", u"Simplify", None))
     # retranslateUi
 

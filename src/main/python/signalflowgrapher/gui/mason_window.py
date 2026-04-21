@@ -11,7 +11,9 @@ class MasonWindow(QDialog):
         # Load UI from generated class
         self._ui = Ui_MasonWindow()
         self._ui.setupUi(self)
-        
+        self.__non_simplified_result = None
+        self._ui.btn_simplify.setEnabled(False)
+        self._ui.btn_simplify.clicked.connect(self.simplify_result)
 
     def set_content(self, interim_res: MasonResult):
         # Build strings based on mason result
@@ -29,8 +31,7 @@ class MasonWindow(QDialog):
                 lambdarepr(interim_res.transfer_function))
         }
 
-        # Create full formula; the non-simplified versdion serves to
-        # derive the symbol list below
+        # Create full formula without simplifying
         T = interim_res.transfer_function[0][0]
         non_simplified = T.subs(interim_res.transfer_function) \
             .subs(interim_res.numerator) \
@@ -38,7 +39,7 @@ class MasonWindow(QDialog):
             .subs(interim_res.determinant) \
             .subs(interim_res.paths) \
             .subs(interim_res.loops)
-        full_res = non_simplified.simplify()
+        self.__non_simplified_result = non_simplified
 
         free_symbols = set()
         for _, _L in interim_res.loops:
@@ -90,7 +91,7 @@ class MasonWindow(QDialog):
         combined_output += '\nT=' + str(interim_res.transfer_function[0][0])
         combined_output += '.subs(transfer_function).subs(numerator)'
         combined_output += '.subs(denominator).subs(determinant).subs(paths)'
-        combined_output += '.subs(loops).simplify()'
+        combined_output += '.subs(loops)     #optional: add .simplify() to simplify the result'
         combined_output += '\ndisplay(T)'
 
         # Set combined output to clipboard
@@ -99,8 +100,18 @@ class MasonWindow(QDialog):
         # Set combined output to text browser
         self._ui.txt_brw_output.setPlainText(combined_output)
 
-        # Set evalulated result to text browser
+        # Set evaluated result to text browser
         self._ui.txt_brw_eval.setPlainText(t_evaluated_str)
+        self._ui.btn_simplify.setEnabled(True)
+
+    def simplify_result(self):
+        # Simplify only on explicit user request.
+        if self.__non_simplified_result is None:
+            return
+
+        simplified_result = self.__non_simplified_result.simplify()
+        self._ui.txt_brw_eval.setPlainText(str(simplified_result))
+        self._ui.btn_simplify.setEnabled(False)
 
     def __get_symbols_str_from_interim_res(self,
                                            expressions,
