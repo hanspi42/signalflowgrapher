@@ -1,6 +1,6 @@
 from importlib import resources
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import QFont, QFontDatabase, QCursor
+from PySide6.QtGui import QFont, QFontDatabase, QCursor, QPalette
 from PySide6.QtCore import Qt, QPoint, QPointF
 from signalflowgrapher.common.observable import ObjectObservable
 from signalflowgrapher.model.model import (
@@ -54,19 +54,18 @@ class LabelWidget(QLabel, ObjectObservable):
     @property
     def selected(self):
         return self._selected
-    
+
     def get_selection_number(self):
         return self._selection_number
     
     def select(self, number):
         self._selected = True
         self._selection_number = number
-        self.setStyleSheet("QLabel { color: blue; }")
+        self.setForegroundRole(QPalette.Highlight)
 
     def unselect(self):
         self._selected = False
-        self.setStyleSheet("")
-    
+        self.setForegroundRole(QPalette.WindowText)
 
     # Position / movement
     def get_center(self) -> QPointF:
@@ -140,7 +139,6 @@ class LabelWidget(QLabel, ObjectObservable):
         if notify:
             self._notify(WidgetPressEvent(self, event))
 
-
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
@@ -152,7 +150,6 @@ class LabelWidget(QLabel, ObjectObservable):
             )
             self._mouse_move_pos = global_pos
 
-
     def mouseReleaseEvent(self, event, notify=True):
         self.setCursor(QCursor(Qt.PointingHandCursor))
 
@@ -160,8 +157,3 @@ class LabelWidget(QLabel, ObjectObservable):
             self._notify(
                 WidgetReleaseEvent(self, self._mouse_press_pos, event)
             )
-
-
-
-# Review Comments 08/23: Font changed to one that is more readable on screen.
-# Source: https://fonts.google.com/specimen/Zilla+Slab

@@ -1,16 +1,8 @@
 import ntpath
 import logging
 
-# Disable dark mode
-import os
-os.environ["QT_QPA_PLATFORM"] = "windows:darkmode=0"
-
 from PySide6.QtWidgets import (
-    QMainWindow,
-    QDockWidget,
-    QFileDialog,
-    QMessageBox,
-)
+    QMainWindow, QDockWidget, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6 import QtCore
 
@@ -195,7 +187,7 @@ class MainWindow(QMainWindow):
 
     def __ask_for_continue_if_unsaved_changes(self):
         if not self.__command_handler.can_undo.get():
-            # Exit; there are no unsaved changes.
+            # Continue. There are no unsaved changes.
             return True
         else:
             # Ask if the user wants to discard unsaved changes
@@ -208,12 +200,12 @@ class MainWindow(QMainWindow):
                 "main_window", "Unsaved changes"))
             box.setText(QCoreApplication.translate(
                 "main_window",
-                "Do you really want to exit without saving changes?"))
+                "Do you want to discard your unsaved changes?"))
             box.setIcon(box.Icon.Question)
             response = box.exec()
 
             if (response == QMessageBox.StandardButton.Yes):
-                # User wants to exit
+                # User wants to continue
                 return True
             else:
                 return False
@@ -270,7 +262,7 @@ class MainWindow(QMainWindow):
         box = QMessageBox()
         box.setWindowTitle("About")
         box.setText(
-            "<h1>SFGrapher v2.0-dev</h1>Initially Developed at the University"
+            "<h1>SFGrapher v2.0.0</h1>Initially Developed at the University"
             " of Applied Sciences and Arts Northwestern"
             " Switzerland (FHNW) by Nicolai Wassermann"
             " and Simon Näf, updated and ported to QT6 by"

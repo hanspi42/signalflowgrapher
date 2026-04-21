@@ -41,7 +41,12 @@ class MasonWindow(QDialog):
             .subs(interim_res.loops)
         self.__non_simplified_result = non_simplified
 
-        t_evaluated_str = str(non_simplified)
+        free_symbols = set()
+        for _, _L in interim_res.loops:
+            free_symbols.update(_L.free_symbols)
+        free_symbols.update(non_simplified.free_symbols)
+
+        t_evaluated_str = str(full_res)
 
         # Combine all symbols to be on top for combined output, except the
         # symbols of the forward paths
@@ -57,7 +62,7 @@ class MasonWindow(QDialog):
         combined_symbols += self.__get_symbols_str_from_interim_res(
             interim_res.transfer_function, sympy_import_name)
         combined_symbols += self.__get_symbols(
-            list(map(lambda x: str(x), non_simplified.free_symbols)),
+            list(map(lambda x: str(x), free_symbols)),
             sympy_import_name)
 
         # Symbols of the forward path
