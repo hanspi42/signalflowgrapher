@@ -7,6 +7,7 @@ from importlib import resources
 from PySide6.QtWidgets import QApplication
 from PySide6 import QtCore
 from signalflowgrapher.containers import MainWindows
+from signalflowgrapher.utils.icon import set_app_icon
 
 if __name__ == '__main__':
     # Instantiate ApplicationContext
@@ -30,6 +31,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     app = QApplication([])
+
+    # Set application icon early so window/taskbar show correct icon
+    try:
+        set_app_icon(app)
+    except Exception:
+        pass
 
     # Set language by command line argument.  This is not done through the
     # application context yet because it anyway only works on the command line

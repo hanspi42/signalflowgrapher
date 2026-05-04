@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import QApplication
 from signalflowgrapher.containers import MainWindows
 from PySide6 import QtCore
+from signalflowgrapher.utils.icon import set_app_icon
 import logging
 import logging.config
 import argparse
@@ -20,6 +21,12 @@ def run(argv):
     args = parser.parse_args()
 
     app = QApplication([])
+
+    # Set application icon early so window/taskbar show correct icon
+    try:
+        set_app_icon(app)
+    except Exception:
+        pass
 
     # Set language by command line argument
     if (args.language):
