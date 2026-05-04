@@ -135,7 +135,7 @@ class MainWindow(QMainWindow):
             self,
             QCoreApplication.translate("main_window",
                                        "Save Signal-flow Graph"),
-            filter="JSON (*.json)")
+            filter="JSON (*.json);;Signal Flow Graph (*.sfg)")
 
         if result[0]:
             try:
@@ -165,7 +165,8 @@ class MainWindow(QMainWindow):
             self,
             QCoreApplication.translate("main_window",
                                        "Open Signal-flow Graph"),
-            filter="JSON (*.json)")
+            filter=("Signal Flow Graph (*.json *.sfg);;"
+                    "JSON (*.json);;Signal Flow Graph (*.sfg)"))
 
         if result[0]:
             self.__file_path = result[0]
