@@ -28,6 +28,12 @@ if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--language', type=str, help='Optional language name')
+    parser.add_argument(
+        'input_file',
+        nargs='?',
+        type=str,
+        help='Optional path to a .sfg or .json file to open at startup'
+    )
     args = parser.parse_args()
 
     app = QApplication([])
@@ -56,6 +62,22 @@ if __name__ == '__main__':
                 exit(2)
 
     window = MainWindows.main_window()
+
+    # Open file specified on command line / startup. If this file cannot be
+    # opened (unknown file type, file not found, etc.), the application will
+    # start empty, but a warning will be logged.
+    if args.input_file:
+        input_file = args.input_file
+        file_ext = path.splitext(input_file)[1].lower()
+
+        if file_ext not in ('.sfg', '.json'):
+            logger.warning("Unsupported startup file type: %s", input_file)
+        elif not path.exists(input_file):
+            logger.warning("Startup file not found: %s", input_file)
+        else:
+            logger.info("Opening file: %s", input_file)
+            window.load_file(input_file)
+
     window.show()
 
     # Invoke QApplication event loop

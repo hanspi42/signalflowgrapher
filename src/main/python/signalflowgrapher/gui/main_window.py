@@ -154,6 +154,18 @@ class MainWindow(QMainWindow):
         # Trigger select all on graph field
         self.__graph_field.select_all()
 
+    def load_file(self, file_path: str):
+        try:
+            self.__io_controller.load_graph(file_path)
+            self.__file_path = file_path
+            self.__set_title()
+        except Exception:
+            logger.exception("Exception while loading file")
+            self.__show_error(
+                QCoreApplication.translate("main_window",
+                                           "Error while opening file."
+                                           " See log for details"))
+
     def __open(self):
         if (not self.__ask_for_continue_if_unsaved_changes()):
             return
@@ -169,16 +181,7 @@ class MainWindow(QMainWindow):
                     "JSON (*.json);;Signal Flow Graph (*.sfg)"))
 
         if result[0]:
-            self.__file_path = result[0]
-            try:
-                self.__io_controller.load_graph(result[0])
-                self.__set_title()
-            except Exception:
-                logger.exception("Exception while loading file")
-                self.__show_error(
-                    QCoreApplication.translate("main_window",
-                                               "Error while opening file."
-                                               " See log for details"))
+            self.load_file(result[0])
 
     def closeEvent(self, event):
         if (self.__ask_for_continue_if_unsaved_changes()):
