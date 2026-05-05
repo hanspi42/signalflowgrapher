@@ -129,13 +129,13 @@ class MainWindow(QMainWindow):
 
     def __save_as(self):
         dialog = QFileDialog()
-        dialog.setDefaultSuffix(".json")
+        dialog.setDefaultSuffix(".sfg")
 
         result = dialog.getSaveFileName(
             self,
             QCoreApplication.translate("main_window",
                                        "Save Signal-flow Graph"),
-            filter="JSON (*.json);;SFG (*.sfg)")
+            filter="SFG (*.sfg);;JSON (*.json)")
 
         if result[0]:
             try:
