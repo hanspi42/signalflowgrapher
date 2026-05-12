@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QDockWidget, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6 import QtCore
+from PySide6.QtGui import QGuiApplication ###
 
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.controllers.io_controller import IOController
@@ -69,6 +70,7 @@ class MainWindow(QMainWindow):
         self._ui.action_new.triggered.connect(self.__new)
         self._ui.action_exit.triggered.connect(lambda: self.close())
         self._ui.action_center_graph.triggered.connect(self.__center_graph)
+        self._ui.action_light_dark.triggered.connect(self.__light_dark)
         self._ui.action_about.triggered.connect(self.__about)
         self._ui.action_copy.triggered.connect(self.__copy)
         self._ui.action_cut.triggered.connect(self.__cut)
@@ -276,3 +278,11 @@ class MainWindow(QMainWindow):
             "<a href='https://github.com/hanspi42/signalflowgrapher/'>"
             "https://github.com/hanspi42/signalflowgrapher/</a>")
         box.exec()
+
+    def __light_dark(self):
+        if (
+                QGuiApplication.styleHints().colorScheme()
+                == Qt.ColorScheme.Light):
+            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+        else:
+            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Light)
