@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.1
+## Created by: Qt User Interface Compiler version 6.10.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -48,6 +48,8 @@ class Ui_MainWindow(object):
         self.action_remove_branch_or_node.setObjectName(u"action_remove_branch_or_node")
         self.action_center_graph = QAction(MainWindow)
         self.action_center_graph.setObjectName(u"action_center_graph")
+        self.action_light_dark = QAction(MainWindow)
+        self.action_light_dark.setObjectName(u"action_light_dark")
         self.action_copy = QAction(MainWindow)
         self.action_copy.setObjectName(u"action_copy")
         self.action_cut = QAction(MainWindow)
@@ -100,6 +102,7 @@ class Ui_MainWindow(object):
         self.menu_edit.addSeparator()
         self.menu_edit.addAction(self.action_remove_branch_or_node)
         self.menu_view.addAction(self.action_center_graph)
+        self.menu_view.addAction(self.action_light_dark)
         self.menu_help.addAction(self.action_about)
         self.toolBar.addAction(self.action_save)
         self.toolBar.addAction(self.action_undo)
@@ -149,6 +152,10 @@ class Ui_MainWindow(object):
         self.action_center_graph.setText(QCoreApplication.translate("MainWindow", u"Center Graph", None))
 #if QT_CONFIG(shortcut)
         self.action_center_graph.setShortcut(QCoreApplication.translate("MainWindow", u"Alt+C", None))
+#endif // QT_CONFIG(shortcut)
+        self.action_light_dark.setText(QCoreApplication.translate("MainWindow", u"Switch Light/Dark Mode", None))
+#if QT_CONFIG(shortcut)
+        self.action_light_dark.setShortcut(QCoreApplication.translate("MainWindow", u"Alt+M", None))
 #endif // QT_CONFIG(shortcut)
         self.action_copy.setText(QCoreApplication.translate("MainWindow", u"Copy", None))
 #if QT_CONFIG(shortcut)
