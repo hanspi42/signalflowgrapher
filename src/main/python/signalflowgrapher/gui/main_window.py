@@ -272,9 +272,9 @@ class MainWindow(QMainWindow):
             return
         if not fileName.lower().endswith('.png'):
             fileName += '.png'
-        p = QPixmap(self.size())
+        p = QPixmap(self.__graph_field.size())
         p.fill()
-        self.render(p)
+        self.__graph_field.render(p)
         p.save(fileName, 'PNG')
 
     def __light_dark(self):
