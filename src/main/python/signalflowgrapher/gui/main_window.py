@@ -75,6 +75,7 @@ class MainWindow(QMainWindow):
         self._ui.action_copy.triggered.connect(self.__copy)
         self._ui.action_cut.triggered.connect(self.__cut)
         self._ui.action_paste.triggered.connect(self.__paste)
+        self._ui.action_toggle_grid.triggered.connect(self.__toggle_grid)
 
         self.__conditional_actions.append(ConditionalAction(
             [MinNumNodesOrBranchesSelected(1)],
@@ -286,3 +287,6 @@ class MainWindow(QMainWindow):
             QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Dark)
         else:
             QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
+    def __toggle_grid(self):
+        self.__graph_field.toggle_grid_visibility()

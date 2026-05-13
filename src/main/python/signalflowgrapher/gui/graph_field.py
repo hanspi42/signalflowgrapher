@@ -520,6 +520,9 @@ class GraphField(QWidget):
         self.__grid_widget.resize(self.size())
         super().resizeEvent(event)
 
+    def toggle_grid_visibility(self):
+        self.__grid_widget.setVisible(not self.__grid_widget.isVisible())
+
     def copy_to_clipboard(self):
         selection = [self.__widget_model_map[w] for w in self.__selection]
 
