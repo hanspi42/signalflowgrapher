@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QMainWindow, QDockWidget, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6 import QtCore
-from PySide6.QtGui import QGuiApplication ###
+from PySide6.QtGui import QGuiApplication, QPixmap
 
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.controllers.io_controller import IOController
@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         self._ui.action_new.triggered.connect(self.__new)
         self._ui.action_exit.triggered.connect(lambda: self.close())
         self._ui.action_center_graph.triggered.connect(self.__center_graph)
+        self._ui.action_save_png.triggered.connect(self.__save_png)
         self._ui.action_light_dark.triggered.connect(self.__light_dark)
         self._ui.action_about.triggered.connect(self.__about)
         self._ui.action_copy.triggered.connect(self.__copy)
@@ -264,6 +265,29 @@ class MainWindow(QMainWindow):
     def __center_graph(self):
         self.__graph_field.center_graph()
 
+    def __save_png(self):
+        fileName, extension = QFileDialog.getSaveFileName(
+            self, 'Save File', '', 'PNG Files (*.png)')
+        if not fileName:
+            return
+        if not fileName.lower().endswith('.png'):
+            fileName += '.png'
+        p = QPixmap(self.size())
+        p.fill()
+        self.render(p)
+        p.save(fileName, 'PNG')
+
+    def __light_dark(self):
+        if (
+                QGuiApplication.styleHints().colorScheme()
+                == Qt.ColorScheme.Light):
+            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+        else:
+            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
+    def __toggle_grid(self):
+        self.__graph_field.toggle_grid_visibility()
+
     def __about(self):
         # Create and set about text
         box = QMessageBox()
@@ -279,14 +303,3 @@ class MainWindow(QMainWindow):
             "<a href='https://github.com/hanspi42/signalflowgrapher/'>"
             "https://github.com/hanspi42/signalflowgrapher/</a>")
         box.exec()
-
-    def __light_dark(self):
-        if (
-                QGuiApplication.styleHints().colorScheme()
-                == Qt.ColorScheme.Light):
-            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Dark)
-        else:
-            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Light)
-
-    def __toggle_grid(self):
-        self.__graph_field.toggle_grid_visibility()
