@@ -9,7 +9,7 @@ from PySide6 import QtCore
 from signalflowgrapher.containers import MainWindows
 from signalflowgrapher.utils.icon import set_app_icon
 
-if __name__ == '__main__':
+def main():
     # Instantiate ApplicationContext
     # NOTE: fbs ApplicationContext removed, importlib.resources is used instead
 
@@ -84,6 +84,6 @@ if __name__ == '__main__':
     exit_code = app.exec()
     sys.exit(exit_code)
 
-# Review comments 08/23: There was a "Configure PyQt" here that has been moved
-# to # main_window.py, mainly to make it possible to get this file flake8
-# clean.
+
+if __name__ == '__main__':
+    main()
