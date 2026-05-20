@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "signalflowgrapher"
-version = "2.1.0-dev1"
+version = "2.1.0-dev2"
 description = "Signal-Flow-Graph Editor"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -20,6 +20,8 @@ dependencies = [
 
 [project.scripts]
 signalflowgrapher = "signalflowgrapher.__main__:main"
+signalflowgrapher-register = "signalflowgrapher.tools.register:main"
+signalflowgrapher-deregister = "signalflowgrapher.tools.deregister:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
