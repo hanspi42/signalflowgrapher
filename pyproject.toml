@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "signalflowgrapher"
 version = "2.1.0-dev2"
 description = "Signal-Flow-Graph Editor"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "Artistic-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
     "attrs",
