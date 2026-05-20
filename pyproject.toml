@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "signalflowgrapher"
-version = "2.1.0"
+version = "2.1.0-dev1"
 description = "Signal-Flow-Graph Editor"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -22,7 +22,7 @@ dependencies = [
 signalflowgrapher = "signalflowgrapher.__main__:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]          # ← was "src/main/python"; now just "src"
+where = ["src"]
 
 [tool.setuptools.package-data]
 "signalflowgrapher.resources" = [
@@ -38,6 +38,6 @@ where = ["src"]          # ← was "src/main/python"; now just "src"
 "signalflowgrapher.resources.translations" = ["*.qm"]
 "signalflowgrapher.resources.examples.SC_analysis__schmid18"  = ["*.sfg", "*.md"]
 "signalflowgrapher.resources.tool_chain_example" = ["*"]
-"signalflowgrapher.resources.tools"         = ["*.png", "*.xcf"]
-"signalflowgrapher.resources.tools.windows" = ["*.ps1", "*.md"]
+"signalflowgrapher.tools"         = ["*.png", "*.xcf"]
+"signalflowgrapher.tools.windows" = ["*.ps1", "*.md"]
 "signalflowgrapher.gui.ui" = ["*.ui"]
