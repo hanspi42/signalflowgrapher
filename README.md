@@ -10,7 +10,7 @@ Please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue
 
 ## Getting started
 
-The easiest way is to install it with `pip install signalflowgrapher`. After that, you can start it with the command `signalflowgrapher`.
+The easiest way is to install it with `pip install signalflowgrapher`. After that, you can start it with the command `signalflowgrapher`. On Windows, you can associate `.sfg` files with the signalflowgrapher by running `signalflowgrapher-register`, this will also create a shortcut on the desktop. `signalflowgrapher-deregister` removes the association again.
 
 If you want to download it and run it locally, then clone or download from https://github.com/hanspi42/signalflowgrapher, e.g. using `git clone https://github.com/hanspi42/signalflowgrapher`. Next:
 
