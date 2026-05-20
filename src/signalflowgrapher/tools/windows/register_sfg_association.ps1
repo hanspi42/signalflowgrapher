@@ -17,16 +17,12 @@ param(
 
 # Find the repository files we need: the app icon and the Python entrypoint.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = (Resolve-Path (Join-Path $scriptDir '..\..')).Path
-$iconPath = Join-Path $repoRoot 'src\main\icons\Icon.ico'
-$mainScript = Join-Path $repoRoot 'src\main\python\main.py'
+$packageRoot = (Resolve-Path (Join-Path $scriptDir '..\..')).Path
+$iconPath = Join-Path $packageRoot 'resources\icons\Icon.ico'
+$invocation = '-m signalflowgrapher'
 
 if (-not (Test-Path $iconPath)) {
     throw "Icon file not found: $iconPath"
-}
-
-if (-not (Test-Path $mainScript)) {
-    throw "Launcher script not found: $mainScript"
 }
 
 # Check for the GUI Python launcher to avoid flashing a console window when opening files.
@@ -104,7 +100,7 @@ $defaultIconKey.Close()
 $shellKey = $progKey.CreateSubKey('shell')
 $openKey = $shellKey.CreateSubKey('open')
 $commandKey = $openKey.CreateSubKey('command')
-$commandKey.SetValue('', "`"$pythonLauncher`" `"$mainScript`" `"%1`"")
+$commandKey.SetValue('', "`"$pythonLauncher`" $invocation `"%1`"")
 $commandKey.Close()
 $openKey.Close()
 $shellKey.Close()
@@ -118,7 +114,7 @@ $extensionKey.Close()
 # Create a desktop shortcut that launches SignalFlowGrapher with the selected Python launcher.
 $shortcut = $wshShell.CreateShortcut($shortcutPath)
 $shortcut.TargetPath = $pythonLauncher
-$shortcut.Arguments = "`"$mainScript`""
+$shortcut.Arguments = "$invocation"
 $shortcut.WorkingDirectory = $repoRoot
 $shortcut.IconLocation = "$iconPath,0"
 $shortcut.Description = 'SignalFlowGrapher'
@@ -127,5 +123,5 @@ $shortcut.Save()
 # Confirm the association is active for this Windows account.
 Write-Host 'SignalFlowGrapher is now the default app for .sfg files in this Windows account.'
 Write-Host "Icon: $iconPath"
-Write-Host "Command: `"$pythonLauncher`" `"$mainScript`" `"%1`""
+Write-Host "Command: `"$pythonLauncher`" $invocation `"%1`""
 Write-Host "Shortcut: $shortcutPath"
