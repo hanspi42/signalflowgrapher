@@ -1,0 +1,306 @@
+import ntpath
+import logging
+
+from PySide6.QtWidgets import (
+    QMainWindow, QDockWidget, QFileDialog, QMessageBox)
+from PySide6.QtCore import Qt, QCoreApplication
+from PySide6 import QtCore
+from PySide6.QtGui import QGuiApplication, QPixmap
+
+from signalflowgrapher.controllers.main_controller import MainController
+from signalflowgrapher.controllers.io_controller import IOController
+from signalflowgrapher.gui.conditional_actions.conditional_action import (
+    ConditionalAction)
+from signalflowgrapher.gui.conditional_actions.selection_condition import (
+    MinNumNodesOrBranchesSelected)
+from signalflowgrapher.gui.ui.ui_main_window import Ui_MainWindow
+
+logger = logging.getLogger(__name__)
+
+
+class MainWindow(QMainWindow):
+    def __init__(self,
+                 graph_field,
+                 side_widget,
+                 main_controller: MainController,
+                 io_controller: IOController,
+                 command_handler,
+                 *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Load UI from generated class
+        self._ui = Ui_MainWindow()
+        self._ui.setupUi(self)
+
+        self.__command_handler = command_handler
+        self.__graph_field = graph_field
+        self.__main_controller = main_controller
+        self.__io_controller = io_controller
+        self.__file_path = ""
+        self.setCentralWidget(graph_field)
+        self.__conditional_actions = []
+
+        # Dock widget
+        dock = QDockWidget(
+            QCoreApplication.translate("main_window", "Operations"), self)
+        dock.setWidget(side_widget)
+        dock.setFeatures(
+            QDockWidget.DockWidgetMovable |
+            QDockWidget.DockWidgetFloatable)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+
+        # Observe can_undo and can_redo on command handler
+        # to enable/disable und and redo buttons
+        self.__command_handler.can_undo.observe(
+            lambda old, new: self._ui.action_undo.setDisabled(not new))
+        self.__command_handler.can_redo.observe(
+            lambda old, new: self._ui.action_redo.setDisabled(not new))
+
+        # Observe selection changes
+        self.__graph_field.selection.observe(
+            self.__handle_selection_change)
+
+        # Connect triggers to methods
+        self._ui.action_redo.triggered.connect(self.__command_handler.redo)
+        self._ui.action_undo.triggered.connect(self.__command_handler.undo)
+        self._ui.action_save.triggered.connect(self.__save)
+        self._ui.action_save_as.triggered.connect(self.__save_as)
+        self._ui.action_select_all.triggered.connect(self.__select_all)
+        self._ui.action_open.triggered.connect(self.__open)
+        self._ui.action_new.triggered.connect(self.__new)
+        self._ui.action_exit.triggered.connect(lambda: self.close())
+        self._ui.action_center_graph.triggered.connect(self.__center_graph)
+        self._ui.action_save_png.triggered.connect(self.__save_png)
+        self._ui.action_light_dark.triggered.connect(self.__light_dark)
+        self._ui.action_about.triggered.connect(self.__about)
+        self._ui.action_copy.triggered.connect(self.__copy)
+        self._ui.action_cut.triggered.connect(self.__cut)
+        self._ui.action_paste.triggered.connect(self.__paste)
+        self._ui.action_toggle_grid.triggered.connect(self.__toggle_grid)
+
+        self.__conditional_actions.append(ConditionalAction(
+            [MinNumNodesOrBranchesSelected(1)],
+            self._ui.action_remove_branch_or_node,
+            self._ui.action_remove_branch_or_node.triggered,
+            lambda sel, *args:
+            self.__main_controller.remove_nodes_and_branches(sel)
+        ))
+
+        # Creat inital graph
+        self.__new()
+
+    def keyPressEvent(self, event):
+        # Pass ctrl key press event to graph field
+        if event.key() == Qt.Key.Key_Control:
+            self.__graph_field.on_ctrl_press()
+
+        if event.key() == Qt.Key.Key_Escape:
+            self.__graph_field.on_esc_press()
+
+    def keyReleaseEvent(self, event):
+        # Pass ctrl key release event to graph field
+        if event.key() == Qt.Key.Key_Control:
+            self.__graph_field.on_ctrl_release()
+
+    def changeEvent(self, event):
+        if event.type() == QtCore.QEvent.Type.ActivationChange:
+            # Manually execute release events if window loses isActive
+            if not self.isActiveWindow() and self.__graph_field:
+                logger.debug("MainWindows lost isActive")
+                self.__graph_field.on_ctrl_release()
+
+    def __new(self):
+        if (not self.__ask_for_continue_if_unsaved_changes()):
+            return
+
+        self.__io_controller.new_graph()
+        self.__file_path = ""
+        self.__set_title()
+
+    def __save(self):
+        if (not self.__file_path):
+            self.__save_as()
+        else:
+            try:
+                self.__io_controller.save_graph(self.__file_path)
+            except Exception:
+                logger.exception("Exception while saving to path: %s",
+                                 self.__file_path)
+                self.__show_error(
+                    QCoreApplication.translate("main_window",
+                                               "Error while saving file."
+                                               " See log for details"))
+
+    def __save_as(self):
+        dialog = QFileDialog()
+        dialog.setDefaultSuffix(".sfg")
+
+        result = dialog.getSaveFileName(
+            self,
+            QCoreApplication.translate("main_window",
+                                       "Save Signal-flow Graph"),
+            filter="SFG (*.sfg);;JSON (*.json)")
+
+        if result[0]:
+            try:
+                self.__io_controller.save_graph(result[0])
+                self.__file_path = result[0]
+                self.__set_title()
+            except Exception:
+                logger.exception("Exception while saving to path: %s",
+                                 self.__file_path)
+                self.__show_error(
+                    QCoreApplication.translate("main_window",
+                                               "Error while saving file."
+                                               " See log for details"))
+
+    def __select_all(self):
+        # Trigger select all on graph field
+        self.__graph_field.select_all()
+
+    def load_file(self, file_path: str):
+        try:
+            self.__io_controller.load_graph(file_path)
+            self.__file_path = file_path
+            self.__set_title()
+        except Exception:
+            logger.exception("Exception while loading file")
+            self.__show_error(
+                QCoreApplication.translate("main_window",
+                                           "Error while opening file."
+                                           " See log for details"))
+
+    def __open(self):
+        if (not self.__ask_for_continue_if_unsaved_changes()):
+            return
+
+        dialog = QFileDialog()
+        dialog.setDefaultSuffix(".json")
+
+        result = dialog.getOpenFileName(
+            self,
+            QCoreApplication.translate("main_window",
+                                       "Open Signal-flow Graph"),
+            filter=("SFG / JSON (*.json *.sfg);;"
+                    "JSON (*.json);;SFG (*.sfg)"))
+
+        if result[0]:
+            self.load_file(result[0])
+
+    def closeEvent(self, event):
+        if (self.__ask_for_continue_if_unsaved_changes()):
+            event.accept()
+        else:
+            event.ignore()
+
+    def __ask_for_continue_if_unsaved_changes(self):
+        if not self.__command_handler.can_undo.get():
+            # Continue. There are no unsaved changes.
+            return True
+        else:
+            # Ask if the user wants to discard unsaved changes
+            box = QMessageBox()
+            box.setStandardButtons(
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            no_button = box.button(QMessageBox.StandardButton.No)
+            box.setDefaultButton(no_button)
+            box.setWindowTitle(QCoreApplication.translate(
+                "main_window", "Unsaved changes"))
+            box.setText(QCoreApplication.translate(
+                "main_window",
+                "Do you want to discard your unsaved changes?"))
+            box.setIcon(box.Icon.Question)
+            response = box.exec()
+
+            if (response == QMessageBox.StandardButton.Yes):
+                # User wants to continue
+                return True
+            else:
+                return False
+
+    def __set_title(self):
+        # Set window title
+        if (self.__file_path):
+            self.setWindowTitle(ntpath.basename(self.__file_path)
+                                + " - SignalFlowGrapher")
+        else:
+            self.setWindowTitle(
+                QCoreApplication.translate("main_window",
+                                           "*Unknown - SignalFlowGrapher"))
+
+    def __show_error(self, message: str):
+        box = QMessageBox()
+        box.critical(self, "Error", message)
+
+    def __handle_selection_change(self, old_selection, new_selection):
+        logger.debug(
+            "Selection change in graph field detected by main window")
+        for action in self.__conditional_actions:
+            action.update_selection(new_selection)
+
+    def __handle_model_change(self, event):
+        logger.debug(
+            "Model change in graph field detected by main window")
+        for action in self.__conditional_actions:
+            action.handle_model_change(event)
+    
+    def __copy(self):
+        try:
+            self.__graph_field.copy_to_clipboard()
+        except Exception:
+            logger.exception("Copy failed")
+
+    def __cut(self):
+        try:
+            self.__graph_field.cut_to_clipboard()
+        except Exception:
+            logger.exception("Cut failed")
+
+    def __paste(self):
+        try:
+            self.__graph_field.paste_from_clipboard()
+        except Exception:
+            logger.exception("Paste failed")
+
+    def __center_graph(self):
+        self.__graph_field.center_graph()
+
+    def __save_png(self):
+        fileName, extension = QFileDialog.getSaveFileName(
+            self, 'Save File', '', 'PNG Files (*.png)')
+        if not fileName:
+            return
+        if not fileName.lower().endswith('.png'):
+            fileName += '.png'
+        p = QPixmap(self.__graph_field.size())
+        p.fill()
+        self.__graph_field.render(p)
+        p.save(fileName, 'PNG')
+
+    def __light_dark(self):
+        if (
+                QGuiApplication.styleHints().colorScheme()
+                == Qt.ColorScheme.Light):
+            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+        else:
+            QGuiApplication.styleHints().setColorScheme(Qt.ColorScheme.Light)
+
+    def __toggle_grid(self):
+        self.__graph_field.toggle_grid_visibility()
+
+    def __about(self):
+        # Create and set about text
+        box = QMessageBox()
+        box.setWindowTitle("About")
+        box.setText(
+            "<h1>SFGrapher v2.1.0</h1>Initially Developed at the University"
+            " of Applied Sciences and Arts Northwestern"
+            " Switzerland (FHNW) by Nicolai Wassermann"
+            " and Simon Näf. Updated and ported to QT6 by"
+            " Michael Saladin, with many quality-of-life contributions"
+            " by Pascal Gsell. Supervised by "
+            " Prof. Dr. Hanspeter Schmid and Prof. Dr. Dominik Gruntz."
+            " <br><br> Maintained by Hanspeter Schmid <br>on "
+            "<a href='https://github.com/hanspi42/signalflowgrapher/'>"
+            "https://github.com/hanspi42/signalflowgrapher/</a>")
+        box.exec()

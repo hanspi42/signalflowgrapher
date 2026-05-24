@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "signalflowgrapher"
 version = "2.1.0"
 description = "Signal-Flow-Graph Editor"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "Artistic-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 dependencies = [
     "attrs",
@@ -20,23 +21,26 @@ dependencies = [
 
 [project.scripts]
 signalflowgrapher = "signalflowgrapher.__main__:main"
+signalflowgrapher-register = "signalflowgrapher.tools.register:main"
+signalflowgrapher-deregister = "signalflowgrapher.tools.deregister:main"
 
 [tool.setuptools.packages.find]
-where = ["src/main/python"]
+where = ["src"]
 
 [tool.setuptools.package-data]
-
-# Font, LaTeX templates, JSON schema,
-# and logging config used at runtime via importlib.resources
 "signalflowgrapher.resources" = [
-    "*.ttf",        # HeptaSlab-Regular.ttf
-    "*.tex",        # prefix.tex, suffix.tex, sfgstyle.tex
-    "*.json",       # schema.json
-    "*.conf",       # logging.conf
+    "*.ttf", "*.otf",           # fonts
+    "*.tex",                    # LaTeX templates
+    "*.json",                   # schema
+    "*.conf",                   # logging config
 ]
-"signalflowgrapher.resources.translations" = [
-    "*.qm",
-]
-"signalflowgrapher.gui.ui" = [
-    "*.ui",
-]
+"signalflowgrapher.resources.icons" = ["*.ico"]
+"signalflowgrapher.resources.icons.base"  = ["*.png"]
+"signalflowgrapher.resources.icons.linux" = ["*.png"]
+"signalflowgrapher.resources.icons.mac"   = ["*.png"]
+"signalflowgrapher.resources.translations" = ["*.qm"]
+"signalflowgrapher.resources.examples.SC_analysis__schmid18"  = ["*.sfg", "*.md"]
+"signalflowgrapher.resources.tool_chain_example" = ["*"]
+"signalflowgrapher.tools"         = ["*.png", "*.xcf"]
+"signalflowgrapher.tools.windows" = ["*.ps1", "*.md"]
+"signalflowgrapher.gui.ui" = ["*.ui"]
