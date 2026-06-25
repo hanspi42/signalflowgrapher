@@ -2,7 +2,7 @@
 
 ![SignalFlowGrapher Title Image](https://raw.githubusercontent.com/hanspi42/signalflowgrapher/master/tools/title_image.png)
 
-## Version 2.1.2
+## Version 2.1.3
 
 Minor update from 2.1.0: `signalflowgrapher-register` will now also work on Linux and macOS.
 
