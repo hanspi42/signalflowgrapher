@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "signalflowgrapher"
-version = "2.1.1-dev1"
+version = "2.1.1"
 description = "Signal-Flow-Graph Editor"
 readme = "README.md"
 license = "Artistic-2.0"
