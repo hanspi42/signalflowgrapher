@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "signalflowgrapher"
-version = "2.1.1"
+version = "2.1.2"
 description = "Signal-Flow-Graph Editor"
 readme = "README.md"
 license = "Artistic-2.0"
@@ -43,4 +43,6 @@ where = ["src"]
 "signalflowgrapher.resources.tool_chain_example" = ["*"]
 "signalflowgrapher.tools"         = ["*.png", "*.xcf"]
 "signalflowgrapher.tools.windows" = ["*.ps1", "*.md"]
+"signalflowgrapher.tools.linux" = ["*.sh", "*.md"]
+"signalflowgrapher.tools.macos" = ["*.sh", "*.md"]
 "signalflowgrapher.gui.ui" = ["*.ui"]
