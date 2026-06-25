@@ -2,7 +2,9 @@
 
 ![SignalFlowGrapher](https://github.com/hanspi42/signalflowgrapher/blob/master/tools/title_image.png)
 
-## Version 2.1.0
+## Version 2.1.1
+
+Minor update from 2.1.0: `signalflowgrapher-register` will now also work on Linux and macOS.
 
 This version can be installed with pip or downloaded and run locally. Please follow the steps in the section [Getting started](##Getting-started).
 
@@ -10,7 +12,7 @@ Please report all issues you find to hanspeter.schmid@fhnw.ch or create an issue
 
 ## Getting started
 
-The easiest way is to install it with `pip install signalflowgrapher`. After that, you can start it with the command `signalflowgrapher`. On Windows, you can associate `.sfg` files with the signalflowgrapher by running `signalflowgrapher-register`, this will also create a shortcut on the desktop. `signalflowgrapher-deregister` removes the association again.
+The easiest way is to install it with `pip install signalflowgrapher`. After that, you can start it with the command `signalflowgrapher`. On Windows, MacOS and Linux, you can associate `.sfg` files with the signalflowgrapher by running `signalflowgrapher-register`, this will also create a shortcut on the desktop. `signalflowgrapher-deregister` removes the association again.
 
 If you want to download it and run it locally, then clone or download from https://github.com/hanspi42/signalflowgrapher, e.g. using `git clone https://github.com/hanspi42/signalflowgrapher`. Next:
 
