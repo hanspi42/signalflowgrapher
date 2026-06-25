@@ -1,6 +1,6 @@
 # SignalFlowGrapher
 
-![SignalFlowGrapher](https://github.com/hanspi42/signalflowgrapher/blob/master/tools/title_image.png)
+![SignalFlowGrapher Title Image](https://raw.githubusercontent.com/hanspi42/signalflowgrapher/master/tools/title_image.png)
 
 ## Version 2.1.1
 
