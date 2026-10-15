@@ -80,7 +80,7 @@ class TestEliminateNodeOperation(TestCase):
         simple_cycles.return_value = [[branch_1, branch_2]]
 
         operation = EliminateNodeOperation()
-        with patch("signalflow_algorithms.algorithms"
+        with patch("signalflowgrapher.algorithms"
                    ".graph_operations.simple_cycles",
                    simple_cycles):
             res = operation.get_self_loops(node)
@@ -97,7 +97,7 @@ class TestEliminateNodeOperation(TestCase):
         chaining_operation = MagicMock(ChainingOperation)
         chaining_operation.get_new_weight.return_value = "X"
         operation = EliminateNodeOperation()
-        with patch("signalflow_algorithms.algorithms"
+        with patch("signalflowgrapher.algorithms"
                    ".graph_operations.ChainingOperation",
                    MagicMock(return_value=chaining_operation)):
             res = operation.get_new_paths(node)
