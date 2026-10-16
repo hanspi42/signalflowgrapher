@@ -103,6 +103,26 @@ class TestGolden(TestCase):
                     h.close()
 
 
+class TestTikzExport(TestCase):
+    def export(self, path):
+        h = Harness()
+        try:
+            h.load(path)
+            with tempfile.TemporaryDirectory() as tmp:
+                tex = os.path.join(tmp, "out.tex")
+                h.io.generate_tikz(tex)
+                with open(tex, encoding="utf-8") as f:
+                    return f.read()
+        finally:
+            h.close()
+
+    def test_export_is_byte_identical_between_runs(self):
+        """Nodes and branches are numbered in a reproducible order (K6)."""
+        for path in example_files():
+            with self.subTest(example=example_name(path)):
+                self.assertEqual(self.export(path), self.export(path))
+
+
 class TestRendering(TestCase):
     def render(self, path):
         h = Harness()

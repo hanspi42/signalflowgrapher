@@ -69,18 +69,23 @@ class TestConsistencyChecker(TestCase):
         handles[0]._spline_abs = handles[0]._spline_abs + QPoint(4, 0)
         self.assert_problem("handle spline")
 
-    def test_detects_grid_offset_mismatch_in_field(self):
+    def test_detects_second_copy_of_pan_state_in_field(self):
         self.h.pan(30, 30)
         self.assertEqual([], check_consistency(self.h))
-        offset = self.h.grid_offset
-        offset += QPoint(1, 0)
-        self.assert_problem("GraphField grid offset")
+        self.h.field._GraphField__grid_offset = QPoint(30, 30)
+        self.assert_problem("keeps its own copy of the pan state")
 
     def test_detects_grid_widget_offset_mismatch(self):
         self.h.pan(10, 10)
         gw = self.h.private("grid_widget")
-        gw.set_offset(QPoint(3, 3))
+        gw._FixedGridWidget__offset_source = lambda: (3, 3)
         self.assert_problem("FixedGridWidget offset")
+
+    def test_detects_snapping_grid_offset_mismatch(self):
+        self.h.pan(10, 10)
+        grid = self.h.private("fixed_grid")
+        grid._FixedGrid__offset_source = lambda: (7, 7)
+        self.assert_problem("FixedGrid offset")
 
     def test_detects_missing_widget(self):
         self.h.model_widget_map.pop(self.a)

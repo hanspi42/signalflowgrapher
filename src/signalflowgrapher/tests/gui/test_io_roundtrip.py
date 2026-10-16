@@ -10,6 +10,7 @@ from unittest import TestCase, expectedFailure
 
 import jsonschema
 
+from signalflowgrapher.io.json import FILE_FORMAT_VERSION, JSONValidator
 from signalflowgrapher.tests.gui.harness import Harness
 from signalflowgrapher.tests.gui.consistency import check_consistency
 from signalflowgrapher.tests.gui.snapshot import model_snapshot
@@ -19,6 +20,7 @@ from signalflowgrapher.tests.gui.test_golden import example_files, \
 
 def normalized(d):
     d = copy.deepcopy(d)
+    d.pop("version", None)      # files are written with the current version
     d["nodes"].sort(key=lambda n: n["id"])
     d["branches"].sort(key=lambda b: b["id"])
     return d
@@ -113,10 +115,7 @@ class TestRoundTrip(TestCase):
             h.close()
 
 
-# JSONValidator.validate_json re-raises `ValidationError()` without the
-# mandatory message argument, which turns into a TypeError (known bug, 1c).
-# Until that is fixed an invalid file is rejected with either exception.
-REJECTED = (jsonschema.exceptions.ValidationError, TypeError)
+REJECTED = jsonschema.exceptions.ValidationError
 
 
 class TestSchemaToday(TestCase):
@@ -173,10 +172,61 @@ class TestSchemaToday(TestCase):
         h = self.load_text(data)       # e.g. a future 'view' section
         h.close()
 
-    @expectedFailure
-    def test_known_bug_invalid_file_raises_validation_error(self):
-        """Step 1c: validate_json must raise a proper ValidationError."""
+    def test_invalid_file_raises_validation_error_with_message(self):
+        """validate_json used to raise a TypeError (K5, 1c)."""
         data = self.base()
         data["nodes"][0]["x"] = 12.5
-        with self.assertRaises(jsonschema.exceptions.ValidationError):
+        with self.assertRaises(jsonschema.exceptions.ValidationError) as ctx:
             self.load_text(data)
+        self.assertIn("12.5", str(ctx.exception.message))
+
+    def test_invalid_grid_pos_is_rejected(self):
+        for bad in ([1], [1, 2, 3], [1.5, 2], "x"):
+            data = self.base()
+            data["grid_pos"] = bad
+            with self.subTest(grid_pos=bad):
+                with self.assertRaises(REJECTED):
+                    self.load_text(data)
+
+    def test_schema_json_resource_equals_validator_schema(self):
+        from importlib import resources
+        text = resources.files("signalflowgrapher.resources") \
+            .joinpath("schema.json").read_text(encoding="utf-8")
+        self.assertEqual(JSONValidator().schema, json.loads(text))
+        self.assertIn("grid_pos", json.loads(text)["properties"])
+        self.assertIn("version", json.loads(text)["properties"])
+
+
+class TestFileVersion(TestCase):
+    def test_saved_files_carry_the_v3_file_format_version(self):
+        self.assertEqual("3.0", FILE_FORMAT_VERSION)
+        h = Harness()
+        try:
+            h.double_click(100, 100)
+            with tempfile.TemporaryDirectory() as tmp:
+                p = os.path.join(tmp, "v.sfg")
+                h.save(p)
+                with open(p, encoding="utf-8") as f:
+                    self.assertEqual("3.0", json.load(f)["version"])
+        finally:
+            h.close()
+
+    def test_files_of_older_versions_still_load(self):
+        for version in ("2.0", "1.0", None):
+            with open(example_files()[0], encoding="utf-8") as f:
+                data = json.load(f)
+            if version is None:
+                del data["version"]
+            else:
+                data["version"] = version
+            h = Harness()
+            try:
+                with tempfile.TemporaryDirectory() as tmp:
+                    p = os.path.join(tmp, "old.sfg")
+                    with open(p, "w", encoding="utf-8") as f:
+                        json.dump(data, f)
+                    h.load(p)
+                self.assertEqual(len(data["nodes"]), len(h.nodes),
+                                 "version %r" % version)
+            finally:
+                h.close()

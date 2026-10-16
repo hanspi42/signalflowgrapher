@@ -51,7 +51,7 @@ def run_sequence(seed, steps, allow_redo, known_issues=()):
             if nodes:
                 choices += ["move", "move", "label", "center", "copy",
                             "loop", "delete"]
-            if len({(n.x, n.y) for n in nodes}) >= 2:
+            if len(nodes) >= 2:
                 choices += ["branch", "branch"]
             if branches:
                 choices += ["handle", "handle", "branch_label"]
@@ -86,10 +86,7 @@ def run_sequence(seed, steps, allow_redo, known_issues=()):
                 h.paste_at(rnd.randint(20, 900), rnd.randint(20, 600))
             elif op == "branch":
                 a, b = rnd.sample(nodes, 2)
-                if (a.x, a.y) == (b.x, b.y):
-                    op = "branch(skipped: coincident nodes)"
-                else:
-                    h.ctrl_click_branch(a, b)
+                h.ctrl_click_branch(a, b)
             elif op == "loop":
                 n = rnd.choice(nodes)
                 h.select(n)
@@ -146,8 +143,7 @@ class TestFuzz(TestCase):
                                        rnd.randint(20, 650))
                     elif r < 0.75:
                         a, b = rnd.sample(nodes, 2)
-                        if (a.x, a.y) != (b.x, b.y):
-                            h.ctrl_click_branch(a, b)
+                        h.ctrl_click_branch(a, b)
                     elif r < 0.9:
                         h.drag_node(rnd.choice(nodes), rnd.randint(-90, 90),
                                     rnd.randint(-90, 90))

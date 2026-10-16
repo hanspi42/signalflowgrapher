@@ -61,6 +61,11 @@ class TikZExport(object):
         return read_file(tex_suffix)
 
     def __generate_tikz(self, nodes: Set[Node], branches: Set[Branch]):
+        # Sort by id: the numbering of nodes and branches in the output is
+        # then reproducible (sets are iterated in an arbitrary order)
+        nodes = sorted(nodes, key=lambda node: node.id)
+        branches = sorted(branches, key=lambda branch: branch.id)
+
         # Generate comment headers and call export for branches and nodes
         content = []
         content.append("\n")

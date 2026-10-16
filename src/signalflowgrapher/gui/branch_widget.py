@@ -456,8 +456,8 @@ class SplineHandleWidget(GraphItem):
 
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         if self.get_node() is event.node:
-            new_origin = QPoint(event.node.x,
-                                event.node.y)
+            new_origin = QPoint(int(event.node.x),
+                                int(event.node.y))
             if not self._origin == new_origin:
                 self._origin_abs = new_origin
                 self.updateGeometry()

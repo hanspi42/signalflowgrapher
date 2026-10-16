@@ -101,7 +101,8 @@ class Harness:
 
     @property
     def grid_offset(self):
-        return self.private("grid_offset")
+        """The pan of the graph; the model is its only owner."""
+        return QPoint(*self.model.get_grid_position())
 
     def widget_of(self, model_obj):
         return self.model_widget_map[model_obj]

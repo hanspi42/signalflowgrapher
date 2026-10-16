@@ -4,22 +4,24 @@ from PySide6.QtGui import QPaintEvent, QPainter, QPen
 
 
 class FixedGridWidget(QWidget):
-    def __init__(self, size, *args, ** kwargs):
+    def __init__(self, size, offset_source, *args, ** kwargs):
         super().__init__(*args, **kwargs)
         self.__grid_size = size
         self.__pen_width = 1
-        self.__offset = QPoint(0, 0)
+        self.__offset_source = offset_source
 
         # Disable the widgets to ignore all events
         # Widget should not become mousegrabber
         self.setDisabled(True)
 
-    def set_offset(self, offset):
+    @property
+    def offset(self) -> QPoint:
         """
-        Sets an offset on the grid to simulate a move.
+        Position of the grid lines: the pan of the graph modulo the grid
+        size. Read from the offset source (the model) at every paint.
         """
-        self.__offset = QPoint(int(offset.x() % self.__grid_size),
-                               int(offset.y() % self.__grid_size))
+        x, y = self.__offset_source()
+        return QPoint(int(x % self.__grid_size), int(y % self.__grid_size))
 
     def paintEvent(self, event: QPaintEvent):
         # Init painter
@@ -35,14 +37,16 @@ class FixedGridWidget(QWidget):
         painter.begin(self)
         painter.setPen(pen)
 
+        offset = self.offset
+
         # Horizontal lines
-        start_h = QPoint(0, int(self.__offset.y()))
-        end_h = QPoint(int(self.width()), int(self.__offset.y()))
+        start_h = QPoint(0, int(offset.y()))
+        end_h = QPoint(int(self.width()), int(offset.y()))
         distance_h = QPoint(0, int(self.__grid_size))
 
         # Vertical lines
-        start_v = QPoint(int(self.__offset.x()), 0)
-        end_v = QPoint(int(self.__offset.x()), int(self.height()))
+        start_v = QPoint(int(offset.x()), 0)
+        end_v = QPoint(int(offset.x()), int(self.height()))
         distance_v = QPoint(int(self.__grid_size), 0)
 
         while start_h.y() < self.height():

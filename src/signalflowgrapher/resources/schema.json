@@ -84,6 +84,21 @@
                     "spline2_y"
                 ]
             }
+        },
+        "grid_pos": {
+            "type": "array",
+            "items": {
+                "type": "integer"
+            },
+            "minItems": 2,
+            "maxItems": 2
+        },
+        "version": {
+            "type": "string"
         }
-    }
+    },
+    "required": [
+        "nodes",
+        "branches"
+    ]
 }

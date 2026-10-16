@@ -1,6 +1,15 @@
 import abc
+from typing import Callable, Tuple
 from PySide6.QtCore import QPoint
 from signalflowgrapher.gui.graph_item import GraphItem
+
+# Distance between two grid lines. The single definition of the grid size,
+# used by the grid snapping, the grid drawing and paste.
+GRID_SIZE = 30
+
+# Returns the current pan of the graph (x, y). The model is the only owner
+# of this state, e.g. `Model.get_grid_position`.
+OffsetSource = Callable[[], Tuple[int, int]]
 
 
 class Grid(abc.ABC):
@@ -12,12 +21,6 @@ class Grid(abc.ABC):
 
     @abc.abstractmethod
     def get_grid_position(self, p):
-        pass
-
-    def set_offset(self, d):
-        """
-        Sets an offset to be able to move the grid on a surface
-        """
         pass
 
     def start_move(self):
@@ -60,10 +63,19 @@ class Grid(abc.ABC):
 
 
 class FixedGrid(Grid):
-    def __init__(self, size: int):
+    def __init__(self, size: int, offset_source: OffsetSource):
         super().__init__()
         self.__size = size
-        self.__offset = QPoint()
+        self.__offset_source = offset_source
+
+    @property
+    def offset(self) -> QPoint:
+        """
+        Position of the grid lines relative to the origin: the pan of the
+        graph modulo the grid size. Always read from the offset source.
+        """
+        x, y = self.__offset_source()
+        return QPoint(int(x % self.__size), int(y % self.__size))
 
     def relative_move(self, dx: int, dy: int, widget: GraphItem):
         return super().relative_move(dx,
@@ -72,13 +84,10 @@ class FixedGrid(Grid):
 
     def get_grid_position(self, p):
         # Subtract 2 for previnting flapping of widgets
-        return self.__offset + QPoint(
-            int(self.__size*round((p.x()-self.__offset.x()-2) / self.__size)),
-            int(self.__size*round((p.y()-self.__offset.y()-2) / self.__size)))
-
-    def set_offset(self, d):
-        self.__offset = QPoint(int(d.x() % self.__size),
-                               int(d.y() % self.__size))
+        offset = self.offset
+        return offset + QPoint(
+            int(self.__size*round((p.x()-offset.x()-2) / self.__size)),
+            int(self.__size*round((p.y()-offset.y()-2) / self.__size)))
 
 
 class NoneGrid(Grid):

@@ -4,8 +4,8 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 
 | Step | Title | Status |
 |---|---|---|
-| 0 | Safety net (tests, consistency checker, snapshots) | done, ready for manual test |
-| 1 | Fix inconsistencies and known bugs | planned |
+| 0 | Safety net (tests, consistency checker, snapshots) | done, tested |
+| 1 | Fix inconsistencies and known bugs, new file version | done, ready for manual test |
 | 2 | Idempotent widget refresh | planned |
 | 3 | `ViewTransform` at identity | planned |
 | 4 | Pan becomes a view offset | planned |
@@ -38,7 +38,7 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | Undo payloads | `Move*Command`, `TransformBranchCommand` | deltas |
 | Clipboard, JSON, TikZ | raw model values | absolute + relative as above |
 
-Controller-level invariant: a spline point moves together with its node (`MainController.move_node`). The detailed analysis, with sequence diagrams for create, move, pan, copy/paste, delete/undo and save/load, is kept alongside the project (Claude doc "SignalFlowGrapher - Coordinate Handling Analysis").
+File format: `"version": "3.0"` is written since step 1g; `grid_pos` (not `grid`, as the V2.0 text below says) holds the pan. Controller-level invariant: a spline point moves together with its node (`MainController.move_node`). The detailed analysis, with sequence diagrams for create, move, pan, copy/paste, delete/undo and save/load, is kept alongside the project (Claude doc "SignalFlowGrapher - Coordinate Handling Analysis").
 
 ## Plan
 
@@ -52,7 +52,7 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 |---|---|
 | `harness.py` | Real `GraphField`, `Model`, controllers and `CommandHandler` in an offscreen window, driven with synthetic mouse events (double click, drag, pan, Ctrl+click, copy/paste, delete, undo/redo, save/load). Uses deterministic ids. |
 | `consistency.py` | Compares every widget with the model: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, graph topology. |
-| `test_consistency_checker.py` | Fault injection: 14 deliberately broken states must each be detected ("tests for the tests"). |
+| `test_consistency_checker.py` | Fault injection: 15 deliberately broken states must each be detected ("tests for the tests"). |
 | `test_gui_operations.py` | Scenario tests with exact expectations (create, move, handles, labels, pan, center, copy/paste, delete, undo/redo, save/load). |
 | `test_gui_fuzz.py` | Seeded random operation sequences with a consistency check after every operation. `SFG_FUZZ_SEEDS` and `SFG_FUZZ_STEPS` scale it up for a soak run. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
@@ -67,7 +67,7 @@ export QT_QPA_PLATFORM=offscreen                 # set automatically by the harn
 python -m pytest signalflowgrapher/tests         # or: python -m unittest discover -s signalflowgrapher/tests -t .
 ```
 
-Expected result at the end of step 0: everything passes, except the **6 expected failures** that document known bugs (next section). Two older tests in `tests/algorithms/test_graph_operations.py` (`TestEliminateNodeOperation.test_get_new_paths` and `test_get_self_loops`) were failing before V3.0 because they patched a module `signalflow_algorithms`, from which the algorithms had been moved into `signalflowgrapher/algorithms` without adapting the tests. Their patch targets were corrected in step 0.
+Expected result: everything passes, except the **expected failures** that still document known bugs (next section). At the end of step 0 there were 6 of them, after step 1 there are 2 (both K1). Two older tests in `tests/algorithms/test_graph_operations.py` (`TestEliminateNodeOperation.test_get_new_paths` and `test_get_self_loops`) were failing before V3.0 because they patched a module `signalflow_algorithms`, from which the algorithms had been moved into `signalflowgrapher/algorithms` without adapting the tests. Their patch targets were corrected in step 0.
 
 Pixel A/B check before and after a step:
 
@@ -84,14 +84,14 @@ If a Qt version or font change moves widget geometry, regenerate the golden file
 
 Each is pinned by a test decorated with `@expectedFailure`. The step that fixes it must remove the decorator (an unexpected success is reported as a failure).
 
-| # | Issue | Test | Fix in |
+| # | Issue | Test | Status |
 |---|---|---|---|
-| K1 | After "move node, undo, redo" (and in some multi-selection undo cases) the **branch label stays at the old position**: redo applies the branch transform before the node move, and branch labels only react to branch events. | `test_known_bug_redo_of_move_leaves_branch_label_stale`, `test_known_bug_random_operations_branch_labels`; the fuzz test tolerates it via `STALE_BRANCH_LABELS` in `consistency.py` | step 2 (remove the tolerance too) |
-| K2 | **Paste after a pan is off-grid**: paste snaps to a grid that ignores the pan offset. | `test_known_bug_paste_after_pan_is_off_grid` | 1b |
-| K3 | **Paste loses node label offsets** (pasted nodes get `(0, 30)`). | `test_known_bug_paste_loses_node_label_offset` | 1b |
-| K4 | **Ctrl+click between two nodes at the same position** raises `ValueError: Unable to calculate angle`; nothing happens for the user. | `test_known_bug_branch_between_coincident_nodes_raises` | 1e |
-| K5 | **Invalid files raise `TypeError`** instead of `ValidationError` (`validate_json` creates the exception without its message). | `test_known_bug_invalid_file_raises_validation_error` | 1c |
-| K6 | The TikZ export is **not byte-identical between runs** (nodes are numbered in set-iteration order). Harmless; tests compare a canonical form. | `snapshot.tikz_snapshot` | 1f (optional: sort) |
+| K1 | After "move node, undo, redo" (and in some multi-selection undo cases) the **branch label stays at the old position**: redo applies the branch transform before the node move, and branch labels only react to branch events. | `test_known_bug_redo_of_move_leaves_branch_label_stale`, `test_known_bug_random_operations_branch_labels`; the fuzz test tolerates it via `STALE_BRANCH_LABELS` in `consistency.py` | open, fix in step 2 (then remove the tolerance too) |
+| K2 | **Paste after a pan was off-grid**: paste snapped to a grid that ignored the pan offset. | `test_paste_after_pan_stays_on_the_panned_grid` | fixed in step 1b |
+| K3 | **Paste lost node label offsets** (pasted nodes got `(0, 30)`). | `test_paste_keeps_node_label_offset` | fixed in step 1b |
+| K4 | **Ctrl+click between two nodes at the same position** raised `ValueError: Unable to calculate angle` (and a second such branch would have looped forever). | `TestCoincidentNodes` | fixed in step 1e |
+| K5 | **Invalid files raised `TypeError`** instead of `ValidationError` (`validate_json` created the exception without its message). | `test_invalid_file_raises_validation_error_with_message` | fixed in step 1c |
+| K6 | The TikZ export was **not byte-identical between runs** (nodes were numbered in set-iteration order). | `TestTikzExport` | fixed in step 1f |
 
 Not a bug (checked): `QPoint(float, float)` in the spline handle's `node_moved_event` truncates silently in PySide6 6.12 instead of raising. Step 1a is therefore a defensive cleanup only.
 
@@ -118,17 +118,29 @@ Run once, so that "works" is agreed before anything changes. Use a fresh window.
 17. Export TikZ and compile it: the picture matches the window.
 18. Open each example from `resources/examples`: they look correct, nothing is selected oddly, nothing is cut off.
 
-### Step 1: Fix inconsistencies and known bugs
+### Step 1: Fix inconsistencies and known bugs, new file version (done)
 
-Separate small commits, each with its test flipped from `@expectedFailure` to a normal test.
+Separate small changes; the application behaves as before except for the fixed bugs and the new file version. The tests of K2 to K6 were changed from `@expectedFailure` to normal tests.
 
-- **1a** `int()` in `SplineHandleWidget.node_moved_event` (defensive).
-- **1b** Paste: snap with the grid offset (use `FixedGrid.get_grid_position`) and restore node label offsets (K2, K3).
-- **1c** JSON schema: validator and `schema.json` agree (`grid_pos`, `version`), `validate_json` raises a proper `ValidationError`, old files keep loading (K5).
-- **1d** `Model` becomes the single owner of pan and grid state; remove the copies in `GraphField`, `FixedGrid` and `FixedGridWidget`; one grid-size constant.
-- **1e** Ctrl+click between coincident nodes does not raise (K4).
-- **1f** Optional: sort nodes/branches in the TikZ export so that the output is byte-identical between runs (K6).
-- *Review:* pan, paste, undo/redo after pan, loading old files; automated tests green.
+- **1a** `int()` in `SplineHandleWidget.node_moved_event` (defensive; PySide6 6.12 truncates floats silently anyway). Test: `test_handle_follows_node_with_integer_origin`.
+- **1b** Paste (K2, K3): snaps with the pan offset, using the fixed grid (Ctrl is held while pasting, which switches the active grid off, so the paste code uses `GraphField.__fixed_grid` explicitly), and restores node label offsets. `MainController.create_node` got optional parameters `label_dx` (default 0) and `label_dy` (default 30).
+- **1c** JSON schema (K5): the validator now declares `grid_pos` (the key the writer has always used; the old declaration `grid` was never matched, so `grid_pos` was not validated). `grid_pos` and `version` stay optional. `validate_json` re-raises the original `ValidationError` with its message. `resources/schema.json` is regenerated from the validator and a test keeps them equal (`JSONValidator.schema`). Old files keep loading.
+- **1d** The model is the only owner of the pan. `GraphField.__grid_offset` and the copies in `FixedGrid` and `FixedGridWidget` are removed; `FixedGrid(size, offset_source)` and `FixedGridWidget(size, offset_source)` read `Model.get_grid_position` when they snap or paint, and `GraphField` triggers a repaint on `GraphMovedEvent` and `GraphChangedEvent`. One grid size constant, `GRID_SIZE` in `gui/grid.py`. The consistency checker verifies that `GraphField` has no copy of the pan state.
+- **1e** Branch between nodes at the same position (K4): the branch is created as an arc below the nodes with label offset `(0, 30)`, and the step size of the overlap loop in `create_branch_auto_pos` has a minimum of 30 for coinciding nodes (it was 0, so the loop never ended). Layouts for all other node positions are unchanged.
+- **1f** Old tests repaired in step 0. The TikZ export sorts nodes and branches by id, so the numbering is reproducible (K6).
+- **1g** File format version: files are written with `"version": "3.0"` (`FILE_FORMAT_VERSION` in `io/json.py`). Files with version `2.0`, any other version or no version are still read; there is no version check on load. The version of the Python package in `pyproject.toml` (2.1.3) is not changed by this step; it belongs to the release.
+- The fuzz tests no longer avoid coinciding nodes.
+
+*Manual checklist for step 1* (in addition to the checklist of step 0):
+
+1. Create two nodes on the same grid point (double-click twice at the same place), select one, Ctrl+click the other: a bent branch with its label below it appears. Repeat in both directions: the branches do not lie on top of each other, the program does not hang.
+2. Pan the canvas by an amount that is not a multiple of 30 pixels, then select some nodes, copy and paste: the pasted nodes lie on the grid lines that are visible on the canvas.
+3. Drag the label of a node away from its default place, copy the node, paste it: the pasted node's label has the same offset.
+4. Pan, save, open the file: grid lines and nodes are at the same place. Open the saved file in a text editor: `"version": "3.0"` and `"grid_pos"` are present.
+5. Open files from `resources/examples` (version 2.0) and a file without `grid_pos`: both load.
+6. Damage a file (for example write `"x": 1.5` for a node) and open it: the dialog "Error while opening file. See log for details" appears, the log names the reason, and the graph that was open stays unchanged.
+7. Pan with the mouse, Ctrl while dragging a node, "Center graph", "Toggle grid" (if available in your menu): the grid always stays aligned with the nodes.
+8. Export TikZ twice from the same graph: the two files are identical.
 
 ### Step 2: Idempotent widget refresh (no zoom yet)
 

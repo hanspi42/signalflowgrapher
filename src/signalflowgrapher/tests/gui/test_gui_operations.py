@@ -15,15 +15,17 @@ so the decorator cannot be forgotten).
 import math
 import os
 import tempfile
+import signal
 from unittest import TestCase, expectedFailure
 
 from PySide6.QtCore import QPoint, Qt
 
+from signalflowgrapher.gui.grid import GRID_SIZE
 from signalflowgrapher.tests.gui.harness import Harness
 from signalflowgrapher.tests.gui.consistency import (
     assert_consistent, check_consistency)
 
-GRID = 30
+GRID = GRID_SIZE
 
 
 def coords(h: Harness):
@@ -231,6 +233,16 @@ class TestHandlesAndLabels(GuiTestCase):
         self.assertEqual(0, (round(knob.y()) - self.h.grid_offset.y()) % GRID)
         self.ok("handle drag")
 
+    def test_handle_follows_node_with_integer_origin(self):
+        """The handle origin is an int point even for float coordinates."""
+        a, b, br = self.make_two_nodes_and_branch()
+        handles = self.h.select_branch(br)
+        self.h.model.graph.move_node_relative(a, 0.5, 0.5)
+        self.h.process_events()
+        handle = next(x for x in self.h.selected_handles()
+                      if x.get_node() is a)
+        self.assertEqual(QPoint(int(a.x), int(a.y)), handle._origin_abs)
+
     def test_handle_drag_undo_redo(self):
         a, b, br = self.make_two_nodes_and_branch()
         handle = self.h.select_branch(br)[1]
@@ -411,9 +423,8 @@ class TestCopyPaste(GuiTestCase):
         self.assertEqual(1, len(self.h.branches))
         self.ok("paste after cut")
 
-    @expectedFailure
-    def test_known_bug_paste_after_pan_is_off_grid(self):
-        """Paste snaps to a grid that ignores the pan offset (step 1b)."""
+    def test_paste_after_pan_stays_on_the_panned_grid(self):
+        """Paste used to snap to a grid that ignored the pan (K2, 1b)."""
         a, b, br = self.make_two_nodes_and_branch()
         self.h.pan(13, 7)
         self.h.select(a, b, br)
@@ -424,9 +435,8 @@ class TestCopyPaste(GuiTestCase):
             self.assertEqual(0, (n.x - gx) % GRID, "node off grid in x")
             self.assertEqual(0, (n.y - gy) % GRID, "node off grid in y")
 
-    @expectedFailure
-    def test_known_bug_paste_loses_node_label_offset(self):
-        """Pasted nodes get the default label offset (0, 30) (step 1b)."""
+    def test_paste_keeps_node_label_offset(self):
+        """Pasted nodes used to get the default label offset (K3, 1b)."""
         a, b, br = self.make_two_nodes_and_branch()
         self.h.drag_label(a, 30, -60)
         offset = (a.label_dx, a.label_dy)
@@ -489,19 +499,56 @@ class TestDelete(GuiTestCase):
         self.assertEqual((-30, 60), tuple(n))
 
 
-class TestKnownBugsOutsideThePlan(GuiTestCase):
-    @expectedFailure
-    def test_known_bug_branch_between_coincident_nodes_raises(self):
-        """
-        Two nodes on the same grid point cannot be connected by Ctrl+click:
-        create_branch_auto_pos raises 'Unable to calculate angle. Given
-        points have same position' (found by the fuzzer, step 1e).
-        """
+class TestCoincidentNodes(GuiTestCase):
+    """
+    Two nodes on the same grid point can be connected (K4, 1e). Before, the
+    first branch raised 'Unable to calculate angle' and a second branch
+    would have looped forever in create_branch_auto_pos.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # a hang must fail the test instead of blocking the test run
+        if hasattr(signal, "SIGALRM"):
+            signal.signal(signal.SIGALRM, self._timeout)
+            signal.alarm(30)
+
+    def tearDown(self):
+        if hasattr(signal, "SIGALRM"):
+            signal.alarm(0)
+        super().tearDown()
+
+    @staticmethod
+    def _timeout(signum, frame):
+        raise TimeoutError("create_branch_auto_pos does not terminate")
+
+    def test_branch_between_coincident_nodes(self):
         a = self.h.double_click(150, 150)
         b = self.h.double_click(150, 150)
         self.assertEqual((a.x, a.y), (b.x, b.y))
-        self.h.ctrl_click_branch(a, b)
+        br = self.h.ctrl_click_branch(a, b)
+        # bent below the nodes, not a zero length line
+        self.assertNotEqual((a.x, a.y), (br.spline1_x, br.spline1_y))
+        self.assertEqual((0, 30), (br.label_dx, br.label_dy))
         self.ok("branch between coincident nodes")
+
+    def test_parallel_and_opposite_branches_between_coincident_nodes(self):
+        a = self.h.double_click(150, 150)
+        b = self.h.double_click(150, 150)
+        first = self.h.ctrl_click_branch(a, b)
+        second = self.h.ctrl_click_branch(a, b)
+        third = self.h.ctrl_click_branch(b, a)
+        shapes = {(x.spline1_x, x.spline1_y, x.spline2_x, x.spline2_y)
+                  for x in (first, second, third)}
+        self.assertEqual(3, len(shapes), "branches lie on top of each other")
+        self.ok("three branches between coincident nodes")
+
+    def test_nearby_nodes_get_a_branch_with_the_old_rules(self):
+        a = self.h.double_click(150, 150)
+        b = self.h.double_click(180, 150)
+        br = self.h.ctrl_click_branch(a, b)
+        self.assertEqual((a.x + b.x) / 2, br.spline1_x)   # straight line
+        self.ok("branch between nearby nodes")
 
 
 class TestSaveLoad(GuiTestCase):

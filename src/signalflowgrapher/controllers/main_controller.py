@@ -28,10 +28,16 @@ class MainController:
         self.__model = model
         self.__command_handler = command_handler
 
-    def create_node(self, x_pos: int, y_pos: int) -> PositionedNode:
-        """Create a new node at the given coordinates."""
+    def create_node(self, x_pos: int, y_pos: int,
+                    label_dx: int = 0,
+                    label_dy: int = 30) -> PositionedNode:
+        """
+        Create a new node at the given coordinates. The label offset is
+        relative to the node, the default places the label below it.
+        """
         logger.debug("Create new node at position (%s,%s)", x_pos, y_pos)
-        node = PositionedNode(self.__model.graph, x_pos, y_pos, 0, 30)
+        node = PositionedNode(self.__model.graph, x_pos, y_pos,
+                              label_dx, label_dy)
 
         command = CreateNodeCommand(self.__model.graph, node, self.__model)
         self.__command_handler.add_command(command)
@@ -216,8 +222,25 @@ class MainController:
         spline1_y = min_y + (max_y - min_y) / 2
         spline2_x, spline2_y = spline1_x, spline1_y
 
+        # Two nodes on the same position have no direction between them.
+        # Start with a bent branch below the nodes instead of a straight
+        # (zero length) line.
+        nodes_coincide = (start_node.x == end_node.x
+                          and start_node.y == end_node.y)
+        if nodes_coincide:
+            (spline1_x,
+             spline1_y,
+             spline2_x,
+             spline2_y) = self.__get_spline_positions(start_node,
+                                                      end_node,
+                                                      60)
+
         if len(overlap) > 0:
             distance_step_size = math.hypot(max_x - min_x, max_y - min_y) / 2
+            if distance_step_size == 0:
+                # Coinciding nodes: a step of 0 would never move the
+                # splines away from an overlapping branch (endless loop)
+                distance_step_size = 30
 
             # Adjust the splines until all other branches are far away
             all_far_away = False
@@ -289,17 +312,22 @@ class MainController:
         # Calulate initial label position
         middle_x = (start_node.x + end_node.x) / 2
         middle_y = (start_node.y + end_node.y) / 2
-        [label_x, label_y] = rotate([middle_x, middle_y],
-                                    move([middle_x, middle_y],
-                                         [end_node.x, end_node.y],
-                                         30),
-                                    math.pi / 2)
+        if nodes_coincide:
+            # no direction: put the label below the bent branch
+            label_dx, label_dy = 0, 30
+        else:
+            [label_x, label_y] = rotate([middle_x, middle_y],
+                                        move([middle_x, middle_y],
+                                             [end_node.x, end_node.y],
+                                             30),
+                                        math.pi / 2)
+            label_dx, label_dy = label_x - middle_x, label_y - middle_y
 
         # Create branch
         self.create_branch(start_node, end_node,
                            spline1_x, spline1_y,
                            spline2_x, spline2_y,
-                           label_x - middle_x, label_y - middle_y,
+                           label_dx, label_dy,
                            weight)
 
     def create_self_loop(self, node: PositionedNode, weight=""):

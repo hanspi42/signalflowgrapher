@@ -24,7 +24,7 @@ Usage:
 from PySide6.QtCore import QPoint, QPointF
 from PySide6.QtGui import QPainterPath
 
-from signalflowgrapher.gui.grid import FixedGrid
+from signalflowgrapher.gui.grid import FixedGrid, GRID_SIZE
 from signalflowgrapher.tests.gui.harness import Harness, _private
 
 LABEL_TOLERANCE = 1.5   # label widgets are placed with int() truncation
@@ -212,26 +212,32 @@ def check_handles(h: Harness):
 
 
 def check_grid(h: Harness):
+    """
+    The pan is owned by the model; the grid used for snapping and the grid
+    drawn on the canvas must both show the lines at (pan mod grid size).
+    """
     problems = []
     gx, gy = h.model.get_grid_position()
-    offset = h.grid_offset
-    if (offset.x(), offset.y()) != (gx, gy):
-        problems.append("GraphField grid offset (%s, %s) != Model grid "
-                        "position (%s, %s)" % (offset.x(), offset.y(), gx, gy))
-    size = h.private("grid_size")
+    size = GRID_SIZE
+    expected = (gx % size, gy % size)
+    for attr in ("grid_offset", "grid_size"):
+        if hasattr(h.field, "_GraphField__" + attr):
+            problems.append("GraphField keeps its own copy of the pan "
+                            "state (%s)" % attr)
     grid_widget = h.private("grid_widget")
-    gw_offset = _private(grid_widget, "FixedGridWidget", "offset")
-    if (gw_offset.x(), gw_offset.y()) != (gx % size, gy % size):
+    gw_offset = grid_widget.offset
+    if (gw_offset.x(), gw_offset.y()) != expected:
         problems.append("FixedGridWidget offset (%s, %s) != pan mod %s "
                         "(%s, %s)" % (gw_offset.x(), gw_offset.y(), size,
-                                      gx % size, gy % size))
-    grid = h.private("grid")
-    if isinstance(grid, FixedGrid):
-        g_offset = _private(grid, "FixedGrid", "offset")
-        if (g_offset.x(), g_offset.y()) != (gx % size, gy % size):
-            problems.append("FixedGrid offset (%s, %s) != pan mod %s "
-                            "(%s, %s)" % (g_offset.x(), g_offset.y(), size,
-                                          gx % size, gy % size))
+                                      expected[0], expected[1]))
+    for name in ("fixed_grid", "grid"):
+        grid = h.private(name)
+        if isinstance(grid, FixedGrid):
+            g_offset = grid.offset
+            if (g_offset.x(), g_offset.y()) != expected:
+                problems.append("FixedGrid offset (%s, %s) != pan mod %s "
+                                "(%s, %s)" % (g_offset.x(), g_offset.y(),
+                                              size, expected[0], expected[1]))
     return problems
 
 

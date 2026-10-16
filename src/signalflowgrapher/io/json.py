@@ -1,11 +1,19 @@
 from signalflowgrapher.common.json_dict import JSONDict
 from typing import Dict, Any
+import copy
 import json
 import logging
 import jsonschema
 from jsonschema.validators import validate
 from signalflowgrapher.io.file import write_file, read_file
 logger = logging.getLogger(__name__)
+
+# Version of the file format written by this program. Files of older
+# versions (without version, or "2.0") are still read.
+#   2.0  nodes, branches, grid_pos
+#   3.0  written by V3.0; same structure, the version marks the files of the
+#        V3.0 series (pan and zoom handling were reworked in this series)
+FILE_FORMAT_VERSION = "3.0"
 
 
 class JSONExport(object):
@@ -22,7 +30,7 @@ class JSONExport(object):
         """
         data_dict = data.to_dict()
         data_dict["grid_pos"] = grid_pos
-        data_dict["version"] = "2.0"
+        data_dict["version"] = FILE_FORMAT_VERSION
 
         logger.info("Write json to file %s", path)
         json_data = json.dumps(data_dict, indent=4)
@@ -118,7 +126,7 @@ class JSONValidator(object):
                         ]
                     }
                 },
-                "grid": {
+                "grid_pos": {
                     "type": "array",
                     "items": {"type": "integer"},
                     "minItems": 2,
@@ -132,7 +140,15 @@ class JSONValidator(object):
                 "nodes",
                 "branches"
             ]
-        } #grid is optional for backward compatibility
+        }  # grid_pos and version are optional for backward compatibility
+
+    @property
+    def schema(self) -> Dict:
+        """
+        The json schema of a graph file (a copy). The file
+        resources/schema.json contains the same schema.
+        """
+        return copy.deepcopy(self.__graph_schema)
 
     def validate_json(self, data: Any):
         """
@@ -143,4 +159,4 @@ class JSONValidator(object):
             validate(instance=data, schema=self.__graph_schema)
         except jsonschema.exceptions.ValidationError as e:
             logger.error("Loaded invalid json file %s", str(e))
-            raise jsonschema.exceptions.ValidationError()
+            raise
