@@ -435,20 +435,28 @@ class GraphField(QWidget):
             return
         if isinstance(event, GraphMovedEvent):
             self.__grid_widget.update()
-            for widget in self.__model_widget_map.values():
-                widget.graph_moved_event(event)
+            self.refresh_widgets()
 
-            for widget in self.__model_label_map.values():
-                widget.graph_moved_event(event)
+    def refresh_widgets(self, force: bool = False):
+        """
+        Derive position and shape of all widgets from the model.
 
-            for widget in self.__handles:
-                widget.graph_moved_event(event)
+        Nodes and branches come first, labels last: a label is placed
+        relative to its owner widget (for a branch: relative to the middle
+        of the drawn curve). With force=True all widgets are recomputed
+        completely, even those that believe to be up to date.
+        """
+        for widget in self.__model_widget_map.values():
+            widget.refresh(force)
+        for handle in self.__handles:
+            handle.refresh(force)
+        for label in self.__model_label_map.values():
+            label.refresh(force)
 
     def __add_node(self, node):
         widget = NodeWidget(node, parent=self)
         # Set initial position centered to given point
-        widget.move(QPoint(int(node.x - widget.width() / 2),
-                           int(node.y - widget.height() / 2)))
+        widget.refresh()
         widget.observe(self.__on_node_click)
         self.__model_widget_map[node] = widget
         self.__widget_model_map[widget] = node
@@ -458,12 +466,7 @@ class GraphField(QWidget):
         self.__add_selection(widget)
 
     def __add_branch(self, branch):
-        widget = BranchWidget(branch,
-                              QPoint(int(branch.spline1_x),
-                                     int(branch.spline1_y)),
-                              QPoint(int(branch.spline2_x),
-                                     int(branch.spline2_y)),
-                              parent=self)
+        widget = BranchWidget(branch, parent=self)
 
         self.__model_widget_map[branch] = widget
         self.__widget_model_map[widget] = branch

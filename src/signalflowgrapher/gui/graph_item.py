@@ -35,14 +35,22 @@ class GraphItem(QWidget, ObjectObservable):
         return QPointF(self.x() + self.width() / 2,
                        self.y() + self.height() / 2)
 
-    def move_relative(self, dx, dy):
-        current_position = self.pos()
-        new_position = QPoint(current_position.x() + dx,
-                              current_position.y() + dy)
-        self.move(new_position)
+    def refresh(self, force: bool = False):
+        """
+        Derive position and shape of the widget from the model.
+
+        Idempotent: the result only depends on the current state of the
+        model, never on which events came before or in which order, so
+        refreshing a widget twice (or after unrelated events) changes
+        nothing. With force=True everything is recomputed, even if the
+        widget believes that it is up to date.
+        """
+        pass
 
     def graph_moved_event(self, event: GraphMovedEvent):
-        self.move_relative(event.dx, event.dy)
+        # The whole graph has moved. The size of the move is not needed:
+        # the widget looks at the model.
+        self.refresh()
 
     def mousePressEvent(self, event, notify=True):
         self._mouse_press_pos = event.globalPos()

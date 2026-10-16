@@ -157,20 +157,11 @@ def check_branches(h: Harness):
     return problems
 
 
-# Known defects that can be tolerated explicitly by a test (see
-# DEVDOCU.md, "Known issues found by the safety net"). Every entry must be
-# removed from here when the defect is fixed.
-STALE_BRANCH_LABELS = "stale_branch_labels"
-
-
-def check_labels(h: Harness, known_issues=()):
+def check_labels(h: Harness):
     problems = []
     for obj, lw in h.model_label_map.items():
         owner_widget = h.model_widget_map.get(obj)
         if owner_widget is None:
-            continue
-        if STALE_BRANCH_LABELS in known_issues and \
-                obj in h.model.graph.branches:
             continue
         c = owner_widget.get_center()
         centre = QPointF(lw.x() + lw.width() / 2, lw.y() + lw.height() / 2)
@@ -245,20 +236,12 @@ ALL_CHECKS = (check_model, check_widget_sets, check_nodes, check_branches,
               check_labels, check_handles, check_grid)
 
 
-def check_consistency(h: Harness, known_issues=()):
-    """
-    Run every check; returns a list of human-readable problems.
-
-    known_issues: names of documented defects to tolerate, e.g.
-    (STALE_BRANCH_LABELS,). Default: tolerate nothing.
-    """
+def check_consistency(h: Harness):
+    """Run every check; returns a list of human-readable problems."""
     h.process_events()
     problems = []
     for check in ALL_CHECKS:
-        if check is check_labels:
-            problems.extend(check(h, known_issues))
-        else:
-            problems.extend(check(h))
+        problems.extend(check(h))
     return problems
 
 

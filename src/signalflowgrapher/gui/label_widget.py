@@ -1,3 +1,4 @@
+import math
 from importlib import resources
 from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import QFont, QFontDatabase, QCursor, QPalette
@@ -5,7 +6,7 @@ from PySide6.QtCore import Qt, QPoint, QPointF
 from signalflowgrapher.common.observable import ObjectObservable
 from signalflowgrapher.model.model import (
     PositionedNodeAddedEvent, PositionedNodeMovedEvent,
-    CurvedBranchTransformedEvent, LabeledObject,
+    CurvedBranchTransformedEvent, CurvedBranch, LabeledObject,
     LabelMovedEvent, LabelChangedTextEvent,
     GraphMovedEvent
 )
@@ -72,20 +73,27 @@ class LabelWidget(QLabel, ObjectObservable):
         return QPointF(self.x() + self.width() / 2,
                        self.y() + self.height() / 2)
     
-    def move_relative(self, dx, dy):
-        pos = self.pos()
-        self.move(QPoint(pos.x() + dx, pos.y() + dy))
+    def refresh(self, force: bool = False):
+        """
+        Derive the position from the owner widget and the label offset.
+        The owner widget has to be up to date: refresh it first.
+        """
+        self.__reposition()
 
     def graph_moved_event(self, event: GraphMovedEvent):
-        self.move_relative(event.dx, event.dy)
-    
+        self.refresh()
+
     def __reposition(self):
         """
         Reposition on parent widget based on own size and owner position.
         """
+        # floor (not int): a move of the owner by a whole number of pixels
+        # moves the label by exactly that number, also at negative positions
         center = self.__owner_widget.get_center()
-        p = QPoint(int(center.x() + self.__owner.label_dx - self.width() / 2),
-                   int(center.y() + self.__owner.label_dy - self.height() / 2))
+        p = QPoint(
+            math.floor(center.x() + self.__owner.label_dx - self.width() / 2),
+            math.floor(center.y() + self.__owner.label_dy
+                       - self.height() / 2))
         self.move(p)
 
     # Model events
@@ -100,9 +108,15 @@ class LabelWidget(QLabel, ObjectObservable):
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         """
         Triggered after node has moved.
-        Makes sure the position is updated accordingly if necessary.
+        Makes sure the position is updated accordingly if necessary. The
+        label of a branch is placed relative to the middle of the branch,
+        which moves when one of its end nodes moves.
         """
         if self.__owner is event.node:
+            self.__reposition()
+        elif isinstance(self.__owner, CurvedBranch) and (
+                self.__owner.start is event.node
+                or self.__owner.end is event.node):
             self.__reposition()
 
     def branch_transformed_event(self, event: CurvedBranchTransformedEvent):

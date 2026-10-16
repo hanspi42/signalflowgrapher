@@ -15,16 +15,14 @@ from signalflowgrapher.gui.geometry import rotate_pointF, rotate_point
 class BranchWidget(GraphItem):
     def __init__(self,
                  owner: CurvedBranch,
-                 spline1: QPoint,
-                 spline2: QPoint,
                  *args,
                  ** kwargs):
         super().__init__(*args, **kwargs)
         self.__owner = owner
-        self.__start = QPoint(int(owner.start.x), int(owner.start.y))
-        self.__end = QPoint(int(owner.end.x), int(owner.end.y))
-        self.__spline1 = spline1
-        self.__spline2 = spline2
+        (self.__start,
+         self.__end,
+         self.__spline1,
+         self.__spline2) = self.__model_points()
         self.__branch = QPainterPath()
         self.__pen_width = 3
         # The arrow has the form of a triangle
@@ -94,6 +92,9 @@ class BranchWidget(GraphItem):
         path_rel = QPainterPath(branch_abs)
         path_rel.translate(offset)
         self.__branch = path_rel
+        # Middle of the curve in widget coordinates; only changes with the
+        # shape, so it is computed here and not at every label refresh
+        self.__branch_middle = self.__get_bezier_middle(self.__branch)
 
         arrow_rel = QPainterPath(arrow_abs)
         arrow_rel.translate(offset)
@@ -115,59 +116,58 @@ class BranchWidget(GraphItem):
         self.setMask(region)
         self.update()
 
+    def __model_points(self):
+        """
+        The four points of the branch as the widget draws them: start,
+        end, spline1, spline2 in the coordinates of the parent widget.
+        """
+        owner = self.__owner
+        return (QPoint(int(owner.start.x), int(owner.start.y)),
+                QPoint(int(owner.end.x), int(owner.end.y)),
+                QPoint(int(owner.spline1_x), int(owner.spline1_y)),
+                QPoint(int(owner.spline2_x), int(owner.spline2_y)))
+
+    def refresh(self, force: bool = False):
+        """
+        Derive the geometry from the model: all four points are read, so
+        the result does not depend on which event triggered the refresh.
+
+        If the shape is unchanged and only moved (the whole graph was
+        panned) the widget is just moved, which is much cheaper than
+        rebuilding paths and masks and gives the identical result.
+        """
+        new_points = self.__model_points()
+        old_points = (self.__start, self.__end,
+                      self.__spline1, self.__spline2)
+        if not force and new_points == old_points:
+            return
+        delta = new_points[0] - old_points[0]
+        only_moved = all(new - old == delta
+                         for new, old in zip(new_points, old_points))
+        (self.__start,
+         self.__end,
+         self.__spline1,
+         self.__spline2) = new_points
+        if only_moved and not force:
+            self.move(self.pos() + delta)
+        else:
+            self.updateGeometry()
+
     def branch_transformed_event(self,
                                  event: CurvedBranchTransformedEvent):
         """
         Triggered after the splines of a branch have been moved.
-        Updates the geometry of the widget if necessary.
         """
         if self.__owner is event.branch:
-            update_geo = False
-            spline1_new = QPoint(int(event.branch.spline1_x),
-                                 int(event.branch.spline1_y))
-
-            spline2_new = QPoint(int(event.branch.spline2_x),
-                                 int(event.branch.spline2_y))
-
-            if not self.__spline1 == spline1_new:
-                self.__spline1 = spline1_new
-                update_geo = True
-
-            if not self.__spline2 == spline2_new:
-                self.__spline2 = spline2_new
-                update_geo = True
-
-            if update_geo:
-                self.updateGeometry()
+            self.refresh()
 
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         """
         Triggered after the node has been moved.
-        Updates the geometry of the widget if necessary.
         """
-        if self.__owner.start is event.node:
-            self.__start = QPoint(int(event.node.x),
-                                  int(event.node.y))
-            self.updateGeometry()
-        if self.__owner.end is event.node:
-            self.__end = QPoint(int(event.node.x),
-                                int(event.node.y))
-            self.updateGeometry()
-
-    def graph_moved_event(self, event: GraphMovedEvent):
-        """
-        Triggered after the whole graph has been moved.
-        Does not change the geometry but mvoes the widget.
-        """
-        self.__start = QPoint(int(self.__owner.start.x),
-                              int(self.__owner.start.y))
-        self.__end = QPoint(int(self.__owner.end.x),
-                            int(self.__owner.end.y))
-        self.__spline1 = QPoint(int(self.__owner.spline1_x),
-                                int(self.__owner.spline1_y))
-        self.__spline2 = QPoint(int(self.__owner.spline2_x),
-                                int(self.__owner.spline2_y))
-        super().graph_moved_event(event)
+        if self.__owner.start is event.node \
+                or self.__owner.end is event.node:
+            self.refresh()
 
     def get_handles(self):
         """
@@ -176,15 +176,11 @@ class BranchWidget(GraphItem):
         handle1 = Spline1HandleWidget(
             parent=self.parent(),
             branch=self.__owner,
-            node=self.__owner.start,
-            origin=self.__start,
-            spline=self.__spline1)
+            node=self.__owner.start)
         handle2 = Spline2HandleWidget(
             parent=self.parent(),
-            node=self.__owner.end,
             branch=self.__owner,
-            origin=self.__end,
-            spline=self.__spline2)
+            node=self.__owner.end)
         return [handle1, handle2]
 
     def paintEvent(self, QPaintEvent):
@@ -306,7 +302,7 @@ class BranchWidget(GraphItem):
         Get the point in the middle of the branch bezier curve
         """
         translate = self.mapToParent(QPoint())
-        return self.__get_bezier_middle(self.__branch) + translate
+        return self.__branch_middle + translate
 
     def __get_bezier_middle(self, bezier: QPainterPath) -> QPointF:
         """
@@ -382,14 +378,13 @@ class SplineHandleWidgetMoveEvent(WidgetEvent):
 class SplineHandleWidget(GraphItem):
     def __init__(self, *args,
                  branch: CurvedBranch, node: PositionedNode,
-                 origin: QPoint, spline: QPoint,
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.__branch = branch
         self.__node = node
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self._origin_abs = origin
-        self._spline_abs = spline
+        self._origin_abs = self._model_origin()
+        self._spline_abs = self._model_spline()
         self._origin_ = None
         self._spline_ = None
         self.__radius = 5
@@ -451,22 +446,32 @@ class SplineHandleWidget(GraphItem):
     def get_node(self):
         return self.__node
 
-    def set_origin(self, origin):
-        self._origin = origin
+    def _model_origin(self) -> QPoint:
+        """The node the handle belongs to, as the widget draws it."""
+        return QPoint(int(self.__node.x), int(self.__node.y))
+
+    def _model_spline(self) -> QPoint:
+        """The spline control point the handle controls."""
+        raise NotImplementedError
+
+    def refresh(self, force: bool = False):
+        """
+        Derive node and spline position from the model.
+        """
+        origin = self._model_origin()
+        spline = self._model_spline()
+        if force or origin != self._origin_abs or spline != self._spline_abs:
+            self._origin_abs = origin
+            self._spline_abs = spline
+            self.updateGeometry()
 
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         if self.get_node() is event.node:
-            new_origin = QPoint(int(event.node.x),
-                                int(event.node.y))
-            if not self._origin == new_origin:
-                self._origin_abs = new_origin
-                self.updateGeometry()
+            self.refresh()
 
-    def graph_moved_event(self, event: GraphMovedEvent):
-        self._origin_abs = QPoint(
-            int(self.__node.x),
-            int(self.__node.y))
-        super().graph_moved_event(event)
+    def branch_transformed_event(self, event: CurvedBranchTransformedEvent):
+        if self.get_branch() is event.branch:
+            self.refresh()
 
     def paintEvent(self, QPaintEvent):
         pen = QPen()
@@ -516,29 +521,9 @@ class Spline1HandleWidget(SplineHandleWidget):
     Spline handle widget for spline1 of branch widget.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def branch_transformed_event(self, event: CurvedBranchTransformedEvent):
-        """
-        Triggered after branch has been transformed.
-        Makes sure the spline positions is udpated accordingly.
-        """
-        if self.get_branch() is event.branch:
-            new_spline1 = QPoint(int(event.branch.spline1_x),
-                                 int(event.branch.spline1_y))
-            if not self._spline_abs == new_spline1:
-                self._spline_abs = new_spline1
-                self.updateGeometry()
-
-    def graph_moved_event(self, event: GraphMovedEvent):
-        """
-        Triggered after whole graph has moved.
-        Makes sure the absolute spline position is updated accordingly.
-        """
-        self._spline_abs = QPoint(int(self.get_branch().spline1_x),
-                                  int(self.get_branch().spline1_y))
-        super().graph_moved_event(event)
+    def _model_spline(self) -> QPoint:
+        branch = self.get_branch()
+        return QPoint(int(branch.spline1_x), int(branch.spline1_y))
 
 
 class Spline2HandleWidget(SplineHandleWidget):
@@ -546,26 +531,6 @@ class Spline2HandleWidget(SplineHandleWidget):
     Spline handle widget for spline2 of branch widget.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def branch_transformed_event(self, event: CurvedBranchTransformedEvent):
-        """
-        Triggered after branch has been transformed.
-        Makes sure the spline positions is udpated accordingly.
-        """
-        if self.get_branch() is event.branch:
-            new_spline2 = QPoint(int(event.branch.spline2_x),
-                                 int(event.branch.spline2_y))
-            if not self._spline_abs == new_spline2:
-                self._spline_abs = new_spline2
-                self.updateGeometry()
-
-    def graph_moved_event(self, event: GraphMovedEvent):
-        """
-        Triggered after whole graph has moved.
-        Makes sure the absolute spline position is updated accordingly.
-        """
-        self._spline_abs = QPoint(int(self.get_branch().spline2_x),
-                                  int(self.get_branch().spline2_y))
-        super().graph_moved_event(event)
+    def _model_spline(self) -> QPoint:
+        branch = self.get_branch()
+        return QPoint(int(branch.spline2_x), int(branch.spline2_y))

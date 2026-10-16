@@ -5,8 +5,8 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | Step | Title | Status |
 |---|---|---|
 | 0 | Safety net (tests, consistency checker, snapshots) | done, tested |
-| 1 | Fix inconsistencies and known bugs, new file version | done, ready for manual test |
-| 2 | Idempotent widget refresh | planned |
+| 1 | Fix inconsistencies and known bugs, new file version | done, tested |
+| 2 | Idempotent widget refresh | done, ready for manual test |
 | 3 | `ViewTransform` at identity | planned |
 | 4 | Pan becomes a view offset | planned |
 | 5 | Zoom (wheel and keyboard, everything scales with z) | planned |
@@ -55,6 +55,7 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 | `test_consistency_checker.py` | Fault injection: 15 deliberately broken states must each be detected ("tests for the tests"). |
 | `test_gui_operations.py` | Scenario tests with exact expectations (create, move, handles, labels, pan, center, copy/paste, delete, undo/redo, save/load). |
 | `test_gui_fuzz.py` | Seeded random operation sequences with a consistency check after every operation. `SFG_FUZZ_SEEDS` and `SFG_FUZZ_STEPS` scale it up for a soak run. |
+| `test_widget_refresh.py` | Step 2: refresh is idempotent, events carry no state, event order does not matter, a pan does not rebuild branch shapes. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
 | `test_io_roundtrip.py` | Load/save round trips, old files without `grid_pos`, schema behaviour. |
 | `render_snapshots.py` | Renders scenes to PNG and compares two directories pixel by pixel (for A/B checks before and after a step). |
@@ -67,7 +68,7 @@ export QT_QPA_PLATFORM=offscreen                 # set automatically by the harn
 python -m pytest signalflowgrapher/tests         # or: python -m unittest discover -s signalflowgrapher/tests -t .
 ```
 
-Expected result: everything passes, except the **expected failures** that still document known bugs (next section). At the end of step 0 there were 6 of them, after step 1 there are 2 (both K1). Two older tests in `tests/algorithms/test_graph_operations.py` (`TestEliminateNodeOperation.test_get_new_paths` and `test_get_self_loops`) were failing before V3.0 because they patched a module `signalflow_algorithms`, from which the algorithms had been moved into `signalflowgrapher/algorithms` without adapting the tests. Their patch targets were corrected in step 0.
+Expected result: everything passes. Known but unfixed defects are documented as tests named `test_known_bug_*` with `@expectedFailure`; at the end of step 0 there were 6 of them, after step 1 there were 2, after step 2 there are none. Two older tests in `tests/algorithms/test_graph_operations.py` (`TestEliminateNodeOperation.test_get_new_paths` and `test_get_self_loops`) were failing before V3.0 because they patched a module `signalflow_algorithms`, from which the algorithms had been moved into `signalflowgrapher/algorithms` without adapting the tests. Their patch targets were corrected in step 0.
 
 Pixel A/B check before and after a step:
 
@@ -86,10 +87,10 @@ Each is pinned by a test decorated with `@expectedFailure`. The step that fixes 
 
 | # | Issue | Test | Status |
 |---|---|---|---|
-| K1 | After "move node, undo, redo" (and in some multi-selection undo cases) the **branch label stays at the old position**: redo applies the branch transform before the node move, and branch labels only react to branch events. | `test_known_bug_redo_of_move_leaves_branch_label_stale`, `test_known_bug_random_operations_branch_labels`; the fuzz test tolerates it via `STALE_BRANCH_LABELS` in `consistency.py` | open, fix in step 2 (then remove the tolerance too) |
+| K1 | After "move node, undo, redo" (and in some multi-selection undo cases) the **branch label stays at the old position**: redo applies the branch transform before the node move, and branch labels only react to branch events. | `test_redo_of_move_updates_the_branch_label`, `test_sequences_that_used_to_leave_stale_branch_labels` | fixed in step 2 (the tolerance `STALE_BRANCH_LABELS` was removed from the checker) |
 | K2 | **Paste after a pan was off-grid**: paste snapped to a grid that ignored the pan offset. | `test_paste_after_pan_stays_on_the_panned_grid` | fixed in step 1b |
 | K3 | **Paste lost node label offsets** (pasted nodes got `(0, 30)`). | `test_paste_keeps_node_label_offset` | fixed in step 1b |
-| K4 | **Ctrl+click between two nodes at the same position** raised `ValueError: Unable to calculate angle` (and a second such branch would have looped forever). | `TestCoincidentNodes` | fixed in step 1e |
+| K4 | **Ctrl+click between two nodes at the same position** raised `ValueError: Unable to calculate angle` (and a second such branch would have looped forever). A second node cannot be created on an occupied point with the mouse (the widget under the pointer takes the double click), so this is only reachable by other means, for example dragging nodes onto each other; there is no manual check for it. | `TestCoincidentNodes` | fixed in step 1e |
 | K5 | **Invalid files raised `TypeError`** instead of `ValidationError` (`validate_json` created the exception without its message). | `test_invalid_file_raises_validation_error_with_message` | fixed in step 1c |
 | K6 | The TikZ export was **not byte-identical between runs** (nodes were numbered in set-iteration order). | `TestTikzExport` | fixed in step 1f |
 
@@ -111,7 +112,7 @@ Run once, so that "works" is agreed before anything changes. Use a fresh window.
 10. Drag the empty canvas: everything pans, the grid follows. Create a node afterwards: it is on the panned grid.
 11. Use "Center graph": the graph is centred in the window.
 12. Alt+drag a rectangle: the enclosed nodes and branches are selected.
-13. Undo and redo after each of 5, 8, 9. Note anything that looks wrong (known: a branch label may stay behind after redo of a node move, K1).
+13. Undo and redo after each of 5, 8, 9. Note anything that looks wrong (in V2.0 and up to step 1 a branch label could stay behind after redo of a node move, K1; fixed in step 2).
 14. Copy, paste (Ctrl+C / Ctrl+V) at a different mouse position, cut and paste.
 15. Delete a node with attached branches, pan, undo: everything returns at the panned position.
 16. Save, close, open the file: the graph and the grid phase are unchanged.
@@ -133,24 +134,56 @@ Separate small changes; the application behaves as before except for the fixed b
 
 *Manual checklist for step 1* (in addition to the checklist of step 0):
 
-1. Create two nodes on the same grid point (double-click twice at the same place), select one, Ctrl+click the other: a bent branch with its label below it appears. Repeat in both directions: the branches do not lie on top of each other, the program does not hang.
-2. Pan the canvas by an amount that is not a multiple of 30 pixels, then select some nodes, copy and paste: the pasted nodes lie on the grid lines that are visible on the canvas.
-3. Drag the label of a node away from its default place, copy the node, paste it: the pasted node's label has the same offset.
-4. Pan, save, open the file: grid lines and nodes are at the same place. Open the saved file in a text editor: `"version": "3.0"` and `"grid_pos"` are present.
-5. Open files from `resources/examples` (version 2.0) and a file without `grid_pos`: both load.
-6. Damage a file (for example write `"x": 1.5` for a node) and open it: the dialog "Error while opening file. See log for details" appears, the log names the reason, and the graph that was open stays unchanged.
-7. Pan with the mouse, Ctrl while dragging a node, "Center graph", "Toggle grid" (if available in your menu): the grid always stays aligned with the nodes.
-8. Export TikZ twice from the same graph: the two files are identical.
+1. Pan the canvas by an amount that is not a multiple of 30 pixels, then select some nodes, copy and paste: the pasted nodes lie on the grid lines that are visible on the canvas.
+2. Drag the label of a node away from its default place, copy the node, paste it: the pasted node's label has the same offset.
+3. Pan, save, open the file: grid lines and nodes are at the same place. Open the saved file in a text editor: `"version": "3.0"` and `"grid_pos"` are present.
+4. Open files from `resources/examples` (version 2.0) and a file without `grid_pos`: both load.
+5. Damage a file (for example write `"x": 1.5` for a node) and open it: the dialog "Error while opening file. See log for details" appears, the log names the reason, and the graph that was open stays unchanged.
+6. Pan with the mouse, Ctrl while dragging a node, "Center graph", "Toggle grid" (if available in your menu): the grid always stays aligned with the nodes.
+7. Export TikZ twice from the same graph: the two files are identical.
 
-### Step 2: Idempotent widget refresh (no zoom yet)
+### Step 2: Idempotent widget refresh (done)
 
-- A `refresh()` per widget that derives its geometry from the model, replacing delta synchronisation (`move_relative`): 2a nodes and labels, 2b branches with `QPointF` caches, 2c spline handles, 2d pan refreshes everything.
-- Fixes K1 by construction (labels are derived from the final state, not from event order). Remove `STALE_BRANCH_LABELS`.
-- *Tests:* consistency checker and fuzz tests without tolerance; golden files unchanged; PNG A/B identical to step 0.
+No zoom yet; the application looks and behaves as before, except that K1 is fixed. Widgets no longer follow the model by adding up the deltas of events. Every widget has `refresh(force=False)`, which derives its position and shape from the **current state of the model**.
+
+Rules (relied upon by steps 3 to 6):
+
+1. `refresh()` is idempotent: the result depends only on the model, never on which events arrived, how often, or in which order. The `dx`/`dy` of an event are not used by any widget (`move_relative` was removed from `GraphItem` and `LabelWidget`).
+2. `GraphField.refresh_widgets(force=False)` refreshes everything: nodes and branches, then handles, then labels (a label is placed relative to its owner widget, so owners come first). With `force=True` every widget is recomputed completely. A zoom change will be "refresh everything".
+3. Event handlers only decide *which* widgets are affected and call their `refresh()`: a node move refreshes the node widget, the attached branch widgets, the handles of the node and the labels of the node **and of the attached branches** (that last part is the fix of K1).
+4. `GraphMovedEvent` (pan) calls `refresh_widgets()`.
+
+What changed, per widget:
+
+| Widget | Before | Now |
+|---|---|---|
+| `NodeWidget` | moved by event deltas | `refresh()` places the centre on the node; also used when the widget is created |
+| `BranchWidget` | cached int points updated per event, `graph_moved_event` moved the widget | constructor reads the model; `refresh()` reads all four points (start, end, spline1, spline2). Unchanged shape that was only moved (pan) is moved, not rebuilt (same result, much cheaper); otherwise `updateGeometry()` |
+| Spline handles | origin and spline passed in at creation, updated per event | read from the model (`_model_origin()`, `_model_spline()`); `refresh()` rebuilds the geometry if either changed |
+| `LabelWidget` | moved by delta on pan, repositioned on some events | `refresh()` repositions from the owner widget; branch labels react to node moves; `math.floor` instead of `int` so that a move of the owner by whole pixels moves the label by exactly that, also at negative coordinates |
+| `BranchWidget.get_branch_middle` | path length recomputed at every call | middle point cached in `updateGeometry()` (otherwise every label refresh of a pan recomputed it: 45% slower pans) |
+
+Deviations from the original plan:
+
+- The branch widget caches **stay `QPoint`** (int-truncated). Switching to `QPointF` would change how fractional spline points are drawn and break the requirement that the output is pixel-identical to step 1. `QPointF` comes with step 3, when the transform makes fractions unavoidable.
+- The step description said "2d: pan refreshes everything"; this is rule 4.
+
+Checks done: all tests pass without any tolerance; the PNG renders of all 9 scenes are pixel-identical to step 1 (`render_snapshots compare`); the golden files are unchanged; 150 fuzz seeds of 100 steps (with undo, redo, delete, paste, handles) are clean; a pan step on a graph with 168 nodes and 216 branches takes the same time as before (about 47 ms in the offscreen test), a node move step as well.
+
+*Manual checklist for step 2* (in addition to the earlier checklists):
+
+1. Create two nodes with a branch, drag the branch label away, drag a node, press undo, then redo: the branch label moves with the branch at every step (this was K1).
+2. Repeat 1 with several nodes selected, and with a node that has two branches.
+3. Undo and redo a label drag, a spline handle drag, a paste, a delete: everything returns to where it was.
+4. Select a branch (handles visible) and drag one of its nodes: the handle follows; then pan: handles, branch, labels and nodes move together.
+5. Pan far to the left/top (until the graph is outside the window) and back: nothing has shifted relative to the rest (compare the label positions).
+6. Open the largest example (`SC_analysis__schmid18/fig_12.sfg`) and pan and drag nodes: it should feel as fast as in step 1.
+7. Look at all examples: they look exactly as before.
 
 ### Step 3: `ViewTransform` at identity (z = 1, offset = 0)
 
 - New class `ViewTransform` in the GUI layer with `to_screen`, `to_world`, `scale_delta`, change signal.
+- The caches of `BranchWidget` and the spline handles become `QPointF` (kept as `QPoint` in step 2 to stay pixel-identical).
 - Route widget placement and all input conversions through it: double click, drags (nodes, labels, handles), paste, `center_graph`, grid snapping in world units, grid drawing.
 - *Tests:* identical to step 2 (PNG A/B and golden). Unit tests of the transform at other values of z. The consistency checker is adapted once to go through the transform.
 

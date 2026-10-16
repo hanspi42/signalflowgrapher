@@ -34,7 +34,8 @@ class TestConsistencyChecker(TestCase):
         self.assertEqual([], check_consistency(self.h))
 
     def test_detects_stale_node_widget(self):
-        self.h.widget_of(self.a).move_relative(3, 0)
+        w = self.h.widget_of(self.a)
+        w.move(w.pos() + QPoint(3, 0))
         self.assert_problem("widget centre")
 
     def test_detects_model_change_without_event(self):
@@ -48,7 +49,7 @@ class TestConsistencyChecker(TestCase):
 
     def test_detects_stale_branch_geometry(self):
         w = self.h.widget_of(self.br)
-        w.move_relative(0, 40)
+        w.move(w.pos() + QPoint(0, 40))
         self.assert_problem("mid point")
 
     def test_detects_stale_label(self):
@@ -64,7 +65,7 @@ class TestConsistencyChecker(TestCase):
     def test_detects_stale_handle(self):
         handles = self.h.select_branch(self.br)
         self.assertEqual(2, len(handles))
-        handles[0].move_relative(7, 7)
+        handles[0].move(handles[0].pos() + QPoint(7, 7))
         # handle geometry itself is derived; break the cached spline
         handles[0]._spline_abs = handles[0]._spline_abs + QPoint(4, 0)
         self.assert_problem("handle spline")

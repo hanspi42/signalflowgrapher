@@ -7,16 +7,16 @@ with the model (see consistency.py). These tests pin down the behaviour of
 the application *before* the V3.0 refactoring and must keep passing after
 every step of the plan (DEVDOCU.md).
 
-Tests named test_known_bug_* document defects that exist today and are
-decorated with @expectedFailure. The step of the plan that fixes a defect
-must remove the decorator (an unexpected success is reported as a failure,
-so the decorator cannot be forgotten).
+Defects that are known but not yet fixed are documented as tests named
+test_known_bug_* decorated with @expectedFailure (an unexpected success is
+reported as a failure, so the decorator cannot be forgotten when the defect
+is fixed). Currently there are none.
 """
 import math
 import os
 import tempfile
 import signal
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 from PySide6.QtCore import QPoint, Qt
 
@@ -194,13 +194,12 @@ class TestMove(GuiTestCase):
         self.assertEqual(before, coords(self.h))
         self.ok("undo of a multi-step drag")
 
-    @expectedFailure
-    def test_known_bug_redo_of_move_leaves_branch_label_stale(self):
+    def test_redo_of_move_updates_the_branch_label(self):
         """
-        move node -> undo -> redo: the branch label stays at the old place.
-        Cause: redo applies the branch transform before the node move and
-        branch labels do not react to node events. Fix: step 2 (idempotent
-        widget refresh) or earlier in step 1.
+        move node -> undo -> redo used to leave the branch label at the old
+        place (K1): redo applies the branch transform before the node move
+        and branch labels did not react to node events. Widgets now derive
+        their position from the model, whatever the order of the events.
         """
         a, b, br = self.make_two_nodes_and_branch()
         self.h.drag_node(b, 60, 30)

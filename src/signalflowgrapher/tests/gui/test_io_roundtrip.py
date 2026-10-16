@@ -6,7 +6,7 @@ import copy
 import json
 import os
 import tempfile
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 import jsonschema
 

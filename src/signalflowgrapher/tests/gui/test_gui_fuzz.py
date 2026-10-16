@@ -12,27 +12,25 @@ For a long soak run before a release:  SFG_FUZZ_SEEDS=300 SFG_FUZZ_STEPS=150
 """
 import os
 import random
-from unittest import TestCase, expectedFailure
+from unittest import TestCase
 
 from PySide6.QtCore import Qt
 
 from signalflowgrapher.tests.gui.harness import Harness
-from signalflowgrapher.tests.gui.consistency import (
-    check_consistency, STALE_BRANCH_LABELS)
+from signalflowgrapher.tests.gui.consistency import check_consistency
 
 SEEDS = int(os.environ.get("SFG_FUZZ_SEEDS", "6"))
 STEPS = int(os.environ.get("SFG_FUZZ_STEPS", "80"))
-# Seeds that expose the stale-branch-label defect (undo/redo of node moves
-# leaves branch labels at the old position; see
-# test_gui_operations.test_known_bug_redo_of_move_leaves_branch_label_stale)
-STALE_LABEL_SEEDS = (9, 11)
+# Seeds that used to expose the stale-branch-label defect (undo/redo of node
+# moves left branch labels at the old position, K1, fixed in step 2)
+FORMER_STALE_LABEL_SEEDS = (9, 11)
 
 
 def _key(model_obj):
     return model_obj.id.int
 
 
-def run_sequence(seed, steps, allow_redo, known_issues=()):
+def run_sequence(seed, steps, allow_redo):
     """
     Returns (ops, problems) of the first failing step, or (ops, []) if the
     whole sequence stayed consistent.
@@ -102,7 +100,7 @@ def run_sequence(seed, steps, allow_redo, known_issues=()):
                 h.redo()
             ops_done.append(op)
 
-            problems = check_consistency(h, known_issues)
+            problems = check_consistency(h)
             if problems:
                 return ops_done, problems
         return ops_done, []
@@ -111,24 +109,19 @@ def run_sequence(seed, steps, allow_redo, known_issues=()):
 
 
 class TestFuzz(TestCase):
-    def assert_sequences_clean(self, seeds, allow_redo, known_issues=()):
+    def assert_sequences_clean(self, seeds, allow_redo=True):
         for seed in seeds:
-            ops, problems = run_sequence(seed, STEPS, allow_redo,
-                                         known_issues)
+            ops, problems = run_sequence(seed, STEPS, allow_redo)
             self.assertEqual(
                 [], problems,
                 "seed %d failed at step %d (ops: ...%s)\n  %s"
                 % (seed, len(ops), ops[-5:], "\n  ".join(problems[:5])))
 
     def test_random_operations_stay_consistent(self):
-        """Strict, except for the one documented branch-label defect."""
-        self.assert_sequences_clean(range(SEEDS), allow_redo=True,
-                                    known_issues=(STALE_BRANCH_LABELS,))
+        self.assert_sequences_clean(range(SEEDS))
 
-    @expectedFailure
-    def test_known_bug_random_operations_branch_labels(self):
-        """Same sequences without tolerance: stale branch labels."""
-        self.assert_sequences_clean(STALE_LABEL_SEEDS, allow_redo=True)
+    def test_sequences_that_used_to_leave_stale_branch_labels(self):
+        self.assert_sequences_clean(FORMER_STALE_LABEL_SEEDS)
 
     def test_undo_everything_returns_to_empty_graph(self):
         for seed in range(min(SEEDS, 4)):

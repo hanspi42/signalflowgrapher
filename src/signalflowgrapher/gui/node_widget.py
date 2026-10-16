@@ -1,6 +1,6 @@
 from PySide6.QtGui import QPainter, QPen, QRegion
 from PySide6.QtWidgets import QSizePolicy
-from PySide6.QtCore import Qt, QPointF, QRect
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect
 from signalflowgrapher.gui.graph_item import GraphItem
 from signalflowgrapher.model.model import (
     PositionedNode, PositionedNodeMovedEvent)
@@ -50,13 +50,19 @@ class NodeWidget(GraphItem):
 
         painter.end()
 
+    def refresh(self, force: bool = False):
+        """
+        Place the widget so that its centre is on the node.
+        """
+        self.move(QPoint(int(self.__owner.x - self.width() / 2),
+                         int(self.__owner.y - self.height() / 2)))
+
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         """
         Triggered after node has been moved.
-        Reacts to node move with move of widget.
         """
         if self.__owner is event.node:
-            self.move_relative(event.dx, event.dy)
+            self.refresh()
 
     def get_center(self) -> QPointF:
         """
