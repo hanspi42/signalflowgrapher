@@ -351,7 +351,7 @@ class SplineHandleWidgetPressEvent(WidgetClickEvent):
     """
 
     def __init__(self, widget, mouse_event, *args, **kwargs):
-        super().__init__(widget, mouse_event.globalPos(), mouse_event,
+        super().__init__(widget, mouse_event.globalPosition().toPoint(), mouse_event,
                          *args, **kwargs)
 
 
@@ -499,7 +499,7 @@ class SplineHandleWidget(GraphItem):
         # Move is only triggered with left mouse button pressed
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-            global_position = event.globalPos()
+            global_position = event.globalPosition().toPoint()
             diff = global_position - self._mouse_move_pos
 
             self._notify(

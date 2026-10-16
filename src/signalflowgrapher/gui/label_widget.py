@@ -16,7 +16,9 @@ from signalflowgrapher.gui.graph_item import (
 )
 
 # Load font using importlib.resources
-with resources.path("signalflowgrapher.resources", "HeptaSlab-Regular.ttf") as font_path:
+with resources.as_file(
+        resources.files("signalflowgrapher.resources")
+        .joinpath("HeptaSlab-Regular.ttf")) as font_path:
     roman_font = str(font_path)
 
 
@@ -41,8 +43,7 @@ class LabelWidget(QLabel, ObjectObservable):
         self.__owner = owner
         self.__owner_widget = owner_widget
 
-        font_database = QFontDatabase()
-        font_id = font_database.addApplicationFont(roman_font)
+        font_id = QFontDatabase.addApplicationFont(roman_font)
         if (font_id == -1):
             raise IOError("Font could not be loaded")
         font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
@@ -147,7 +148,7 @@ class LabelWidget(QLabel, ObjectObservable):
 
     # Mouse handling (was in GraphItem)
     def mousePressEvent(self, event, notify=True):
-        self._mouse_press_pos = event.globalPos()
+        self._mouse_press_pos = event.globalPosition().toPoint()
         self._mouse_move_pos = self._mouse_press_pos
 
         if notify:
@@ -156,7 +157,7 @@ class LabelWidget(QLabel, ObjectObservable):
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-            global_pos = event.globalPos()
+            global_pos = event.globalPosition().toPoint()
             diff = global_pos - self._mouse_move_pos
 
             self._notify(

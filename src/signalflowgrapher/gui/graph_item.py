@@ -53,7 +53,7 @@ class GraphItem(QWidget, ObjectObservable):
         self.refresh()
 
     def mousePressEvent(self, event, notify=True):
-        self._mouse_press_pos = event.globalPos()
+        self._mouse_press_pos = event.globalPosition().toPoint()
         self._mouse_move_pos = self._mouse_press_pos
 
         if notify:
@@ -64,7 +64,7 @@ class GraphItem(QWidget, ObjectObservable):
         # Move is only triggered with left mouse button pressed
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-            global_position = event.globalPos()
+            global_position = event.globalPosition().toPoint()
             diff = global_position - self._mouse_move_pos
 
             self._notify(
@@ -102,7 +102,7 @@ class WidgetClickEvent(WidgetEvent):
 class WidgetPressEvent(WidgetClickEvent):
     def __init__(self, widget: GraphItem, mouse_event: QMouseEvent,
                  *args, **kwargs):
-        super().__init__(widget, mouse_event.globalPos(), mouse_event,
+        super().__init__(widget, mouse_event.globalPosition().toPoint(), mouse_event,
                          *args, **kwargs)
 
 

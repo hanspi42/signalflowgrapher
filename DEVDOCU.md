@@ -6,7 +6,8 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 |---|---|---|
 | 0 | Safety net (tests, consistency checker, snapshots) | done, tested |
 | 1 | Fix inconsistencies and known bugs, new file version | done, tested |
-| 2 | Idempotent widget refresh | done, ready for manual test |
+| 2 | Idempotent widget refresh | done, tested |
+| 2b | Remove deprecated Qt and library calls | done, ready for manual test |
 | 3 | `ViewTransform` at identity | planned |
 | 4 | Pan becomes a view offset | planned |
 | 5 | Zoom (wheel and keyboard, everything scales with z) | planned |
@@ -55,6 +56,7 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 | `test_consistency_checker.py` | Fault injection: 15 deliberately broken states must each be detected ("tests for the tests"). |
 | `test_gui_operations.py` | Scenario tests with exact expectations (create, move, handles, labels, pan, center, copy/paste, delete, undo/redo, save/load). |
 | `test_gui_fuzz.py` | Seeded random operation sequences with a consistency check after every operation. `SFG_FUZZ_SEEDS` and `SFG_FUZZ_STEPS` scale it up for a soak run. |
+| `test_deprecations.py`, `deprecation_scenario.py` | Runs a broad scenario in a fresh process and fails if the application's own modules issue a `DeprecationWarning` (also at import time). |
 | `test_widget_refresh.py` | Step 2: refresh is idempotent, events carry no state, event order does not matter, a pan does not rebuild branch shapes. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
 | `test_io_roundtrip.py` | Load/save round trips, old files without `grid_pos`, schema behaviour. |
@@ -179,6 +181,22 @@ Checks done: all tests pass without any tolerance; the PNG renders of all 9 scen
 5. Pan far to the left/top (until the graph is outside the window) and back: nothing has shifted relative to the rest (compare the label positions).
 6. Open the largest example (`SC_analysis__schmid18/fig_12.sfg`) and pan and drag nodes: it should feel as fast as in step 1.
 7. Look at all examples: they look exactly as before.
+
+### Step 2b: Remove deprecated Qt and library calls (done)
+
+The test runs produced hundreds of `DeprecationWarning`s from the application code. They are removed, so that real problems are not hidden in the noise and the program keeps working with future PySide6 versions. No change of behaviour.
+
+| Where | Before | Now |
+|---|---|---|
+| `graph_item.py`, `branch_widget.py`, `label_widget.py` (7 places) | `event.globalPos()` | `event.globalPosition().toPoint()` (this is what `globalPos()` returned internally, so the positions are identical) |
+| `label_widget.py` | `QFontDatabase()` instance to call `addApplicationFont` | the static call `QFontDatabase.addApplicationFont(...)` |
+| `label_widget.py` | `importlib.resources.path(...)` | `resources.as_file(resources.files(...).joinpath(...))` (Python 3.9 and later; the project requires 3.10) |
+
+Not changed: `tools/register.py` and `tools/deregister.py` also use `importlib.resources.path`. They change the operating system's file associations, are not covered by any test, and issue no warning in the test runs; they should be migrated when they can be tested on each operating system.
+
+`test_deprecations.py` keeps it that way: it fails if any `DeprecationWarning` comes from a file of the application. Checked: the test fails on the step 2 code (77 warnings) and passes now; the renders of all 9 scenes are still pixel-identical to step 1; pytest and unittest report 0 warnings.
+
+*Manual checklist for step 2b:* nothing new to look at in the window. Start the program from a terminal with `python -W default -m signalflowgrapher` (or your usual command with `-W default`), use it for a minute (create, drag, pan, labels, handles, open an example) and check that no `DeprecationWarning` appears in the terminal.
 
 ### Step 3: `ViewTransform` at identity (z = 1, offset = 0)
 
