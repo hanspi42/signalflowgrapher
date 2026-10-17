@@ -4,18 +4,19 @@ Consistency checker: compares everything the GUI shows with the model.
 Written for the V3.0 refactoring (DEVDOCU.md, step 0). It encodes the
 invariants that hold *today* between model coordinates and widget state:
 
-  * node widget centre == node (x, y)
-  * branch widget caches == int() of the model's end points / splines
-  * branch widget mid point == Bezier mid point of the model's curve
-  * label widget centre == owner centre + (label_dx, label_dy)
+  * node widget centre == the node's world position mapped to the screen
+  * branch widget caches == the branch's points mapped to the screen
+  * branch widget mid point == Bezier mid point of the curve on the screen
+  * label widget centre == owner centre + label offset * zoom
   * visible spline handles == model splines (knob mirrored about the node)
-  * grid offset state agrees everywhere (model, GraphField, grid widgets)
+  * grid offset state agrees everywhere (model, grid widgets)
   * every model object has exactly one widget and one label widget
   * the model graph itself is topologically consistent
 
-After the refactoring (steps 2-5) the checker is adapted *once* to go
-through the ViewTransform (screen = z * world + t); the identity case
-(z = 1, t = 0) must keep passing with the checker as it is today.
+"mapped to the screen" is `harness.view.to_screen_point` (screen = zoom *
+world + offset, rounded down to a pixel), so the checker is valid for every
+zoom and offset. At zoom 1 and offset (0, 0) it checks the situation of
+V2.0.
 
 Usage:
     problems = check_consistency(harness)
@@ -31,26 +32,35 @@ LABEL_TOLERANCE = 1.5   # label widgets are placed with int() truncation
 MIDPOINT_TOLERANCE = 1.0
 
 
-def _pt(p) -> QPoint:
-    return QPoint(int(p.x()), int(p.y()))
-
-
 def _close(a, b, tol):
     return abs(a.x() - b.x()) <= tol and abs(a.y() - b.y()) <= tol
 
 
-def expected_branch_path(branch) -> QPainterPath:
-    """Absolute Bezier path of a model branch, as the widget builds it."""
+def screen_point(h: Harness, x, y) -> QPoint:
+    """Screen pixel of a model position, through the view transform."""
+    return h.view.to_screen_point(QPointF(x, y))
+
+
+def expected_branch_points(h: Harness, branch):
+    return {
+        "start": screen_point(h, branch.start.x, branch.start.y),
+        "end": screen_point(h, branch.end.x, branch.end.y),
+        "spline1": screen_point(h, branch.spline1_x, branch.spline1_y),
+        "spline2": screen_point(h, branch.spline2_x, branch.spline2_y),
+    }
+
+
+def expected_branch_path(h: Harness, branch) -> QPainterPath:
+    """Bezier path of a model branch on the screen, as the widget builds it."""
+    p = expected_branch_points(h, branch)
     path = QPainterPath()
-    path.moveTo(QPoint(int(branch.start.x), int(branch.start.y)))
-    path.cubicTo(QPoint(int(branch.spline1_x), int(branch.spline1_y)),
-                 QPoint(int(branch.spline2_x), int(branch.spline2_y)),
-                 QPoint(int(branch.end.x), int(branch.end.y)))
+    path.moveTo(p["start"])
+    path.cubicTo(p["spline1"], p["spline2"], p["end"])
     return path
 
 
-def expected_branch_middle(branch) -> QPointF:
-    path = expected_branch_path(branch)
+def expected_branch_middle(h: Harness, branch) -> QPointF:
+    path = expected_branch_path(h, branch)
     return path.pointAtPercent(path.percentAtLength(path.length() / 2))
 
 
@@ -109,8 +119,12 @@ def check_nodes(h: Harness):
         if not isinstance(node.x, int) or not isinstance(node.y, int):
             problems.append("node %s has non-integer coordinates (%r, %r)"
                             % (node.id.hex, node.x, node.y))
+        if not isinstance(node.label_dx, int) \
+                or not isinstance(node.label_dy, int):
+            problems.append("node %s has a non-integer label offset (%r, %r)"
+                            % (node.id.hex, node.label_dx, node.label_dy))
         c = w.get_center()
-        if not _close(c, QPoint(int(node.x), int(node.y)), 0):
+        if not _close(c, screen_point(h, node.x, node.y), 0):
             problems.append("node %s: widget centre (%s, %s) != model "
                             "(%s, %s)" % (node.id.hex, c.x(), c.y(),
                                           node.x, node.y))
@@ -127,12 +141,7 @@ def check_branches(h: Harness):
         if w is None:
             continue
         cls = "BranchWidget"
-        cached = {
-            "start": QPoint(int(branch.start.x), int(branch.start.y)),
-            "end": QPoint(int(branch.end.x), int(branch.end.y)),
-            "spline1": QPoint(int(branch.spline1_x), int(branch.spline1_y)),
-            "spline2": QPoint(int(branch.spline2_x), int(branch.spline2_y)),
-        }
+        cached = expected_branch_points(h, branch)
         for name, expected in cached.items():
             actual = _private(w, cls, name)
             if actual != expected:
@@ -141,7 +150,7 @@ def check_branches(h: Harness):
                                               actual.x(), actual.y(),
                                               expected.x(), expected.y()))
         mid = w.get_center()
-        exp_mid = expected_branch_middle(branch)
+        exp_mid = expected_branch_middle(h, branch)
         if not _close(mid, exp_mid, MIDPOINT_TOLERANCE):
             problems.append("branch %s: widget mid point (%.1f, %.1f) != "
                             "Bezier mid point of model (%.1f, %.1f)"
@@ -165,7 +174,9 @@ def check_labels(h: Harness):
             continue
         c = owner_widget.get_center()
         centre = QPointF(lw.x() + lw.width() / 2, lw.y() + lw.height() / 2)
-        expected = QPointF(c.x() + obj.label_dx, c.y() + obj.label_dy)
+        zoom = h.view.zoom
+        expected = QPointF(c.x() + obj.label_dx * zoom,
+                           c.y() + obj.label_dy * zoom)
         if not _close(centre, expected, LABEL_TOLERANCE):
             problems.append("label of %s: centre (%.1f, %.1f) != owner "
                             "centre + offset (%.1f, %.1f)"
@@ -182,8 +193,8 @@ def check_handles(h: Harness):
             node, spline = branch.start, (branch.spline1_x, branch.spline1_y)
         else:
             node, spline = branch.end, (branch.spline2_x, branch.spline2_y)
-        origin = QPoint(int(node.x), int(node.y))
-        spl = QPoint(int(spline[0]), int(spline[1]))
+        origin = screen_point(h, node.x, node.y)
+        spl = screen_point(h, spline[0], spline[1])
         if hw._origin_abs != origin:
             problems.append("handle origin (%s, %s) != node (%s, %s)"
                             % (hw._origin_abs.x(), hw._origin_abs.y(),

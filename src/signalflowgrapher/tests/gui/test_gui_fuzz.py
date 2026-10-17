@@ -21,6 +21,9 @@ from signalflowgrapher.tests.gui.consistency import check_consistency
 
 SEEDS = int(os.environ.get("SFG_FUZZ_SEEDS", "6"))
 STEPS = int(os.environ.get("SFG_FUZZ_STEPS", "80"))
+# zoom factors used by the sequences with a random view (the plan allows
+# 10% to 100%; 2.0 is included because the transform supports it)
+ZOOMS = (0.1, 0.25, 0.3, 0.5, 0.75, 1.0, 1.0, 2.0)
 # Seeds that used to expose the stale-branch-label defect (undo/redo of node
 # moves left branch labels at the old position, K1, fixed in step 2)
 FORMER_STALE_LABEL_SEEDS = (9, 11)
@@ -30,7 +33,7 @@ def _key(model_obj):
     return model_obj.id.int
 
 
-def run_sequence(seed, steps, allow_redo):
+def run_sequence(seed, steps, allow_redo, random_views=False):
     """
     Returns (ops, problems) of the first failing step, or (ops, []) if the
     whole sequence stayed consistent.
@@ -38,7 +41,14 @@ def run_sequence(seed, steps, allow_redo):
     rnd = random.Random(seed)
     h = Harness()
     ops_done = []
+
+    def change_view():
+        h.set_view(rnd.choice(ZOOMS),
+                   (rnd.randint(-150, 150), rnd.randint(-150, 150)))
+
     try:
+        if random_views:
+            change_view()
         for step in range(steps):
             nodes = sorted(h.nodes, key=_key)
             branches = sorted(h.branches, key=_key)
@@ -46,6 +56,8 @@ def run_sequence(seed, steps, allow_redo):
             choices = ["node", "node", "undo", "pan"]
             if allow_redo:
                 choices.append("redo")
+            if random_views:
+                choices += ["view", "view"]
             if nodes:
                 choices += ["move", "move", "label", "center", "copy",
                             "loop", "delete"]
@@ -94,6 +106,8 @@ def run_sequence(seed, steps, allow_redo):
                 if handles:
                     h.drag_handle(rnd.choice(handles), rnd.randint(-80, 80),
                                   rnd.randint(-80, 80))
+            elif op == "view":
+                change_view()
             elif op == "undo":
                 h.undo()
             elif op == "redo":
@@ -119,6 +133,22 @@ class TestFuzz(TestCase):
 
     def test_random_operations_stay_consistent(self):
         self.assert_sequences_clean(range(SEEDS))
+
+    def test_random_operations_with_random_zoom_and_offset(self):
+        """
+        The same operations, but the view (zoom and offset) is random and
+        changes during the sequence. Everything must stay consistent with
+        the model through the transform, and the model must stay valid
+        (integer node coordinates).
+        """
+        for seed in range(SEEDS):
+            ops, problems = run_sequence(5000 + seed, STEPS, True,
+                                         random_views=True)
+            self.assertEqual(
+                [], problems,
+                "seed %d failed at step %d (ops: ...%s)\n  %s"
+                % (5000 + seed, len(ops), ops[-5:],
+                   "\n  ".join(problems[:5])))
 
     def test_sequences_that_used_to_leave_stale_branch_labels(self):
         self.assert_sequences_clean(FORMER_STALE_LABEL_SEEDS)

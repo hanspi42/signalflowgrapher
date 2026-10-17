@@ -8,7 +8,7 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | 1 | Fix inconsistencies and known bugs, new file version | done, tested |
 | 2 | Idempotent widget refresh | done, tested |
 | 2b | Remove deprecated Qt and library calls | done, ready for manual test |
-| 3 | `ViewTransform` at identity | planned |
+| 3 | `ViewTransform` at identity | done, ready for manual test |
 | 4 | Pan becomes a view offset | planned |
 | 5 | Zoom (wheel and keyboard, everything scales with z) | planned |
 | 6 | Mini map | planned |
@@ -52,11 +52,12 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 | File | Purpose |
 |---|---|
 | `harness.py` | Real `GraphField`, `Model`, controllers and `CommandHandler` in an offscreen window, driven with synthetic mouse events (double click, drag, pan, Ctrl+click, copy/paste, delete, undo/redo, save/load). Uses deterministic ids. |
-| `consistency.py` | Compares every widget with the model: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, graph topology. |
-| `test_consistency_checker.py` | Fault injection: 15 deliberately broken states must each be detected ("tests for the tests"). |
+| `consistency.py` | Compares every widget with the model through the view transform: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, integer node coordinates and label offsets, graph topology. |
+| `test_consistency_checker.py` | Fault injection: 16 deliberately broken states must each be detected ("tests for the tests"). |
 | `test_gui_operations.py` | Scenario tests with exact expectations (create, move, handles, labels, pan, center, copy/paste, delete, undo/redo, save/load). |
 | `test_gui_fuzz.py` | Seeded random operation sequences with a consistency check after every operation. `SFG_FUZZ_SEEDS` and `SFG_FUZZ_STEPS` scale it up for a soak run. |
 | `test_deprecations.py`, `deprecation_scenario.py` | Runs a broad scenario in a fresh process and fails if the application's own modules issue a `DeprecationWarning` (also at import time). |
+| `test_view_transform.py` | Step 3: the `ViewTransform` class, and every conversion between world and screen coordinates with real zoom and offset values (widgets, mouse input, grid snapping and drawing, paste, pan, center). |
 | `test_widget_refresh.py` | Step 2: refresh is idempotent, events carry no state, event order does not matter, a pan does not rebuild branch shapes. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
 | `test_io_roundtrip.py` | Load/save round trips, old files without `grid_pos`, schema behaviour. |
@@ -198,12 +199,37 @@ Not changed: `tools/register.py` and `tools/deregister.py` also use `importlib.r
 
 *Manual checklist for step 2b:* nothing new to look at in the window. Start the program from a terminal with `python -W default -m signalflowgrapher` (or your usual command with `-W default`), use it for a minute (create, drag, pan, labels, handles, open an example) and check that no `DeprecationWarning` appears in the terminal.
 
-### Step 3: `ViewTransform` at identity (z = 1, offset = 0)
+### Step 3: `ViewTransform` at identity (done)
 
-- New class `ViewTransform` in the GUI layer with `to_screen`, `to_world`, `scale_delta`, change signal.
-- The caches of `BranchWidget` and the spline handles become `QPointF` (kept as `QPoint` in step 2 to stay pixel-identical).
-- Route widget placement and all input conversions through it: double click, drags (nodes, labels, handles), paste, `center_graph`, grid snapping in world units, grid drawing.
-- *Tests:* identical to step 2 (PNG A/B and golden). Unit tests of the transform at other values of z. The consistency checker is adapted once to go through the transform.
+The application still runs at zoom 1 and offset (0, 0), so it looks and behaves as before (pixel-identical renders, same timing). What changed is that no place assumes any more that model coordinates and screen pixels are the same thing.
+
+**Two coordinate systems.**
+
+- *World* coordinates are the coordinates of the model: node positions, spline points, label offsets. They are what files, the clipboard, the TikZ export and the undo stack contain. World coordinates never depend on the view.
+- *Screen* coordinates are pixels of the `GraphField` widget: where widgets are placed and where mouse events happen.
+- `ViewTransform` (`gui/view_transform.py`, owned by `GraphField`, available as `graph_field.view`) maps between them: `screen = zoom * world + offset`. It has `to_screen`, `to_world` (exact), `to_screen_point` (whole pixel), `to_world_delta`, `to_screen_delta`, `set(zoom, offset)`, `reset()` and the Qt signal `changed`. `GraphField` reacts to `changed` with `refresh_widgets(force=True)` and a repaint of the grid, so changing the view is "refresh everything" (step 2).
+
+**Rules** (steps 4 to 6 build on them):
+
+1. Widgets are placed from the model through the transform, never from other widgets' positions. All widgets use the one rule `ViewTransform.to_screen_point` (round down to a pixel), so a branch ends exactly at the node it belongs to. It rounds down instead of truncating towards zero as V2.0 did; this differs only for fractional negative coordinates (a spline at y = -110.5 is drawn at -111 instead of -110, off screen), and makes a move by whole pixels an exact translation.
+2. Mouse input is converted at the boundary and nothing else in the program sees screen distances: double click and paste use `to_world`, drags use `to_world_delta` (`GraphField.__relative_grid_move`), pan uses `GraphField.__pan_graph`. The rubber band stays in screen space (it compares with widget geometry).
+3. `Grid` works purely in world units: `relative_move(dx, dy, center)` takes the distance in world units and the world position of the dragged widget. Each draggable widget provides `get_world_center()` (node: exact model position; label: converted from its screen position; handle: mirrored spline point from the model). Moves are applied in whole world units; with a zoom a screen pixel is more than one unit, so the fraction is carried to the next mouse move (`Grid` deviation, now also for `NoneGrid` when Ctrl is held). Node coordinates and node label offsets therefore stay integers at every zoom, as the file format requires.
+4. Label offsets are in world units and scale with the zoom (`to_screen_delta`).
+5. The grid is drawn where the view maps the world grid lines: spacing `30 * zoom`, phase from the pan and the view offset.
+6. What does **not** scale yet: sizes of glyphs (node circle, line widths, arrows, handle size, label font). That is step 5.
+
+**Pan** is still a change of the model (step 4 changes that). It is converted with `to_world_delta`; the part of a pan that is less than a world unit is carried to the next mouse move (`__pan_residual_*`) and dropped at the next press. This code is transitional.
+
+Deviation from the original plan: the caches of `BranchWidget` and the spline handles stay `QPoint` (now screen pixels from `to_screen_point`), not `QPointF`. With the pixel rule above, branch ends coincide with node widgets and the output at zoom 1 stays pixel-identical; `QPointF` is only worth it if sub-pixel curves are wanted at low zoom, to be decided at the review of step 5.
+
+Checks done:
+
+- All tests pass at identity with the checker adapted once to go through the transform; renders of all 9 scenes are pixel-identical to step 1; golden files unchanged; timing unchanged (pan step 45 to 50 ms on a graph with 168 nodes and 216 branches, as before).
+- `test_view_transform.py` exercises 8 views (zoom 0.1 to 2, with and without offset): widgets follow the view, the model and the undo stack do not change with the view, the saved file does not depend on the view, double click, node/label/handle drags (grid and Ctrl), paste, pan and center produce the right world distances, node label offsets stay integers, the grid lines are drawn at the expected pixels (checked in the rendered picture).
+- Mutation check: 14 deliberate breaks of single conversions (for example "drag distance not divided by the zoom", "paste position not converted", "grid drawn without zoom") are all caught by the tests.
+- The fuzz tests also run with a random view that changes during the sequence (210 seeds of 100 steps: clean).
+
+*Manual checklist for step 3:* at 100% nothing should look or behave differently, and there is no way to zoom in the window yet (the debug shortcut comes with step 5a). Repeat the checklists of steps 0 to 2 quickly, paying attention to: dragging nodes, labels and handles (snapping to the grid, Ctrl for free movement), panning with the mouse, "Center graph", paste at the mouse position after a pan, grid lines staying aligned with the nodes, and the look of the examples. Anything that is even one pixel different from step 2 is a regression.
 
 ### Step 4: Pan becomes a view offset
 

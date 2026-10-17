@@ -14,6 +14,7 @@ from signalflowgrapher.model.model import (
 from signalflowgrapher.gui.graph_item import (
     WidgetPressEvent, WidgetMoveEvent, WidgetReleaseEvent
 )
+from signalflowgrapher.gui.view_transform import ViewTransform
 
 # Load font using importlib.resources
 with resources.as_file(
@@ -27,6 +28,7 @@ class LabelWidget(QLabel, ObjectObservable):
                  text: str,
                  owner: LabeledObject,
                  owner_widget,
+                 view: ViewTransform,
                  parent=None,
                  flags=Qt.WindowFlags()):
         QLabel.__init__(self, text, parent=parent, flags=flags)
@@ -42,6 +44,7 @@ class LabelWidget(QLabel, ObjectObservable):
         # --- LabelWidget-specific ---
         self.__owner = owner
         self.__owner_widget = owner_widget
+        self.__view = view
 
         font_id = QFontDatabase.addApplicationFont(roman_font)
         if (font_id == -1):
@@ -74,6 +77,13 @@ class LabelWidget(QLabel, ObjectObservable):
         return QPointF(self.x() + self.width() / 2,
                        self.y() + self.height() / 2)
     
+    def get_world_center(self) -> QPointF:
+        """
+        The centre of the label in world coordinates, converted from the
+        position on the screen (the label is placed in whole pixels).
+        """
+        return self.__view.to_world(self.get_center())
+
     def refresh(self, force: bool = False):
         """
         Derive the position from the owner widget and the label offset.
@@ -90,11 +100,13 @@ class LabelWidget(QLabel, ObjectObservable):
         """
         # floor (not int): a move of the owner by a whole number of pixels
         # moves the label by exactly that number, also at negative positions
+        # The offset is in world units, it scales with the zoom
         center = self.__owner_widget.get_center()
+        dx = self.__view.to_screen_delta(self.__owner.label_dx)
+        dy = self.__view.to_screen_delta(self.__owner.label_dy)
         p = QPoint(
-            math.floor(center.x() + self.__owner.label_dx - self.width() / 2),
-            math.floor(center.y() + self.__owner.label_dy
-                       - self.height() / 2))
+            math.floor(center.x() + dx - self.width() / 2),
+            math.floor(center.y() + dy - self.height() / 2))
         self.move(p)
 
     # Model events

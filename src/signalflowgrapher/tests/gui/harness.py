@@ -100,6 +100,16 @@ class Harness:
         return self.private("model_label_map")
 
     @property
+    def view(self):
+        """The ViewTransform (model <-> screen) of the GraphField."""
+        return self.field.view
+
+    def set_view(self, zoom=None, offset=None):
+        """Change zoom and/or offset; the widgets follow like in the app."""
+        self.view.set(zoom, QPointF(*offset) if offset is not None else None)
+        self.process_events()
+
+    @property
     def grid_offset(self):
         """The pan of the graph; the model is its only owner."""
         return QPoint(*self.model.get_grid_position())

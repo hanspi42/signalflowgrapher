@@ -1,14 +1,16 @@
+import math
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QWidget, QApplication
 from PySide6.QtGui import QPaintEvent, QPainter, QPen
 
 
 class FixedGridWidget(QWidget):
-    def __init__(self, size, offset_source, *args, ** kwargs):
+    def __init__(self, size, offset_source, view, *args, ** kwargs):
         super().__init__(*args, **kwargs)
         self.__grid_size = size
         self.__pen_width = 1
         self.__offset_source = offset_source
+        self.__view = view
 
         # Disable the widgets to ignore all events
         # Widget should not become mousegrabber
@@ -17,8 +19,9 @@ class FixedGridWidget(QWidget):
     @property
     def offset(self) -> QPoint:
         """
-        Position of the grid lines: the pan of the graph modulo the grid
-        size. Read from the offset source (the model) at every paint.
+        Position of the grid lines in world coordinates: the pan of the
+        graph modulo the grid size. Read from the offset source (the
+        model) at every paint.
         """
         x, y = self.__offset_source()
         return QPoint(int(x % self.__grid_size), int(y % self.__grid_size))
@@ -37,26 +40,27 @@ class FixedGridWidget(QWidget):
         painter.begin(self)
         painter.setPen(pen)
 
+        # The grid lines are at world positions offset + k * size; the
+        # view maps them to the screen
         offset = self.offset
+        zoom = self.__view.zoom
+        view_offset = self.__view.offset
+        distance = self.__grid_size * zoom
 
         # Horizontal lines
-        start_h = QPoint(0, int(offset.y()))
-        end_h = QPoint(int(self.width()), int(offset.y()))
-        distance_h = QPoint(0, int(self.__grid_size))
+        first = (zoom * offset.y() + view_offset.y()) % distance
+        k = 0
+        while first + k * distance < self.height():
+            y = math.floor(first + k * distance + 0.5)
+            painter.drawLine(QPoint(0, y), QPoint(int(self.width()), y))
+            k += 1
 
         # Vertical lines
-        start_v = QPoint(int(offset.x()), 0)
-        end_v = QPoint(int(offset.x()), int(self.height()))
-        distance_v = QPoint(int(self.__grid_size), 0)
-
-        while start_h.y() < self.height():
-            painter.drawLine(start_h, end_h)
-            start_h += distance_h
-            end_h += distance_h
-
-        while start_v.x() < self.width():
-            painter.drawLine(start_v, end_v)
-            start_v += distance_v
-            end_v += distance_v
+        first = (zoom * offset.x() + view_offset.x()) % distance
+        k = 0
+        while first + k * distance < self.width():
+            x = math.floor(first + k * distance + 0.5)
+            painter.drawLine(QPoint(x, 0), QPoint(x, int(self.height())))
+            k += 1
 
         painter.end()

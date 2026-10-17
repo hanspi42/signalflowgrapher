@@ -1,8 +1,10 @@
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QPoint, QRect, QSize
+import math
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QSize
 from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid, GRID_SIZE
+from signalflowgrapher.gui.view_transform import ViewTransform
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
 from signalflowgrapher.gui.branch_widget import (
     BranchWidget, Spline1HandleWidget, Spline2HandleWidget,
@@ -47,18 +49,38 @@ class GraphField(QWidget):
         self.__label_model_map = {}
         self.__mouse_press_pos: QPoint = None
         self.__selection_rect = None
+        # Maps world coordinates (the model) to screen coordinates (this
+        # widget). All widgets are placed through it and all mouse input
+        # is converted with it.
+        self.__view = ViewTransform(parent=self)
+        self.__view.changed.connect(self.__on_view_changed)
+        # Part of a pan that is less than a world unit (when zoomed)
+        self.__pan_residual_x = 0.0
+        self.__pan_residual_y = 0.0
         # The model owns the pan; grid snapping and grid drawing read it
         self.__fixed_grid = FixedGrid(GRID_SIZE,
                                       self.__model.get_grid_position)
         self.__grid = self.__fixed_grid
         self.__grid_widget = FixedGridWidget(
-            GRID_SIZE, self.__model.get_grid_position, parent=self)
+            GRID_SIZE, self.__model.get_grid_position, self.__view,
+            parent=self)
         self.__grid_widget.resize(self.size())
         self.__grid_widget.show()
         self.__rubber_band: QRubberBand = QRubberBand(
             QRubberBand.Rectangle, self)
 
         self.setMinimumSize(800, 600)
+
+    @property
+    def view(self) -> ViewTransform:
+        """The transformation between model and screen coordinates."""
+        return self.__view
+
+    def __on_view_changed(self):
+        # Everything that is shown depends on the view: derive all widgets
+        # from the model again
+        self.refresh_widgets(force=True)
+        self.__grid_widget.update()
 
     def on_esc_press(self):
         self.__clear_selection()
@@ -94,11 +116,39 @@ class GraphField(QWidget):
         graph_center_x = min_x + graph_width // 2
         graph_center_y = min_y + graph_height // 2
 
+        # Distance on the screen, in world units for the model
         dx = viewport_center_x - graph_center_x
         dy = viewport_center_y - graph_center_y
+        world_dx = math.floor(self.__view.to_world_delta(dx) + 0.5)
+        world_dy = math.floor(self.__view.to_world_delta(dy) + 0.5)
 
         # Move graph (the grid follows, it reads the pan from the model)
-        self.__model.move_graph_relative(dx, dy)
+        self.__model.move_graph_relative(world_dx, world_dy)
+
+    def __pan_graph(self, screen_dx: int, screen_dy: int):
+        """
+        Move the whole graph by a distance on the screen. The model is
+        moved in whole world units; what is left over is carried to the
+        next call, so that a slow pan loses nothing.
+        """
+        x = self.__view.to_world_delta(screen_dx) + self.__pan_residual_x
+        y = self.__view.to_world_delta(screen_dy) + self.__pan_residual_y
+        world_dx = math.floor(x + 0.5)
+        world_dy = math.floor(y + 0.5)
+        self.__pan_residual_x = x - world_dx
+        self.__pan_residual_y = y - world_dy
+        self.__model.move_graph_relative(world_dx, world_dy)
+
+    def __relative_grid_move(self, event) -> QPoint:
+        """
+        Snap the move of a dragged widget to the grid. The mouse moved by a
+        distance on the screen; the result is the move of the model in
+        world units.
+        """
+        return self.__grid.relative_move(
+            self.__view.to_world_delta(event.dx),
+            self.__view.to_world_delta(event.dy),
+            event.widget.get_world_center())
 
 
     def __selection_changed(self):
@@ -109,6 +159,8 @@ class GraphField(QWidget):
         logger.debug("MousePressEvent")
         if event.button() == Qt.LeftButton:
             self.__mouse_press_pos = event.globalPosition().toPoint()
+            self.__pan_residual_x = 0.0
+            self.__pan_residual_y = 0.0
             self.__command_handler.start_script()
 
             if event.modifiers() == Qt.AltModifier:
@@ -130,7 +182,9 @@ class GraphField(QWidget):
 
     def mouseDoubleClickEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
-            grid_pos = self.__grid.get_grid_position(event.position().toPoint())
+            # the click is on the screen, the node is created in the world
+            world_pos = self.__view.to_world(event.position().toPoint())
+            grid_pos = self.__grid.get_grid_position(world_pos.toPoint())
             self.__controller.create_node(grid_pos.x(), grid_pos.y())
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -151,7 +205,7 @@ class GraphField(QWidget):
                         self.__remove_selection(widget)
             else:
                 self.setCursor(QCursor(Qt.ClosedHandCursor))
-                self.__model.move_graph_relative(diff.x(), diff.y())
+                self.__pan_graph(diff.x(), diff.y())
                 self.__mouse_press_pos = global_position
 
     def __on_label_click(self, event):
@@ -171,9 +225,7 @@ class GraphField(QWidget):
 
         if isinstance(event, WidgetMoveEvent):
             label_model = self.__label_model_map[event.widget]
-            grid_move = self.__grid.relative_move(event.dx,
-                                                  event.dy,
-                                                  event.widget)
+            grid_move = self.__relative_grid_move(event)
             self.__controller.move_label_relative(label_model,
                                                   grid_move.x(),
                                                   grid_move.y())
@@ -220,10 +272,7 @@ class GraphField(QWidget):
                 self.__clear_selection()
                 self.__add_selection(event.widget)
 
-            grid_move = self.__grid.relative_move(
-                event.dx,
-                event.dy,
-                event.widget)
+            grid_move = self.__relative_grid_move(event)
 
             for widget in self.__selection:
                 if isinstance(widget, NodeWidget):
@@ -272,9 +321,7 @@ class GraphField(QWidget):
         if isinstance(event, SplineHandleWidgetMoveEvent):
             widget = event.widget
             dx1, dy1, dx2, dy2 = 0, 0, 0, 0
-            grid_move = self.__grid.relative_move(event.dx,
-                                                  event.dy,
-                                                  event.widget)
+            grid_move = self.__relative_grid_move(event)
             if isinstance(widget, Spline1HandleWidget):
                 dx1, dy1 = grid_move.x(), grid_move.y()
             elif isinstance(widget, Spline2HandleWidget):
@@ -454,7 +501,7 @@ class GraphField(QWidget):
             label.refresh(force)
 
     def __add_node(self, node):
-        widget = NodeWidget(node, parent=self)
+        widget = NodeWidget(node, self.__view, parent=self)
         # Set initial position centered to given point
         widget.refresh()
         widget.observe(self.__on_node_click)
@@ -466,7 +513,7 @@ class GraphField(QWidget):
         self.__add_selection(widget)
 
     def __add_branch(self, branch):
-        widget = BranchWidget(branch, parent=self)
+        widget = BranchWidget(branch, self.__view, parent=self)
 
         self.__model_widget_map[branch] = widget
         self.__widget_model_map[widget] = branch
@@ -494,6 +541,7 @@ class GraphField(QWidget):
         label = LabelWidget(labeled_object.label_text,
                             labeled_object,
                             widget,
+                            self.__view,
                             parent=self)
 
         self.__model_label_map[labeled_object] = label
@@ -575,12 +623,12 @@ class GraphField(QWidget):
                                         "Mouse pointer is outside the graph area.")
             return
 
-        mouse_x, mouse_y = local_pos.x(), local_pos.y()
+        # The mouse is on the screen, the pasted nodes are in the world
+        world_pos = self.__view.to_world(local_pos).toPoint()
 
         # Snap to the grid lines (always the fixed grid: Ctrl is held while
         # pasting, which switches the active grid off)
-        grid_pos = self.__fixed_grid.get_grid_position(
-            QPoint(mouse_x, mouse_y))
+        grid_pos = self.__fixed_grid.get_grid_position(world_pos)
         grid_x, grid_y = grid_pos.x(), grid_pos.y()
 
         # Compute bounding box of copied nodes

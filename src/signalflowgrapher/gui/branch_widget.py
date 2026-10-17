@@ -10,15 +10,18 @@ from signalflowgrapher.model.model import (
     PositionedNodeMovedEvent, GraphMovedEvent)
 import math
 from signalflowgrapher.gui.geometry import rotate_pointF, rotate_point
+from signalflowgrapher.gui.view_transform import ViewTransform
 
 
 class BranchWidget(GraphItem):
     def __init__(self,
                  owner: CurvedBranch,
+                 view: ViewTransform,
                  *args,
                  ** kwargs):
         super().__init__(*args, **kwargs)
         self.__owner = owner
+        self.__view = view
         (self.__start,
          self.__end,
          self.__spline1,
@@ -119,13 +122,15 @@ class BranchWidget(GraphItem):
     def __model_points(self):
         """
         The four points of the branch as the widget draws them: start,
-        end, spline1, spline2 in the coordinates of the parent widget.
+        end, spline1, spline2 in the coordinates of the parent widget
+        (screen pixels, from the world coordinates of the model).
         """
         owner = self.__owner
-        return (QPoint(int(owner.start.x), int(owner.start.y)),
-                QPoint(int(owner.end.x), int(owner.end.y)),
-                QPoint(int(owner.spline1_x), int(owner.spline1_y)),
-                QPoint(int(owner.spline2_x), int(owner.spline2_y)))
+        to_screen = self.__view.to_screen_point
+        return (to_screen(QPointF(owner.start.x, owner.start.y)),
+                to_screen(QPointF(owner.end.x, owner.end.y)),
+                to_screen(QPointF(owner.spline1_x, owner.spline1_y)),
+                to_screen(QPointF(owner.spline2_x, owner.spline2_y)))
 
     def refresh(self, force: bool = False):
         """
@@ -176,11 +181,13 @@ class BranchWidget(GraphItem):
         handle1 = Spline1HandleWidget(
             parent=self.parent(),
             branch=self.__owner,
-            node=self.__owner.start)
+            node=self.__owner.start,
+            view=self.__view)
         handle2 = Spline2HandleWidget(
             parent=self.parent(),
             branch=self.__owner,
-            node=self.__owner.end)
+            node=self.__owner.end,
+            view=self.__view)
         return [handle1, handle2]
 
     def paintEvent(self, QPaintEvent):
@@ -378,10 +385,12 @@ class SplineHandleWidgetMoveEvent(WidgetEvent):
 class SplineHandleWidget(GraphItem):
     def __init__(self, *args,
                  branch: CurvedBranch, node: PositionedNode,
+                 view: ViewTransform,
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.__branch = branch
         self.__node = node
+        self.__view = view
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self._origin_abs = self._model_origin()
         self._spline_abs = self._model_spline()
@@ -443,16 +452,33 @@ class SplineHandleWidget(GraphItem):
             self._spline_abs,
             math.radians(180))
 
+    def get_world_center(self) -> QPointF:
+        """
+        Position of the knob in world coordinates: the spline point
+        mirrored at the node, from the model (whole units, like the
+        drawing).
+        """
+        origin = QPoint(int(self.__node.x), int(self.__node.y))
+        spline_x, spline_y = self._model_spline_world()
+        return rotate_point(origin, QPoint(int(spline_x), int(spline_y)),
+                            math.radians(180))
+
     def get_node(self):
         return self.__node
 
     def _model_origin(self) -> QPoint:
         """The node the handle belongs to, as the widget draws it."""
-        return QPoint(int(self.__node.x), int(self.__node.y))
+        return self.__view.to_screen_point(
+            QPointF(self.__node.x, self.__node.y))
+
+    def _model_spline_world(self):
+        """World coordinates (x, y) of the spline point of the handle."""
+        raise NotImplementedError
 
     def _model_spline(self) -> QPoint:
-        """The spline control point the handle controls."""
-        raise NotImplementedError
+        """The spline control point the handle controls, as drawn."""
+        x, y = self._model_spline_world()
+        return self.__view.to_screen_point(QPointF(x, y))
 
     def refresh(self, force: bool = False):
         """
@@ -521,9 +547,9 @@ class Spline1HandleWidget(SplineHandleWidget):
     Spline handle widget for spline1 of branch widget.
     """
 
-    def _model_spline(self) -> QPoint:
+    def _model_spline_world(self):
         branch = self.get_branch()
-        return QPoint(int(branch.spline1_x), int(branch.spline1_y))
+        return branch.spline1_x, branch.spline1_y
 
 
 class Spline2HandleWidget(SplineHandleWidget):
@@ -531,6 +557,6 @@ class Spline2HandleWidget(SplineHandleWidget):
     Spline handle widget for spline2 of branch widget.
     """
 
-    def _model_spline(self) -> QPoint:
+    def _model_spline_world(self):
         branch = self.get_branch()
-        return QPoint(int(branch.spline2_x), int(branch.spline2_y))
+        return branch.spline2_x, branch.spline2_y

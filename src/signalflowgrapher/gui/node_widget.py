@@ -2,14 +2,17 @@ from PySide6.QtGui import QPainter, QPen, QRegion
 from PySide6.QtWidgets import QSizePolicy
 from PySide6.QtCore import Qt, QPoint, QPointF, QRect
 from signalflowgrapher.gui.graph_item import GraphItem
+from signalflowgrapher.gui.view_transform import ViewTransform
 from signalflowgrapher.model.model import (
     PositionedNode, PositionedNodeMovedEvent)
 
 
 class NodeWidget(GraphItem):
-    def __init__(self, owner: PositionedNode, *args, **kwargs):
+    def __init__(self, owner: PositionedNode, view: ViewTransform,
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__owner = owner
+        self.__view = view
         self.__radius = 8
         self.__circle_width = 3
         self.__size = self.__radius * 2 + self.__circle_width * 2
@@ -54,8 +57,10 @@ class NodeWidget(GraphItem):
         """
         Place the widget so that its centre is on the node.
         """
-        self.move(QPoint(int(self.__owner.x - self.width() / 2),
-                         int(self.__owner.y - self.height() / 2)))
+        center = self.__view.to_screen_point(
+            QPointF(self.__owner.x, self.__owner.y))
+        self.move(QPoint(int(center.x() - self.width() / 2),
+                         int(center.y() - self.height() / 2)))
 
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         """
@@ -63,6 +68,13 @@ class NodeWidget(GraphItem):
         """
         if self.__owner is event.node:
             self.refresh()
+
+    def get_world_center(self) -> QPointF:
+        """
+        The position of the node in world coordinates (exactly, not the
+        rounded position of the widget on the screen).
+        """
+        return QPointF(self.__owner.x, self.__owner.y)
 
     def get_center(self) -> QPointF:
         """
