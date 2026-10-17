@@ -100,6 +100,12 @@ class TestConsistencyChecker(TestCase):
         self.h.model.graph.move_node_relative(self.a, 0.5, 0)
         self.assert_problem("non-integer")
 
+    def test_detects_wrong_view_origin_in_model(self):
+        self.h.pan(30, 10)
+        self.assertEqual([], check_consistency(self.h))
+        self.h.model.set_view_origin((5, 5))
+        self.assert_problem("model view origin")
+
     def test_detects_non_integer_node_label_offset(self):
         self.h.model.graph.move_label_relative(self.a, 0.5, 0)
         self.assert_problem("non-integer label offset")

@@ -12,7 +12,7 @@ from PySide6.QtCore import QPoint
 
 from signalflowgrapher.gui.branch_widget import BranchWidget
 from signalflowgrapher.model.model import (
-    CurvedBranchTransformedEvent, GraphMovedEvent, PositionedNodeMovedEvent)
+    CurvedBranchTransformedEvent, PositionedNodeMovedEvent)
 from signalflowgrapher.tests.gui import test_gui_operations as ops
 from signalflowgrapher.tests.gui.consistency import check_consistency
 from signalflowgrapher.tests.gui.harness import Harness
@@ -87,11 +87,14 @@ class TestEventsDoNotCarryState(RefreshTestCase):
         self.assertEqual([], snapshots_close(before, self.geometry(), 0))
         self.ok("duplicate node moved events")
 
-    def test_graph_moved_event_with_wrong_delta(self):
+    def test_repeated_view_changed_signals(self):
+        """The view signal carries nothing; every handling shows the view."""
         before = self.geometry()
-        self.dispatch(GraphMovedEvent(set(), set(), 77, 33))
+        for _ in range(3):
+            self.h.field._GraphField__on_view_changed()
+        self.h.process_events()
         self.assertEqual([], snapshots_close(before, self.geometry(), 0))
-        self.ok("spurious graph moved event")
+        self.ok("repeated view changed signals")
 
     def test_branch_transformed_event_with_wrong_delta(self):
         before = self.geometry()

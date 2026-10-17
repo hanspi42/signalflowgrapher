@@ -279,17 +279,16 @@ class TestInputConversion(ViewTestCase):
         knob = self.h.selected_handles()[1].get_world_center()
         self.assert_on_grid(round(knob.x()), round(knob.y()), "knob")
 
-    def test_pan_moves_the_model_by_the_world_distance(self):
+    def test_pan_moves_the_view_by_the_screen_distance(self):
+        """The graph itself stays as it is, whatever the zoom."""
         for zoom in (0.5, 0.25, 0.3):
             with self.subTest(zoom=zoom):
-                self.set_view(zoom, (0, 0))
-                x, y = self.a.x, self.a.y
-                gx, gy = self.h.model.get_grid_position()
+                self.set_view(zoom, (7, -3))
+                before = ops.coords(self.h)
                 self.h.pan(30, 15, steps=30)        # 1 px at a time
-                self.assertEqual((x + round(30 / zoom), y + round(15 / zoom)),
-                                 (self.a.x, self.a.y))
-                self.assertEqual((gx + round(30 / zoom), gy + round(15 / zoom)),
-                                 tuple(self.h.model.get_grid_position()))
+                self.assertEqual(QPointF(37, 12), self.h.view.offset)
+                self.assertEqual(zoom, self.h.view.zoom)
+                self.assertEqual(before, ops.coords(self.h))
                 self.ok("pan at %s" % zoom)
 
     def test_center_graph_while_zoomed(self):
@@ -344,20 +343,30 @@ class TestInputConversion(ViewTestCase):
         self.assertEqual(after, ops.coords(self.h))
         self.ok("redo")
 
-    def test_saved_file_does_not_depend_on_the_view(self):
+    def test_saved_file_depends_on_the_view_only_by_view_origin(self):
+        """
+        The graph in the file does not depend on pan and zoom. The only
+        thing that does is `view_origin`, the world position of the top
+        left corner of the window, so that the file opens showing the same
+        part of the graph.
+        """
         import json
         import os
         import tempfile
-        texts = []
-        for zoom, offset in ((1.0, (0, 0)), (0.5, (37, -12)), (0.1, (5, 5))):
+        saved = []
+        views = ((1.0, (0, 0)), (0.5, (37, -12)), (0.1, (5, 5)))
+        for zoom, offset in views:
             self.set_view(zoom, offset)
             with tempfile.TemporaryDirectory() as tmp:
                 p = os.path.join(tmp, "g.sfg")
                 self.h.save(p)
                 with open(p, encoding="utf-8") as f:
-                    texts.append(json.load(f))
-        self.assertEqual(texts[0], texts[1])
-        self.assertEqual(texts[0], texts[2])
+                    saved.append(json.load(f))
+        origins = [d.pop("view_origin") for d in saved]
+        self.assertEqual(saved[0], saved[1])
+        self.assertEqual(saved[0], saved[2])
+        # world = (screen - offset) / zoom at the screen position (0, 0)
+        self.assertEqual([[0, 0], [-74, 24], [-50, -50]], origins)
 
 
 class TestGridDrawing(TestCase):

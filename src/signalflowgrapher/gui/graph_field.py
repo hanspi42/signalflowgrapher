@@ -1,5 +1,4 @@
 from PySide6 import QtGui
-import math
 from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QSize
 from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
@@ -13,7 +12,7 @@ from signalflowgrapher.gui.branch_widget import (
 from signalflowgrapher.commands.command_handler import CommandHandler
 from signalflowgrapher.model.model import (
     Model, CurvedBranchAddedEvent, CurvedBranchRemovedEvent,
-    CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent,
+    CurvedBranchTransformedEvent, GraphChangedEvent,
     LabelChangedTextEvent, LabelMovedEvent,
     LabeledObject, PositionedNodeAddedEvent,
     PositionedNodeMovedEvent, PositionedNodeRemovedEvent,
@@ -54,9 +53,6 @@ class GraphField(QWidget):
         # is converted with it.
         self.__view = ViewTransform(parent=self)
         self.__view.changed.connect(self.__on_view_changed)
-        # Part of a pan that is less than a world unit (when zoomed)
-        self.__pan_residual_x = 0.0
-        self.__pan_residual_y = 0.0
         # The model owns the pan; grid snapping and grid drawing read it
         self.__fixed_grid = FixedGrid(GRID_SIZE,
                                       self.__model.get_grid_position)
@@ -78,9 +74,21 @@ class GraphField(QWidget):
 
     def __on_view_changed(self):
         # Everything that is shown depends on the view: derive all widgets
-        # from the model again
-        self.refresh_widgets(force=True)
+        # from the model again. Widgets that are only moved by a pan are
+        # moved, not rebuilt.
+        self.refresh_widgets()
         self.__grid_widget.update()
+        # The model remembers what part of the graph is shown, for the file
+        origin = self.__view.to_world(QPointF(0, 0))
+        self.__model.set_view_origin((round(origin.x()), round(origin.y())))
+
+    def __show_view_origin_of_model(self):
+        """
+        Show the part of the graph that the model remembers (the part that
+        was shown when the file was saved) at zoom 100%.
+        """
+        origin_x, origin_y = self.__model.get_view_origin()
+        self.__view.set(1.0, QPointF(-origin_x, -origin_y))
 
     def on_esc_press(self):
         self.__clear_selection()
@@ -116,28 +124,18 @@ class GraphField(QWidget):
         graph_center_x = min_x + graph_width // 2
         graph_center_y = min_y + graph_height // 2
 
-        # Distance on the screen, in world units for the model
-        dx = viewport_center_x - graph_center_x
-        dy = viewport_center_y - graph_center_y
-        world_dx = math.floor(self.__view.to_world_delta(dx) + 0.5)
-        world_dy = math.floor(self.__view.to_world_delta(dy) + 0.5)
+        # Show the graph shifted by this distance on the screen
+        self.__pan_view(viewport_center_x - graph_center_x,
+                        viewport_center_y - graph_center_y)
 
-        # Move graph (the grid follows, it reads the pan from the model)
-        self.__model.move_graph_relative(world_dx, world_dy)
-
-    def __pan_graph(self, screen_dx: int, screen_dy: int):
+    def __pan_view(self, screen_dx: float, screen_dy: float):
         """
-        Move the whole graph by a distance on the screen. The model is
-        moved in whole world units; what is left over is carried to the
-        next call, so that a slow pan loses nothing.
+        Show the graph shifted by a distance on the screen. Only the view
+        changes; the graph (its coordinates, the undo history) does not.
         """
-        x = self.__view.to_world_delta(screen_dx) + self.__pan_residual_x
-        y = self.__view.to_world_delta(screen_dy) + self.__pan_residual_y
-        world_dx = math.floor(x + 0.5)
-        world_dy = math.floor(y + 0.5)
-        self.__pan_residual_x = x - world_dx
-        self.__pan_residual_y = y - world_dy
-        self.__model.move_graph_relative(world_dx, world_dy)
+        offset = self.__view.offset
+        self.__view.set(offset=QPointF(offset.x() + screen_dx,
+                                       offset.y() + screen_dy))
 
     def __relative_grid_move(self, event) -> QPoint:
         """
@@ -159,8 +157,6 @@ class GraphField(QWidget):
         logger.debug("MousePressEvent")
         if event.button() == Qt.LeftButton:
             self.__mouse_press_pos = event.globalPosition().toPoint()
-            self.__pan_residual_x = 0.0
-            self.__pan_residual_y = 0.0
             self.__command_handler.start_script()
 
             if event.modifiers() == Qt.AltModifier:
@@ -205,7 +201,7 @@ class GraphField(QWidget):
                         self.__remove_selection(widget)
             else:
                 self.setCursor(QCursor(Qt.ClosedHandCursor))
-                self.__pan_graph(diff.x(), diff.y())
+                self.__pan_view(diff.x(), diff.y())
                 self.__mouse_press_pos = global_position
 
     def __on_label_click(self, event):
@@ -473,6 +469,10 @@ class GraphField(QWidget):
             self.__widget_model_map.clear()
             self.__label_model_map.clear()
             self.__model_label_map.clear()
+            # Show the graph where it was when it was saved (this has to be
+            # done before the widgets are created, which are placed
+            # through the view)
+            self.__show_view_origin_of_model()
             for node in event.nodes:
                 self.__add_node(node)
             for branch in event.branches:
@@ -480,9 +480,6 @@ class GraphField(QWidget):
 
             self.__grid_widget.update()
             return
-        if isinstance(event, GraphMovedEvent):
-            self.__grid_widget.update()
-            self.refresh_widgets()
 
     def refresh_widgets(self, force: bool = False):
         """

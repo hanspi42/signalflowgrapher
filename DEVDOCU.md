@@ -7,9 +7,9 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | 0 | Safety net (tests, consistency checker, snapshots) | done, tested |
 | 1 | Fix inconsistencies and known bugs, new file version | done, tested |
 | 2 | Idempotent widget refresh | done, tested |
-| 2b | Remove deprecated Qt and library calls | done, ready for manual test |
-| 3 | `ViewTransform` at identity | done, ready for manual test |
-| 4 | Pan becomes a view offset | planned |
+| 2b | Remove deprecated Qt and library calls | done, tested |
+| 3 | `ViewTransform` at identity | done, tested |
+| 4 | Pan becomes a view offset | done, ready for manual test |
 | 5 | Zoom (wheel and keyboard, everything scales with z) | planned |
 | 6 | Mini map | planned |
 
@@ -19,7 +19,7 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 - **Everything scales with z**, exactly as in the TikZ output: node size, circle width, branch pen width, arrow size, spline handle size, label font size, label offsets and the grid. The size relationship between lines, text and nodes is therefore identical at every zoom level.
 - **Zoom input:** keyboard shortcuts for zoom in, zoom out and reset, and **Ctrl + mouse wheel** (zooming about the mouse pointer). The plain wheel is left unused.
 - **The model never contains zoom.** Model coordinates stay in "world units" (= pixels at 100%). Saved files, the clipboard, the TikZ export and the undo stack do not depend on the zoom level. The zoom level is not stored in the file.
-- **Pan becomes a view offset** (step 4, agreed), so navigation no longer rewrites the model.
+- **Pan becomes a view offset** (step 4, agreed), so navigation no longer rewrites the model. A saved file remembers the part of the graph that was shown (`view_origin`), not the zoom.
 - **Mini map** can be switched on and off (step 6).
 
 ## Coordinate handling in V2.0 (summary of the analysis)
@@ -52,12 +52,13 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 | File | Purpose |
 |---|---|
 | `harness.py` | Real `GraphField`, `Model`, controllers and `CommandHandler` in an offscreen window, driven with synthetic mouse events (double click, drag, pan, Ctrl+click, copy/paste, delete, undo/redo, save/load). Uses deterministic ids. |
-| `consistency.py` | Compares every widget with the model through the view transform: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, integer node coordinates and label offsets, graph topology. |
-| `test_consistency_checker.py` | Fault injection: 16 deliberately broken states must each be detected ("tests for the tests"). |
+| `consistency.py` | Compares every widget with the model through the view transform: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, integer node coordinates and label offsets, the view origin that the model remembers, graph topology. |
+| `test_consistency_checker.py` | Fault injection: 17 deliberately broken states must each be detected ("tests for the tests"). |
 | `test_gui_operations.py` | Scenario tests with exact expectations (create, move, handles, labels, pan, center, copy/paste, delete, undo/redo, save/load). |
 | `test_gui_fuzz.py` | Seeded random operation sequences with a consistency check after every operation. `SFG_FUZZ_SEEDS` and `SFG_FUZZ_STEPS` scale it up for a soak run. |
 | `test_deprecations.py`, `deprecation_scenario.py` | Runs a broad scenario in a fresh process and fails if the application's own modules issue a `DeprecationWarning` (also at import time). |
 | `test_view_transform.py` | Step 3: the `ViewTransform` class, and every conversion between world and screen coordinates with real zoom and offset values (widgets, mouse input, grid snapping and drawing, paste, pan, center). |
+| `test_pan_view_offset.py` | Step 4: a pan changes only the view; the view is remembered in the file; files of the old pan semantics look the same pixel by pixel. |
 | `test_widget_refresh.py` | Step 2: refresh is idempotent, events carry no state, event order does not matter, a pan does not rebuild branch shapes. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
 | `test_io_roundtrip.py` | Load/save round trips, old files without `grid_pos`, schema behaviour. |
@@ -212,13 +213,13 @@ The application still runs at zoom 1 and offset (0, 0), so it looks and behaves 
 **Rules** (steps 4 to 6 build on them):
 
 1. Widgets are placed from the model through the transform, never from other widgets' positions. All widgets use the one rule `ViewTransform.to_screen_point` (round down to a pixel), so a branch ends exactly at the node it belongs to. It rounds down instead of truncating towards zero as V2.0 did; this differs only for fractional negative coordinates (a spline at y = -110.5 is drawn at -111 instead of -110, off screen), and makes a move by whole pixels an exact translation.
-2. Mouse input is converted at the boundary and nothing else in the program sees screen distances: double click and paste use `to_world`, drags use `to_world_delta` (`GraphField.__relative_grid_move`), pan uses `GraphField.__pan_graph`. The rubber band stays in screen space (it compares with widget geometry).
+2. Mouse input is converted at the boundary and nothing else in the program sees screen distances: double click and paste use `to_world`, drags use `to_world_delta` (`GraphField.__relative_grid_move`); a pan is a change of the view offset (`GraphField.__pan_view`, since step 4, in screen pixels, no conversion needed). The rubber band stays in screen space (it compares with widget geometry).
 3. `Grid` works purely in world units: `relative_move(dx, dy, center)` takes the distance in world units and the world position of the dragged widget. Each draggable widget provides `get_world_center()` (node: exact model position; label: converted from its screen position; handle: mirrored spline point from the model). Moves are applied in whole world units; with a zoom a screen pixel is more than one unit, so the fraction is carried to the next mouse move (`Grid` deviation, now also for `NoneGrid` when Ctrl is held). Node coordinates and node label offsets therefore stay integers at every zoom, as the file format requires.
 4. Label offsets are in world units and scale with the zoom (`to_screen_delta`).
 5. The grid is drawn where the view maps the world grid lines: spacing `30 * zoom`, phase from the pan and the view offset.
 6. What does **not** scale yet: sizes of glyphs (node circle, line widths, arrows, handle size, label font). That is step 5.
 
-**Pan** is still a change of the model (step 4 changes that). It is converted with `to_world_delta`; the part of a pan that is less than a world unit is carried to the next mouse move (`__pan_residual_*`) and dropped at the next press. This code is transitional.
+**Pan** was still a change of the model in this step (distance converted with `to_world_delta`, the fraction of a world unit carried to the next mouse move). This transitional code was replaced in step 4.
 
 Deviation from the original plan: the caches of `BranchWidget` and the spline handles stay `QPoint` (now screen pixels from `to_screen_point`), not `QPointF`. With the pixel rule above, branch ends coincide with node widgets and the output at zoom 1 stays pixel-identical; `QPointF` is only worth it if sub-pixel curves are wanted at low zoom, to be decided at the review of step 5.
 
@@ -231,11 +232,49 @@ Checks done:
 
 *Manual checklist for step 3:* at 100% nothing should look or behave differently, and there is no way to zoom in the window yet (the debug shortcut comes with step 5a). Repeat the checklists of steps 0 to 2 quickly, paying attention to: dragging nodes, labels and handles (snapping to the grid, Ctrl for free movement), panning with the mouse, "Center graph", paste at the mouse position after a pan, grid lines staying aligned with the nodes, and the look of the examples. Anything that is even one pixel different from step 2 is a regression.
 
-### Step 4: Pan becomes a view offset
+### Step 4: Pan becomes a view offset (done)
 
-- Panning changes the view offset only; the model is no longer mutated by navigation. `Model.__gridpos`-based corrections (`gridpos_atCreation` in the four Create/Remove commands) are removed. Old files stay loadable: `grid_pos` becomes a constant world-grid phase.
-- Done before zoom because zooming about the mouse pointer needs fractional pan, which would break integer model coordinates.
-- *Tests:* save, pan, load; undo after pan; delete, pan, undo; golden files unchanged except the intentionally changed pan semantics (document the diff).
+Panning now changes only `ViewTransform.offset`. No coordinate of the graph changes by navigation any more, and the undo history is not involved. At zoom 1 the pictures are exactly what the old pan produced.
+
+What changed:
+
+| Part | Before | Now |
+|---|---|---|
+| `GraphField` pan and "Center graph" | `Model.move_graph_relative` added the distance to every node and spline point; fractions of a world unit had to be carried | `__pan_view` adds the screen distance to the view offset (a plain float, nothing to round, nothing to carry) |
+| `Model.move_graph_relative`, `GraphMovedEvent` | moved the graph, told all widgets | removed (with `GraphItem.graph_moved_event` and the equivalent methods of the label and branch widgets); the widgets follow the `changed` signal of the view |
+| Grid position (`Model.get_grid_position`, `grid_pos` in the file) | the accumulated pan | a **constant** of the graph: the world position of a grid line crossing. Grid lines are at this position plus multiples of 30 in world coordinates. Pan and zoom do not change it, so nodes that snap to the grid stay on it |
+| `CreateNodeCommand`, `RemoveNodeCommand`, `CreateBranchCommand`, `RemoveBranchCommand` | remembered the pan at creation and shifted the objects by the pan difference when re-adding them (`gridpos_atCreation`) | no compensation; the `model` parameter of the constructors is removed. Objects keep their world coordinates |
+| `FixedGrid`, `FixedGridWidget` | grid lines at `pan mod 30` | lines at `grid position mod 30` in world coordinates, mapped to the screen by the view (this was already prepared in step 3) |
+| Widgets on a view change | `refresh_widgets(force=True)` | `refresh_widgets()`: a branch widget whose shape is only moved is moved, not rebuilt, so a pan costs the same as before (about 43 ms per step on a graph with 168 nodes and 216 branches, before: about 47 ms) |
+
+**What a file remembers: `view_origin`.** In V2.0 the pan was part of the coordinates, so a file opened showing what was on the screen when it was saved. To keep that, the file now has the optional key `view_origin` (a pair of numbers): the world position at the top left corner of the window when it was saved. Loading shows the graph from there, at zoom 100% (the zoom is not saved). `Model.get_view_origin()` / `set_view_origin()` hold it; the `GraphField` keeps the model up to date whenever the view changes and applies it when a graph is loaded. Files without the key (all files of V2.0 and of the steps 1 to 3) are shown from (0, 0). A new graph starts with the grid position (0, 0) and the view at (0, 0). Panning is not part of the undo history and does not make the file "modified".
+
+*This is a decision that was not in the plan; it is easy to remove if you do not want the view in the file* (`view_origin` in `io/json.py`, `io_controller.py`, `Model` and `GraphField.__show_view_origin_of_model`).
+
+**Compatibility.**
+
+- Files of V2.0 and steps 1 to 3 (coordinates shifted by the pan, `grid_pos` = accumulated pan) load unchanged and look exactly as before: the grid lines come out at the same place (`grid_pos mod 30`), which a test shows pixel by pixel.
+- Files written now can be opened by V2.0: the coordinates are consistent, `grid_pos` is just a grid position, and the unknown key `view_origin` is ignored. V2.0 then shows the graph from the origin instead of the saved view; "Center graph" helps.
+- The file format version stays "3.0"; `view_origin` is an additive optional key (schema and `resources/schema.json` updated).
+
+Checks done:
+
+- All 282 earlier tests pass after adapting the tests that described the old pan (they asserted that a pan shifted every coordinate and the grid position); `test_pan_view_offset.py` adds the new behaviour (graph, grid position and undo history untouched by pans; undo, redo, delete, paste and create after pans; the file; old files; the schema).
+- `TestPanLooksLikeTheOldPan`: for four examples and four pan distances, the picture of the graph panned with the view is **identical pixel by pixel** to the picture of a file as V2.0 would have saved it after the same pan (all coordinates shifted, shift added to `grid_pos`).
+- The 9 reference renders are identical to those of step 1 (including the panned scene); golden files unchanged.
+- Mutation check: 13 deliberate breaks (pan ignoring a direction, reversed pan, saved view not applied or not written or not read, grid position following the pan again, a new graph keeping the old view, the view change rebuilding every widget, and others) are all caught.
+- Fuzz: 160 seeds of 100 steps (60 of them with random zoom and offset changing during the sequence) are clean; the checker also verifies after every operation that the model's view origin is the world position at the top left of the window.
+
+*Manual checklist for step 4* (in addition to the earlier ones):
+
+1. Pan with the mouse: the graph, labels, handles and grid move together and smoothly, as before (also on the largest example `fig_12.sfg`).
+2. Pan far away, create nodes there, pan back, drag, undo, redo: nothing jumps.
+3. Delete a node, pan, undo: the node comes back at its old place in the graph (not shifted).
+4. Pan, then paste: the pasted nodes are on visible grid lines.
+5. Pan the window to a different part of the graph, save, close the program, open the file: you see the same part of the graph. Repeat with "Center graph" before saving.
+6. Open an example and a file that you saved with the previous step after panning: they look exactly as they did before.
+7. Open a saved file in a text editor: `grid_pos` is the same after panning (it no longer accumulates), `view_origin` is there.
+8. "New" resets the view and the grid to the origin.
 
 ### Step 5: Zoom (10% to 100%)
 

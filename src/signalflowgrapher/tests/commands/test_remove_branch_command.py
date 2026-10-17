@@ -3,7 +3,7 @@ from unittest.mock import Mock, MagicMock
 from signalflowgrapher.commands.remove_branch_command \
     import RemoveBranchCommand
 from signalflowgrapher.model.model import CurvedBranch, \
-    PositionedNode, ObservableGraph, Model
+    PositionedNode, ObservableGraph
 
 
 class TestRemoveBranchCommand(unittest.TestCase):
@@ -13,10 +13,9 @@ class TestRemoveBranchCommand(unittest.TestCase):
         start_node = Mock(PositionedNode)
         end_node = Mock(PositionedNode)
         branch_mock = Mock(CurvedBranch)
-        model_mock = MagicMock(Model)
         branch_mock.start = start_node
         branch_mock.end = end_node
-        command = RemoveBranchCommand(graph_mock, branch_mock, model_mock)
+        command = RemoveBranchCommand(graph_mock, branch_mock)
 
         # Execute
         command.undo()
@@ -29,8 +28,7 @@ class TestRemoveBranchCommand(unittest.TestCase):
         # Prepare
         graph_mock = MagicMock(ObservableGraph)
         branch_mock = Mock(CurvedBranch)
-        model_mock = MagicMock(Model)
-        command = RemoveBranchCommand(graph_mock, branch_mock, model_mock)
+        command = RemoveBranchCommand(graph_mock, branch_mock)
 
         # Execute
         command.redo()

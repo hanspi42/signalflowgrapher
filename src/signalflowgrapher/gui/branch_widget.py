@@ -7,7 +7,7 @@ from signalflowgrapher.gui.graph_item import (
     GraphItem, WidgetClickEvent, WidgetEvent)
 from signalflowgrapher.model.model import (
     CurvedBranch, PositionedNode, CurvedBranchTransformedEvent,
-    PositionedNodeMovedEvent, GraphMovedEvent)
+    PositionedNodeMovedEvent)
 import math
 from signalflowgrapher.gui.geometry import rotate_pointF, rotate_point
 from signalflowgrapher.gui.view_transform import ViewTransform

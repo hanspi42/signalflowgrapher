@@ -10,6 +10,8 @@ invariants that hold *today* between model coordinates and widget state:
   * label widget centre == owner centre + label offset * zoom
   * visible spline handles == model splines (knob mirrored about the node)
   * grid offset state agrees everywhere (model, grid widgets)
+  * the view origin that the model remembers for the file is the world
+    position at the top left corner of the window
   * every model object has exactly one widget and one label widget
   * the model graph itself is topologically consistent
 
@@ -213,10 +215,24 @@ def check_handles(h: Harness):
     return problems
 
 
+def check_view_origin(h: Harness):
+    """The model remembers the part of the graph that is shown (for saving)."""
+    problems = []
+    expected = h.view.to_world(QPointF(0, 0))
+    ox, oy = h.model.get_view_origin()
+    if abs(ox - expected.x()) > 0.51 or abs(oy - expected.y()) > 0.51:
+        problems.append("model view origin (%s, %s) != world position at the "
+                        "top left of the window (%.1f, %.1f)"
+                        % (ox, oy, expected.x(), expected.y()))
+    return problems
+
+
 def check_grid(h: Harness):
     """
-    The pan is owned by the model; the grid used for snapping and the grid
-    drawn on the canvas must both show the lines at (pan mod grid size).
+    The grid position belongs to the graph and does not change with pan or
+    zoom. The grid used for snapping and the grid drawn on the canvas must
+    both have their lines at (grid position mod grid size) in world
+    coordinates.
     """
     problems = []
     gx, gy = h.model.get_grid_position()
@@ -244,7 +260,7 @@ def check_grid(h: Harness):
 
 
 ALL_CHECKS = (check_model, check_widget_sets, check_nodes, check_branches,
-              check_labels, check_handles, check_grid)
+              check_labels, check_handles, check_grid, check_view_origin)
 
 
 def check_consistency(h: Harness):

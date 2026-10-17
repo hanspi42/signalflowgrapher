@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PySide6.QtGui import QMouseEvent, QCursor
-from signalflowgrapher.model.model import GraphMovedEvent
 from signalflowgrapher.common.observable import ObjectObservable
 
 # Some code is inspired by
@@ -46,11 +45,6 @@ class GraphItem(QWidget, ObjectObservable):
         widget believes that it is up to date.
         """
         pass
-
-    def graph_moved_event(self, event: GraphMovedEvent):
-        # The whole graph has moved. The size of the move is not needed:
-        # the widget looks at the model.
-        self.refresh()
 
     def mousePressEvent(self, event, notify=True):
         self._mouse_press_pos = event.globalPosition().toPoint()

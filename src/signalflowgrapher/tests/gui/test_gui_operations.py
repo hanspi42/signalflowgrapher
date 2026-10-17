@@ -18,7 +18,7 @@ import tempfile
 import signal
 from unittest import TestCase
 
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, QPointF, Qt
 
 from signalflowgrapher.gui.grid import GRID_SIZE
 from signalflowgrapher.tests.gui.harness import Harness
@@ -74,14 +74,21 @@ class TestCreate(GuiTestCase):
         self.assertEqual((90, 90), (self.h.nodes[0].x, self.h.nodes[0].y))
         self.ok("redo create node")
 
-    def test_create_node_on_panned_grid(self):
+    def test_create_node_after_pan(self):
+        """
+        Panning moves the view, not the grid: the new node is on the grid
+        of the graph and appears on a grid line that is visible.
+        """
         self.h.pan(13, 7)
         n = self.h.double_click(200, 200)
         gx, gy = self.h.model.get_grid_position()
-        self.assertEqual((13, 7), (gx, gy))
+        self.assertEqual((0, 0), (gx, gy))               # constant
         self.assertEqual(0, (n.x - gx) % GRID)
         self.assertEqual(0, (n.y - gy) % GRID)
-        self.ok("create node on panned grid")
+        centre = self.h.widget_of(n).get_center()
+        self.assertEqual(0, (centre.x() - 13 - gx) % GRID)
+        self.assertEqual(0, (centre.y() - 7 - gy) % GRID)
+        self.ok("create node after pan")
 
     def test_create_branch_between_two_nodes(self):
         a, b, br = self.make_two_nodes_and_branch()
@@ -295,19 +302,18 @@ class TestHandlesAndLabels(GuiTestCase):
 
 
 class TestPan(GuiTestCase):
-    def test_pan_shifts_every_model_coordinate(self):
+    def test_pan_changes_only_the_view(self):
+        """Panning no longer touches the graph (it did up to V3.0 step 3)."""
         a, b, br = self.make_two_nodes_and_branch()
-        n0, b0, g0 = coords(self.h)
+        before = coords(self.h)
+        centres = {o: self.h.widget_of(o).get_center()
+                   for o in (a, b, br)}
         self.h.pan(33, 17)
-        n1, b1, g1 = coords(self.h)
-        for o, n in zip(n0, n1):
-            self.assertEqual((o[1] + 33, o[2] + 17, o[3], o[4]),
-                             (n[1], n[2], n[3], n[4]))   # labels unchanged
-        for o, n in zip(b0, b1):
-            self.assertEqual((o[4] + 33, o[5] + 17, o[6] + 33, o[7] + 17),
-                             (n[4], n[5], n[6], n[7]))
-            self.assertEqual((o[8], o[9]), (n[8], n[9]))
-        self.assertEqual((33, 17), g1)
+        self.assertEqual(before, coords(self.h))   # incl. grid position
+        self.assertEqual(QPointF(33, 17), self.h.view.offset)
+        for obj, old in centres.items():
+            self.assertEqual(old + QPointF(33, 17),
+                             self.h.widget_of(obj).get_center())
         self.ok("pan")
 
     def test_pan_accumulates_and_is_not_undoable(self):
@@ -315,11 +321,12 @@ class TestPan(GuiTestCase):
         undo_depth = self.h.command_handler.can_undo.get()
         self.h.pan(33, 17)
         self.h.pan(-50, 40)
-        self.assertEqual((-17, 57), tuple(self.h.model.get_grid_position()))
+        self.assertEqual(QPointF(-17, 57), self.h.view.offset)
+        self.assertEqual((0, 0), tuple(self.h.model.get_grid_position()))
         self.assertEqual(undo_depth, self.h.command_handler.can_undo.get())
         self.ok("two pans")
 
-    def test_move_after_pan_snaps_to_panned_grid(self):
+    def test_move_after_pan_snaps_to_the_grid(self):
         a, b, br = self.make_two_nodes_and_branch()
         self.h.pan(13, 7)
         self.h.drag_node(a, 31, 29)
@@ -331,7 +338,9 @@ class TestPan(GuiTestCase):
     def test_center_graph(self):
         a, b, br = self.make_two_nodes_and_branch()
         self.h.pan(300, 200)
+        before = coords(self.h)
         self.h.field.center_graph()
+        self.assertEqual(before, coords(self.h))   # only the view moved
         widgets = list(self.h.model_widget_map.values())
         min_x = min(w.x() for w in widgets)
         max_x = max(w.x() + w.width() for w in widgets)
@@ -422,7 +431,7 @@ class TestCopyPaste(GuiTestCase):
         self.assertEqual(1, len(self.h.branches))
         self.ok("paste after cut")
 
-    def test_paste_after_pan_stays_on_the_panned_grid(self):
+    def test_paste_after_pan_stays_on_the_grid(self):
         """Paste used to snap to a grid that ignored the pan (K2, 1b)."""
         a, b, br = self.make_two_nodes_and_branch()
         self.h.pan(13, 7)
@@ -471,31 +480,31 @@ class TestDelete(GuiTestCase):
         self.assertEqual(before, coords(self.h))
         self.ok("second undo delete")
 
-    def test_undo_delete_after_pan_restores_at_panned_position(self):
-        """The 'gridpos_atCreation' pan compensation of the commands."""
+    def test_undo_delete_after_pan_restores_the_graph(self):
+        """
+        Deleted objects keep their world coordinates, the pan in between
+        does not matter (the commands used to compensate for it).
+        """
         a, b, br = self.make_two_nodes_and_branch()
-        before_nodes, before_branches, _ = coords(self.h)
+        before = coords(self.h)
         self.h.select(b)
         self.h.delete_selection()
         self.h.pan(40, 25)
         self.h.undo()
-        nodes, branches, grid = coords(self.h)
-        self.assertEqual((40, 25), grid)
-        for o, n in zip(before_nodes, nodes):
-            self.assertEqual((o[1] + 40, o[2] + 25), (n[1], n[2]))
-        for o, n in zip(before_branches, branches):
-            self.assertEqual((o[4] + 40, o[5] + 25, o[6] + 40, o[7] + 25),
-                             (n[4], n[5], n[6], n[7]))
+        self.assertEqual(before, coords(self.h))
+        self.assertEqual(QPointF(40, 25), self.h.view.offset)
         self.ok("undo delete after pan")
 
     def test_undo_create_after_pan_then_redo(self):
         a, b, br = self.make_two_nodes_and_branch()
         self.h.undo()                      # remove branch
+        before_redo = coords(self.h)
         self.h.pan(-30, 60)
         self.h.redo()                      # re-add branch
         self.ok("redo create branch after pan")
-        n = self.h.model.get_grid_position()
-        self.assertEqual((-30, 60), tuple(n))
+        self.assertEqual(QPointF(-30, 60), self.h.view.offset)
+        self.assertEqual(1, len(self.h.branches))
+        self.assertEqual(before_redo[0], coords(self.h)[0])    # nodes
 
 
 class TestCoincidentNodes(GuiTestCase):
@@ -551,7 +560,7 @@ class TestCoincidentNodes(GuiTestCase):
 
 
 class TestSaveLoad(GuiTestCase):
-    def test_roundtrip_with_pan_keeps_coordinates_and_grid(self):
+    def test_roundtrip_with_pan_keeps_coordinates_grid_and_view(self):
         a, b, br = self.make_two_nodes_and_branch()
         self.h.drag_label(br, 20, 20)
         self.h.pan(13, 7)
@@ -563,6 +572,8 @@ class TestSaveLoad(GuiTestCase):
             try:
                 h2.load(path)
                 self.assertEqual(before, coords(h2))
+                # the file opens showing the same part of the graph
+                self.assertEqual(QPointF(13, 7), h2.view.offset)
                 self.assertEqual([], check_consistency(h2))
                 # grid phase survives: new nodes are on the same grid
                 n = h2.double_click(210, 210)

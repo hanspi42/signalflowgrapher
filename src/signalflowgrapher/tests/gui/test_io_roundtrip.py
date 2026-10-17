@@ -21,6 +21,7 @@ from signalflowgrapher.tests.gui.test_golden import example_files, \
 def normalized(d):
     d = copy.deepcopy(d)
     d.pop("version", None)      # files are written with the current version
+    d.pop("view_origin", None)  # written since V3.0 (checked separately)
     d["nodes"].sort(key=lambda n: n["id"])
     d["branches"].sort(key=lambda b: b["id"])
     return d

@@ -10,9 +10,13 @@ logger = logging.getLogger(__name__)
 
 # Version of the file format written by this program. Files of older
 # versions (without version, or "2.0") are still read.
-#   2.0  nodes, branches, grid_pos
-#   3.0  written by V3.0; same structure, the version marks the files of the
-#        V3.0 series (pan and zoom handling were reworked in this series)
+#   2.0  nodes, branches, grid_pos (the accumulated pan of the graph: the
+#        coordinates of nodes and splines were shifted by every pan)
+#   3.0  written by V3.0. Panning no longer changes any coordinate, so
+#        grid_pos is a constant: the position of a grid line crossing.
+#        Optional key view_origin: the world position at the top left
+#        corner of the window when the file was saved. Readers that do
+#        not know it ignore it.
 FILE_FORMAT_VERSION = "3.0"
 
 
@@ -24,12 +28,15 @@ class JSONExport(object):
     def __init__(self):
         super().__init__()
 
-    def write_as_json(self, data: JSONDict, grid_pos, path: str):
+    def write_as_json(self, data: JSONDict, grid_pos, path: str,
+                      view_origin=None):
         """
         Write data to file at path.
         """
         data_dict = data.to_dict()
         data_dict["grid_pos"] = grid_pos
+        if view_origin is not None:
+            data_dict["view_origin"] = list(view_origin)
         data_dict["version"] = FILE_FORMAT_VERSION
 
         logger.info("Write json to file %s", path)
@@ -132,6 +139,12 @@ class JSONValidator(object):
                     "minItems": 2,
                     "maxItems": 2
                 },
+                "view_origin": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                    "minItems": 2,
+                    "maxItems": 2
+                },
                 "version": {
                     "type": "string"
                 }
@@ -140,7 +153,7 @@ class JSONValidator(object):
                 "nodes",
                 "branches"
             ]
-        }  # grid_pos and version are optional for backward compatibility
+        }  # grid_pos, view_origin and version are optional
 
     @property
     def schema(self) -> Dict:

@@ -1,17 +1,14 @@
 import unittest
 from unittest.mock import MagicMock, Mock
 from signalflowgrapher.commands.create_node_command import CreateNodeCommand
-from signalflowgrapher.model.model import ObservableGraph, Model
+from signalflowgrapher.model.model import ObservableGraph
 
 
 class TestCreateNodeCommand(unittest.TestCase):
     def test_undo(self):
         graph_mock = MagicMock(ObservableGraph)
         node_mock = Mock()
-        model_mock = MagicMock(Model)
-
-
-        command = CreateNodeCommand(graph_mock, node_mock, model_mock)
+        command = CreateNodeCommand(graph_mock, node_mock)
         command.undo()
 
         # Assert
@@ -20,9 +17,8 @@ class TestCreateNodeCommand(unittest.TestCase):
     def test_redo(self):
         graph_mock = MagicMock(ObservableGraph)
         node_mock = Mock()
-        model_mock = MagicMock(Model)
 
-        command = CreateNodeCommand(graph_mock, node_mock, model_mock)
+        command = CreateNodeCommand(graph_mock, node_mock)
         command.redo()
 
         # Assert

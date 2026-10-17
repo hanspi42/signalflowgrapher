@@ -7,8 +7,7 @@ from signalflowgrapher.common.observable import ObjectObservable
 from signalflowgrapher.model.model import (
     PositionedNodeAddedEvent, PositionedNodeMovedEvent,
     CurvedBranchTransformedEvent, CurvedBranch, LabeledObject,
-    LabelMovedEvent, LabelChangedTextEvent,
-    GraphMovedEvent
+    LabelMovedEvent, LabelChangedTextEvent
 )
 
 from signalflowgrapher.gui.graph_item import (
@@ -90,9 +89,6 @@ class LabelWidget(QLabel, ObjectObservable):
         The owner widget has to be up to date: refresh it first.
         """
         self.__reposition()
-
-    def graph_moved_event(self, event: GraphMovedEvent):
-        self.refresh()
 
     def __reposition(self):
         """

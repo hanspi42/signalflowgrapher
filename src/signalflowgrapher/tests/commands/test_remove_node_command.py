@@ -1,17 +1,14 @@
 import unittest
 from unittest.mock import MagicMock, Mock
 from signalflowgrapher.commands.remove_node_command import RemoveNodeCommand
-from signalflowgrapher.model.model import ObservableGraph, Model
+from signalflowgrapher.model.model import ObservableGraph
 
 
 class TestRemoveNodeCommand(unittest.TestCase):
     def test_redo(self):
         graph_mock = MagicMock(ObservableGraph)
         node_mock = Mock()
-        model_mock = MagicMock(Model)
-
-
-        command = RemoveNodeCommand(graph_mock, node_mock, model_mock)
+        command = RemoveNodeCommand(graph_mock, node_mock)
         command.redo()
 
         # Assert
@@ -20,9 +17,8 @@ class TestRemoveNodeCommand(unittest.TestCase):
     def test_undo(self):
         graph_mock = MagicMock(ObservableGraph)
         node_mock = Mock()
-        model_mock = MagicMock(Model)
 
-        command = RemoveNodeCommand(graph_mock, node_mock, model_mock)
+        command = RemoveNodeCommand(graph_mock, node_mock)
         command.undo()
 
         # Assert
