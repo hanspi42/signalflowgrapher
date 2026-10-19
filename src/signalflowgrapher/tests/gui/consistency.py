@@ -8,6 +8,8 @@ invariants that hold *today* between model coordinates and widget state:
   * branch widget caches == the branch's points mapped to the screen
   * branch widget mid point == Bezier mid point of the curve on the screen
   * label widget centre == owner centre + label offset * zoom
+  * everything that is drawn has the size of zoom 100% times the zoom:
+    node widget size, label font size, branch widget covers its curve
   * visible spline handles == model splines (knob mirrored about the node)
   * grid offset state agrees everywhere (model, grid widgets)
   * the view origin that the model remembers for the file is the world
@@ -24,9 +26,10 @@ Usage:
     problems = check_consistency(harness)
     assert not problems, "\n".join(problems)
 """
-from PySide6.QtCore import QPoint, QPointF
+from PySide6.QtCore import QPoint, QPointF, QRectF
 from PySide6.QtGui import QPainterPath
 
+from signalflowgrapher.gui import glyphs
 from signalflowgrapher.gui.grid import FixedGrid, GRID_SIZE
 from signalflowgrapher.tests.gui.harness import Harness, _private
 
@@ -133,6 +136,12 @@ def check_nodes(h: Harness):
         if w.parent() is not h.field:
             problems.append("node widget %s has the wrong parent"
                             % node.id.hex)
+        size = 2 * glyphs.node_half_size(h.view.zoom)
+        if (w.width(), w.height()) != (size, size):
+            problems.append("node widget %s has the size %sx%s, expected "
+                            "%sx%s for zoom %s" % (node.id.hex, w.width(),
+                                                   w.height(), size, size,
+                                                   h.view.zoom))
     return problems
 
 
@@ -158,13 +167,24 @@ def check_branches(h: Harness):
                             "Bezier mid point of model (%.1f, %.1f)"
                             % (branch.id.hex, mid.x(), mid.y(),
                                exp_mid.x(), exp_mid.y()))
-        # The widget must at least contain its start and end node centre.
+        # The widget must contain the whole curve (and its arrow) ...
         geo = w.geometry()
-        for name in ("start", "end"):
-            p = cached[name]
-            if not geo.adjusted(-1, -1, 1, 1).contains(p):
-                problems.append("branch %s: widget geometry does not cover "
-                                "its %s point" % (branch.id.hex, name))
+        curve = expected_branch_path(h, branch).boundingRect()
+        # (compared edge by edge: QRectF.contains is false for a rect
+        # without height or width, e.g. a straight horizontal branch)
+        outer = QRectF(geo.adjusted(-1, -1, 1, 1))
+        if not (outer.left() <= curve.left()
+                and outer.top() <= curve.top()
+                and outer.right() >= curve.right()
+                and outer.bottom() >= curve.bottom()):
+            problems.append("branch %s: widget geometry %s does not cover "
+                            "the curve %s" % (branch.id.hex, geo, curve))
+        # ... and has been built for the current zoom (the size of the arrow
+        # follows from it)
+        if w._BranchWidget__zoom != h.view.zoom:
+            problems.append("branch %s was built for zoom %s, the zoom is %s"
+                            % (branch.id.hex, w._BranchWidget__zoom,
+                               h.view.zoom))
     return problems
 
 
@@ -177,6 +197,11 @@ def check_labels(h: Harness):
         c = owner_widget.get_center()
         centre = QPointF(lw.x() + lw.width() / 2, lw.y() + lw.height() / 2)
         zoom = h.view.zoom
+        font_points = lw.font().pointSizeF()
+        if abs(font_points - glyphs.LABEL_FONT_POINTS * zoom) > 0.01:
+            problems.append("label of %s: font size %.2f pt, expected %.2f"
+                            % (obj.id.hex, font_points,
+                               glyphs.LABEL_FONT_POINTS * zoom))
         expected = QPointF(c.x() + obj.label_dx * zoom,
                            c.y() + obj.label_dy * zoom)
         if not _close(centre, expected, LABEL_TOLERANCE):

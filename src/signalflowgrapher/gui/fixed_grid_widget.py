@@ -1,5 +1,6 @@
 import math
 from PySide6.QtCore import QPoint, Qt
+from signalflowgrapher.gui import glyphs
 from PySide6.QtWidgets import QWidget, QApplication
 from PySide6.QtGui import QPaintEvent, QPainter, QPen
 
@@ -46,6 +47,13 @@ class FixedGridWidget(QWidget):
         zoom = self.__view.zoom
         view_offset = self.__view.offset
         distance = self.__grid_size * zoom
+
+        # Lines that are only a few pixels apart would not be a grid but a
+        # grey area, so zoomed far out the grid is not drawn (snapping to
+        # it still works)
+        if distance < glyphs.MIN_VISIBLE_GRID_SPACING:
+            painter.end()
+            return
 
         # Horizontal lines
         first = (zoom * offset.y() + view_offset.y()) % distance

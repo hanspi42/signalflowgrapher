@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.2
+## Created by: Qt User Interface Compiler version 6.12.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -46,6 +46,14 @@ class Ui_MainWindow(object):
         self.action_redo.setEnabled(False)
         self.action_remove_branch_or_node = QAction(MainWindow)
         self.action_remove_branch_or_node.setObjectName(u"action_remove_branch_or_node")
+        self.action_zoom_in = QAction(MainWindow)
+        self.action_zoom_in.setObjectName(u"action_zoom_in")
+        self.action_zoom_out = QAction(MainWindow)
+        self.action_zoom_out.setObjectName(u"action_zoom_out")
+        self.action_zoom_reset = QAction(MainWindow)
+        self.action_zoom_reset.setObjectName(u"action_zoom_reset")
+        self.action_zoom_fit = QAction(MainWindow)
+        self.action_zoom_fit.setObjectName(u"action_zoom_fit")
         self.action_center_graph = QAction(MainWindow)
         self.action_center_graph.setObjectName(u"action_center_graph")
         self.action_save_png = QAction(MainWindow)
@@ -105,6 +113,11 @@ class Ui_MainWindow(object):
         self.menu_edit.addAction(self.action_select_all)
         self.menu_edit.addSeparator()
         self.menu_edit.addAction(self.action_remove_branch_or_node)
+        self.menu_view.addAction(self.action_zoom_in)
+        self.menu_view.addAction(self.action_zoom_out)
+        self.menu_view.addAction(self.action_zoom_reset)
+        self.menu_view.addAction(self.action_zoom_fit)
+        self.menu_view.addSeparator()
         self.menu_view.addAction(self.action_center_graph)
         self.menu_view.addAction(self.action_save_png)
         self.menu_view.addAction(self.action_light_dark)
@@ -154,6 +167,22 @@ class Ui_MainWindow(object):
         self.action_remove_branch_or_node.setText(QCoreApplication.translate("MainWindow", u"Remove Node(s) or Branch(es)", None))
 #if QT_CONFIG(shortcut)
         self.action_remove_branch_or_node.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+Shift+Del", None))
+#endif // QT_CONFIG(shortcut)
+        self.action_zoom_in.setText(QCoreApplication.translate("MainWindow", u"Zoom In", None))
+#if QT_CONFIG(shortcut)
+        self.action_zoom_in.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl++", None))
+#endif // QT_CONFIG(shortcut)
+        self.action_zoom_out.setText(QCoreApplication.translate("MainWindow", u"Zoom Out", None))
+#if QT_CONFIG(shortcut)
+        self.action_zoom_out.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+-", None))
+#endif // QT_CONFIG(shortcut)
+        self.action_zoom_reset.setText(QCoreApplication.translate("MainWindow", u"Zoom 100%", None))
+#if QT_CONFIG(shortcut)
+        self.action_zoom_reset.setShortcut(QCoreApplication.translate("MainWindow", u"Ctrl+0", None))
+#endif // QT_CONFIG(shortcut)
+        self.action_zoom_fit.setText(QCoreApplication.translate("MainWindow", u"Zoom to Fit", None))
+#if QT_CONFIG(shortcut)
+        self.action_zoom_fit.setShortcut(QCoreApplication.translate("MainWindow", u"Alt+Z", None))
 #endif // QT_CONFIG(shortcut)
         self.action_center_graph.setText(QCoreApplication.translate("MainWindow", u"Center Graph", None))
 #if QT_CONFIG(shortcut)

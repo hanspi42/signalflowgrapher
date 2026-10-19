@@ -5,8 +5,8 @@ The application itself still runs at zoom 1 / offset (0, 0) in this step.
 These tests set other values on the GraphField's transform to prove that
 every place that converts between model (world) and screen coordinates
 does so: widget placement, mouse input, grid snapping, paste, pan.
-The sizes of glyphs (node circle, pen widths, font) do not scale yet; that
-is step 5.
+Since step 5 the sizes of glyphs (node circle, pen widths, font) scale with
+the zoom too; that is tested in test_zoom.py.
 """
 import math
 from unittest import TestCase
@@ -381,8 +381,13 @@ class TestGridDrawing(TestCase):
 
     @staticmethod
     def expected_lines(zoom, view_offset, pan, extent):
-        """Screen positions of the grid lines in one direction."""
+        """
+        Screen positions of the grid lines in one direction. Lines that
+        would be less than 6 pixels apart are not drawn.
+        """
         lines = set()
+        if GRID_SIZE * zoom < 6:
+            return lines
         world_offset = pan % GRID_SIZE
         first = -int(abs(view_offset) / (GRID_SIZE * zoom)) - 5
         last = int(extent / (GRID_SIZE * zoom)) + int(
@@ -403,6 +408,16 @@ class TestGridDrawing(TestCase):
         """
         img = self.h.private("grid_widget").grab().toImage()
         width, height = img.width(), img.height()
+        if not expected_x:
+            # nothing should be drawn: every pixel is the background; report
+            # the columns and rows that differ from the corner pixel
+            background = img.pixel(0, 0)
+            return ({x for x in range(width)
+                     if any(img.pixel(x, y) != background
+                            for y in range(height))},
+                    {y for y in range(height)
+                     if any(img.pixel(x, y) != background
+                            for x in range(width))})
         free_x = next(x for x in range(width) if x not in expected_x)
         free_y = next(y for y in range(height) if y not in expected_y)
         background = img.pixel(free_x, free_y)

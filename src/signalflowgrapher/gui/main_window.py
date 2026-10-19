@@ -2,10 +2,10 @@ import ntpath
 import logging
 
 from PySide6.QtWidgets import (
-    QMainWindow, QDockWidget, QFileDialog, QMessageBox)
+    QMainWindow, QDockWidget, QFileDialog, QMessageBox, QLabel)
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6 import QtCore
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtGui import QGuiApplication, QKeySequence, QPixmap
 
 from signalflowgrapher.controllers.main_controller import MainController
 from signalflowgrapher.controllers.io_controller import IOController
@@ -70,6 +70,19 @@ class MainWindow(QMainWindow):
         self._ui.action_new.triggered.connect(self.__new)
         self._ui.action_exit.triggered.connect(lambda: self.close())
         self._ui.action_center_graph.triggered.connect(self.__center_graph)
+        self._ui.action_zoom_in.triggered.connect(graph_field.zoom_in)
+        self._ui.action_zoom_out.triggered.connect(graph_field.zoom_out)
+        self._ui.action_zoom_reset.triggered.connect(graph_field.zoom_reset)
+        self._ui.action_zoom_fit.triggered.connect(graph_field.zoom_to_fit)
+        # Ctrl+= is the same key as Ctrl++ on keyboards where + needs Shift
+        self._ui.action_zoom_in.setShortcuts(
+            [QKeySequence("Ctrl++"), QKeySequence("Ctrl+=")])
+
+        # Show the zoom in the status bar
+        self.__zoom_label = QLabel()
+        self._ui.statusbar.addPermanentWidget(self.__zoom_label)
+        graph_field.view.changed.connect(self.__update_zoom_label)
+        self.__update_zoom_label()
         self._ui.action_save_png.triggered.connect(self.__save_png)
         self._ui.action_light_dark.triggered.connect(self.__light_dark)
         self._ui.action_about.triggered.connect(self.__about)
@@ -264,6 +277,10 @@ class MainWindow(QMainWindow):
 
     def __center_graph(self):
         self.__graph_field.center_graph()
+
+    def __update_zoom_label(self):
+        self.__zoom_label.setText(
+            "%d%%" % round(self.__graph_field.view.zoom * 100))
 
     def __save_png(self):
         fileName, extension = QFileDialog.getSaveFileName(

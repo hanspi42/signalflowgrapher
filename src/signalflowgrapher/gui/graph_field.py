@@ -1,9 +1,10 @@
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QSize
-from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QSize, QTimer
+from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent, QWheelEvent
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid, GRID_SIZE
-from signalflowgrapher.gui.view_transform import ViewTransform
+from signalflowgrapher.gui.view_transform import (
+    ViewTransform, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP)
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
 from signalflowgrapher.gui.branch_widget import (
     BranchWidget, Spline1HandleWidget, Spline2HandleWidget,
@@ -53,6 +54,14 @@ class GraphField(QWidget):
         # is converted with it.
         self.__view = ViewTransform(parent=self)
         self.__view.changed.connect(self.__on_view_changed)
+        self.__shown_zoom = self.__view.zoom
+        # Turns of the mouse wheel that came together are one zoom
+        self.__wheel_steps = 0.0
+        self.__wheel_anchor = None
+        self.__wheel_timer = QTimer(self)
+        self.__wheel_timer.setSingleShot(True)
+        self.__wheel_timer.setInterval(0)
+        self.__wheel_timer.timeout.connect(self.__apply_wheel_steps)
         # The model owns the pan; grid snapping and grid drawing read it
         self.__fixed_grid = FixedGrid(GRID_SIZE,
                                       self.__model.get_grid_position)
@@ -76,7 +85,19 @@ class GraphField(QWidget):
         # Everything that is shown depends on the view: derive all widgets
         # from the model again. Widgets that are only moved by a pan are
         # moved, not rebuilt.
-        self.refresh_widgets()
+        zoom_changed = self.__shown_zoom != self.__view.zoom
+        self.__shown_zoom = self.__view.zoom
+        if zoom_changed:
+            # Everything changes its size: paint the window once at the end,
+            # not after every widget (a third of the time). A pan does not
+            # need this, the moved widgets are painted where they are.
+            self.setUpdatesEnabled(False)
+            try:
+                self.refresh_widgets()
+            finally:
+                self.setUpdatesEnabled(True)
+        else:
+            self.refresh_widgets()
         self.__grid_widget.update()
         # The model remembers what part of the graph is shown, for the file
         origin = self.__view.to_world(QPointF(0, 0))
@@ -127,6 +148,118 @@ class GraphField(QWidget):
         # Show the graph shifted by this distance on the screen
         self.__pan_view(viewport_center_x - graph_center_x,
                         viewport_center_y - graph_center_y)
+
+    # Space that "zoom to fit" leaves around the graph, in pixels
+    FIT_MARGIN = 40
+
+    @staticmethod
+    def __limited_zoom(zoom: float) -> float:
+        """
+        The zoom the user can choose: between MIN_ZOOM and MAX_ZOOM; values
+        that only differ by rounding errors from the limits and from 100%
+        are the exact value, so that steps in and out arrive at 100% again.
+        """
+        for exact in (1.0, MIN_ZOOM, MAX_ZOOM):
+            if abs(zoom - exact) < 1e-6:
+                zoom = exact
+        return min(max(zoom, MIN_ZOOM), MAX_ZOOM)
+
+    def set_zoom(self, zoom: float, anchor: QPointF = None):
+        """
+        Zoom to the given factor (limited to 10% to 100%). The part of the
+        graph that is at the screen position `anchor` stays there; without
+        an anchor this is the centre of the window.
+        """
+        new_zoom = self.__limited_zoom(zoom)
+        old_zoom = self.__view.zoom
+        if new_zoom == old_zoom:
+            return
+        if anchor is None:
+            anchor = QPointF(self.width() / 2, self.height() / 2)
+        # The world position under the anchor is (anchor - offset) / zoom
+        # and has to be shown at the anchor with the new zoom:
+        #   new_zoom * world + new_offset = anchor
+        offset = self.__view.offset
+        ratio = new_zoom / old_zoom
+        self.__view.set(new_zoom, QPointF(
+            anchor.x() - ratio * (anchor.x() - offset.x()),
+            anchor.y() - ratio * (anchor.y() - offset.y())))
+
+    def zoom_by_steps(self, steps: float, anchor: QPointF = None):
+        """
+        Zoom in (steps > 0) or out (steps < 0) by steps of the keyboard or
+        mouse wheel, see ZOOM_STEP.
+        """
+        self.set_zoom(self.__view.zoom * ZOOM_STEP ** steps, anchor)
+
+    def zoom_in(self):
+        self.zoom_by_steps(1)
+
+    def zoom_out(self):
+        self.zoom_by_steps(-1)
+
+    def zoom_reset(self):
+        """Back to 100%, the centre of the window stays where it is."""
+        self.set_zoom(1.0)
+
+    def zoom_to_fit(self):
+        """
+        Show the whole graph: zoomed out as far as necessary (but not
+        beyond 100%) and centred in the window.
+        """
+        graph = self.__model.graph
+        points = []
+        for node in graph.nodes:
+            points.append((node.x, node.y))
+            points.append((node.x + node.label_dx, node.y + node.label_dy))
+        for branch in graph.branches:
+            curve = [(branch.start.x, branch.start.y),
+                     (branch.spline1_x, branch.spline1_y),
+                     (branch.spline2_x, branch.spline2_y),
+                     (branch.end.x, branch.end.y)]
+            points.extend(curve)
+            # label: placed relative to the middle of the curve
+            middle_x = sum(w * p[0] for w, p in zip((1, 3, 3, 1), curve)) / 8
+            middle_y = sum(w * p[1] for w, p in zip((1, 3, 3, 1), curve)) / 8
+            points.append((middle_x + branch.label_dx,
+                           middle_y + branch.label_dy))
+        if not points:
+            return
+        min_x = min(p[0] for p in points)
+        max_x = max(p[0] for p in points)
+        min_y = min(p[1] for p in points)
+        max_y = max(p[1] for p in points)
+        width = max(max_x - min_x, 1)
+        height = max(max_y - min_y, 1)
+        zoom = self.__limited_zoom(min(
+            (self.width() - 2 * self.FIT_MARGIN) / width,
+            (self.height() - 2 * self.FIT_MARGIN) / height))
+        self.__view.set(zoom, QPointF(
+            self.width() / 2 - zoom * (min_x + max_x) / 2,
+            self.height() / 2 - zoom * (min_y + max_y) / 2))
+
+    def wheelEvent(self, event: QWheelEvent):
+        # Ctrl + mouse wheel zooms around the mouse pointer; the wheel alone
+        # is not used
+        if event.modifiers() & Qt.ControlModifier:
+            steps = event.angleDelta().y() / 120
+            if steps:
+                # Zooming rebuilds every widget, which takes a while for a
+                # big graph. A fast turn of the wheel produces many events
+                # at once; they are added up and zoomed in one go.
+                self.__wheel_steps += steps
+                self.__wheel_anchor = event.position()
+                self.__wheel_timer.start()
+            event.accept()
+        else:
+            super().wheelEvent(event)
+
+    def __apply_wheel_steps(self):
+        steps, anchor = self.__wheel_steps, self.__wheel_anchor
+        self.__wheel_steps = 0.0
+        self.__wheel_anchor = None
+        if steps:
+            self.zoom_by_steps(steps, anchor)
 
     def __pan_view(self, screen_dx: float, screen_dy: float):
         """

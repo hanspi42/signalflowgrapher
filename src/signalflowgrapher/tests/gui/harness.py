@@ -17,7 +17,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import uuid  # noqa: E402
 from signalflowgrapher.algorithms import graph as graph_module  # noqa: E402
 from PySide6.QtCore import QEvent, QPoint, QPointF, Qt  # noqa: E402
-from PySide6.QtGui import QCursor, QMouseEvent  # noqa: E402
+from PySide6.QtGui import QCursor, QMouseEvent, QWheelEvent  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from signalflowgrapher.commands.command_handler import CommandHandler  # noqa
@@ -183,6 +183,23 @@ class Harness:
                                           round(dy * i / steps)),
                       modifiers=modifiers)
         self.release(widget, g0 + QPoint(dx, dy), modifiers=modifiers)
+
+    def wheel(self, x, y, delta, modifiers=Qt.ControlModifier, widget=None):
+        """
+        Turn the mouse wheel at the canvas position (x, y); 120 is one notch
+        (positive: away from the user). The event is sent to `widget`
+        (default: the canvas); Qt hands it on to the parent if it is not
+        used, like for a real wheel over a node.
+        """
+        target = widget if widget is not None else self.field
+        glob = self.field.mapToGlobal(QPoint(x, y))
+        local = QPointF(target.mapFromGlobal(glob))
+        event = QWheelEvent(local, QPointF(glob), QPoint(0, 0),
+                            QPoint(0, delta), Qt.NoButton, modifiers,
+                            Qt.NoScrollPhase, False)
+        QApplication.sendEvent(target, event)
+        self.process_events()
+        return event
 
     # ------------------------------------------------------ user operations
     def double_click(self, x, y):

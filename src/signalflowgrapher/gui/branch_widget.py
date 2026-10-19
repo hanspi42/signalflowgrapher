@@ -10,6 +10,7 @@ from signalflowgrapher.model.model import (
     PositionedNodeMovedEvent)
 import math
 from signalflowgrapher.gui.geometry import rotate_pointF, rotate_point
+from signalflowgrapher.gui import glyphs
 from signalflowgrapher.gui.view_transform import ViewTransform
 
 
@@ -27,25 +28,19 @@ class BranchWidget(GraphItem):
          self.__spline1,
          self.__spline2) = self.__model_points()
         self.__branch = QPainterPath()
-        self.__pen_width = 3
-        # The arrow has the form of a triangle
-        # Half of the width of the arrow (at the back)
-        self.__arrow_height = 9
-        # Length of the arrow from top to back
-        self.__arrow_length = 27
-        # The triangle is drawn with 3 bezier curves
-        # These numbers determine the bend of the curves
-        self.__arrow_side_spline_depth = 2
-        self.__arrow_back_spline_depth = 5.5
-        # Antialiasing offsets for arrow mask
-        self.__arrow_mask_length_offset = 8
-        self.__arrow_mask_height_offset = 5
+        # Everything that is drawn is scaled with the zoom (the dimensions
+        # at zoom 100% are in glyphs.py); this is the zoom the widget was
+        # built for
+        self.__zoom = self.__view.zoom
         self.__arrow_mask = None
         self.__arrow = None
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.updateGeometry()
 
     def updateGeometry(self):
+        zoom = self.__view.zoom
+        self.__zoom = zoom
+
         # Calculate path absolute
         branch_abs = QPainterPath()
         branch_abs.moveTo(self.__start)
@@ -58,22 +53,30 @@ class BranchWidget(GraphItem):
         arrow_abs = self.__calculate_arrow(
             branch_middle,
             middle_angle,
-            self.__arrow_height,
-            self.__arrow_length,
-            self.__arrow_side_spline_depth,
-            self.__arrow_back_spline_depth)
+            glyphs.ARROW_HEIGHT * zoom,
+            glyphs.ARROW_LENGTH * zoom,
+            glyphs.ARROW_SIDE_SPLINE_DEPTH * zoom,
+            glyphs.ARROW_BACK_SPLINE_DEPTH * zoom)
 
-        # Calculate arrow mask absolute
+        # Calculate arrow mask absolute. The mask is the area that reacts
+        # to the mouse and has space for anti aliasing pixels; it does not
+        # get smaller than a minimum.
+        mask_height_offset = max(
+            glyphs.ARROW_MASK_HEIGHT_OFFSET * zoom,
+            glyphs.MIN_ARROW_MASK_HEIGHT_OFFSET)
+        mask_length_offset = max(
+            glyphs.ARROW_MASK_LENGTH_OFFSET * zoom,
+            glyphs.MIN_ARROW_MASK_LENGTH_OFFSET)
         arrow_mask_abs = self.__calculate_arrow(
             branch_middle,
             middle_angle,
-            self.__arrow_height + self.__arrow_mask_height_offset,
-            self.__arrow_length + self.__arrow_mask_length_offset,
-            self.__arrow_side_spline_depth,
-            self.__arrow_back_spline_depth)
+            glyphs.ARROW_HEIGHT * zoom + mask_height_offset,
+            glyphs.ARROW_LENGTH * zoom + mask_length_offset,
+            glyphs.ARROW_SIDE_SPLINE_DEPTH * zoom,
+            glyphs.ARROW_BACK_SPLINE_DEPTH * zoom)
 
         # Add some margin to avoid cutting off anti aliasing pixels of branch
-        branch_aliasing_margin = 4
+        branch_aliasing_margin = glyphs.branch_aliasing_margin(zoom)
         geo_branch = branch_abs.boundingRect() \
                                .toRect().marginsAdded(QMargins(
                                    branch_aliasing_margin,
@@ -108,9 +111,10 @@ class BranchWidget(GraphItem):
         self.__arrow_mask = arrow_mask_rel
 
         stroker = QPainterPathStroker()
-        stroker.setWidth(8)
+        stroker.setWidth(max(glyphs.BRANCH_HIT_WIDTH * zoom,
+                             glyphs.MIN_BRANCH_HIT_WIDTH))
         wide_stroke = stroker.createStroke(self.__branch)
-        stroker.setWidth(self.__pen_width)
+        stroker.setWidth(glyphs.BRANCH_PEN_WIDTH * zoom)
         narrow_stroke = stroker.createStroke(self.__branch)
         branch_outlet = wide_stroke.united(narrow_stroke).toFillPolygon()
         mask_poly_f = self.__arrow_mask.toFillPolygon().united(branch_outlet)
@@ -144,11 +148,13 @@ class BranchWidget(GraphItem):
         new_points = self.__model_points()
         old_points = (self.__start, self.__end,
                       self.__spline1, self.__spline2)
-        if not force and new_points == old_points:
+        zoom_changed = self.__zoom != self.__view.zoom
+        if not force and not zoom_changed and new_points == old_points:
             return
         delta = new_points[0] - old_points[0]
-        only_moved = all(new - old == delta
-                         for new, old in zip(new_points, old_points))
+        only_moved = not zoom_changed and all(
+            new - old == delta
+            for new, old in zip(new_points, old_points))
         (self.__start,
          self.__end,
          self.__spline1,
@@ -191,8 +197,9 @@ class BranchWidget(GraphItem):
         return [handle1, handle2]
 
     def paintEvent(self, QPaintEvent):
+        zoom = self.__view.zoom
         pen = QPen()
-        pen.setWidth(self.__pen_width)
+        pen.setWidthF(glyphs.BRANCH_PEN_WIDTH * zoom)
         if self.selected:
             pen.setColor(self.palette().highlight().color())
         else:
@@ -204,7 +211,7 @@ class BranchWidget(GraphItem):
         painter.setPen(pen)
         painter.drawPath(self.__branch)
 
-        pen.setWidth(1)
+        pen.setWidthF(glyphs.BRANCH_ARROW_PEN_WIDTH * zoom)
         painter.setPen(pen)
         if self.selected:
             painter.setBrush(self.palette().highlight())
@@ -217,10 +224,10 @@ class BranchWidget(GraphItem):
     def __calculate_arrow(self,
                           branch_middle: QPointF,
                           middle_angle: QPointF,
-                          arrow_height: int,
-                          arrow_length: int,
-                          side_spline_depth: int,
-                          back_spline_depth: int) -> QPainterPath:
+                          arrow_height: float,
+                          arrow_length: float,
+                          side_spline_depth: float,
+                          back_spline_depth: float) -> QPainterPath:
         """
         Calculate the QPainterPath of an arrow consisting
         of three Bézier curves
@@ -396,22 +403,28 @@ class SplineHandleWidget(GraphItem):
         self._spline_abs = self._model_spline()
         self._origin_ = None
         self._spline_ = None
-        self.__radius = 5
-        self.__circle_width = 2
         self.__handle_pos = None
+        # Everything that is drawn is scaled with the zoom (the dimensions
+        # at zoom 100% are in glyphs.py)
+        self.__zoom = self.__view.zoom
         self.updateGeometry()
 
     def updateGeometry(self):
+        zoom = self.__view.zoom
+        self.__zoom = zoom
+
         # Get absolute position of handle by spline
         __handle_pos_abs = rotate_point(
             self._origin_abs,
             self._spline_abs,
             math.radians(180))
 
-        # Calculate bounding rect including circle and line
+        # Calculate bounding rect including circle and line. The circle
+        # area also is the area that reacts to the mouse; it does not get
+        # smaller than a minimum.
         rect = QRect(self._origin_abs, __handle_pos_abs).normalized()  # Line
-        circle_offset = QPoint(int(self.__circle_width + self.__radius),
-                               int(self.__circle_width + self.__radius))
+        hit_radius = glyphs.handle_hit_radius(zoom)
+        circle_offset = QPoint(hit_radius, hit_radius)
         circle_rect = QRect(__handle_pos_abs - circle_offset,  # Circle
                             __handle_pos_abs + circle_offset).normalized()
 
@@ -435,7 +448,8 @@ class SplineHandleWidget(GraphItem):
 
         # Create stroke to give space for anti aliasing pixels of line
         stroker = QPainterPathStroker()
-        stroker.setWidth(4)
+        stroker.setWidth(max(glyphs.HANDLE_LINE_HIT_WIDTH * zoom,
+                             glyphs.MIN_HANDLE_LINE_HIT_WIDTH))
         line_stroke = stroker.createStroke(self.line_path)
 
         mask = circle_region.united(
@@ -486,7 +500,8 @@ class SplineHandleWidget(GraphItem):
         """
         origin = self._model_origin()
         spline = self._model_spline()
-        if force or origin != self._origin_abs or spline != self._spline_abs:
+        if (force or self.__zoom != self.__view.zoom
+                or origin != self._origin_abs or spline != self._spline_abs):
             self._origin_abs = origin
             self._spline_abs = spline
             self.updateGeometry()
@@ -500,9 +515,10 @@ class SplineHandleWidget(GraphItem):
             self.refresh()
 
     def paintEvent(self, QPaintEvent):
+        zoom = self.__view.zoom
         pen = QPen()
         pen.setColor(self.palette().text().color())
-        pen.setWidth(self.__circle_width)
+        pen.setWidthF(glyphs.HANDLE_CIRCLE_WIDTH * zoom)
         painter = QPainter()
         painter.begin(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -512,8 +528,9 @@ class SplineHandleWidget(GraphItem):
         painter.drawPath(self.line_path)
 
         # Paint circle
+        radius = glyphs.HANDLE_RADIUS * zoom
         painter.setBrush(self.palette().window())
-        painter.drawEllipse(self.__handle_pos, self.__radius, self.__radius)
+        painter.drawEllipse(QPointF(self.__handle_pos), radius, radius)
         painter.end()
 
     def mousePressEvent(self, event):

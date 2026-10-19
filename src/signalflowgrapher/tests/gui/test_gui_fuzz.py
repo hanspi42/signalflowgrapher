@@ -14,7 +14,7 @@ import os
 import random
 from unittest import TestCase
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPointF, Qt
 
 from signalflowgrapher.tests.gui.harness import Harness
 from signalflowgrapher.tests.gui.consistency import check_consistency
@@ -57,7 +57,9 @@ def run_sequence(seed, steps, allow_redo, random_views=False):
             if allow_redo:
                 choices.append("redo")
             if random_views:
-                choices += ["view", "view"]
+                # directly set views, and the zoom operations of the user
+                choices += ["view", "view", "zoom_step", "zoom_step",
+                            "wheel", "fit"]
             if nodes:
                 choices += ["move", "move", "label", "center", "copy",
                             "loop", "delete"]
@@ -108,6 +110,15 @@ def run_sequence(seed, steps, allow_redo, random_views=False):
                                   rnd.randint(-80, 80))
             elif op == "view":
                 change_view()
+            elif op == "zoom_step":
+                h.field.zoom_by_steps(
+                    rnd.uniform(-3, 3),
+                    QPointF(rnd.randint(0, 1000), rnd.randint(0, 700)))
+            elif op == "wheel":
+                h.wheel(rnd.randint(0, 990), rnd.randint(0, 690),
+                        rnd.choice([-360, -120, -30, 30, 120, 240]))
+            elif op == "fit":
+                h.field.zoom_to_fit()
             elif op == "undo":
                 h.undo()
             elif op == "redo":

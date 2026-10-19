@@ -9,8 +9,8 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | 2 | Idempotent widget refresh | done, tested |
 | 2b | Remove deprecated Qt and library calls | done, tested |
 | 3 | `ViewTransform` at identity | done, tested |
-| 4 | Pan becomes a view offset | done, ready for manual test |
-| 5 | Zoom (wheel and keyboard, everything scales with z) | planned |
+| 4 | Pan becomes a view offset | done, tested |
+| 5 | Zoom (wheel and keyboard, everything scales with z) | done, ready for manual test |
 | 6 | Mini map | planned |
 
 ## Decisions
@@ -52,13 +52,14 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 | File | Purpose |
 |---|---|
 | `harness.py` | Real `GraphField`, `Model`, controllers and `CommandHandler` in an offscreen window, driven with synthetic mouse events (double click, drag, pan, Ctrl+click, copy/paste, delete, undo/redo, save/load). Uses deterministic ids. |
-| `consistency.py` | Compares every widget with the model through the view transform: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, integer node coordinates and label offsets, the view origin that the model remembers, graph topology. |
+| `consistency.py` | Compares every widget with the model through the view transform: node centres, branch caches and Bezier mid points, label positions, spline handles, grid offsets, widget/label maps, integer node coordinates and label offsets, the view origin that the model remembers, glyph sizes (node widgets, label fonts, branch widgets cover their curve and have the current zoom), graph topology. |
 | `test_consistency_checker.py` | Fault injection: 17 deliberately broken states must each be detected ("tests for the tests"). |
 | `test_gui_operations.py` | Scenario tests with exact expectations (create, move, handles, labels, pan, center, copy/paste, delete, undo/redo, save/load). |
 | `test_gui_fuzz.py` | Seeded random operation sequences with a consistency check after every operation. `SFG_FUZZ_SEEDS` and `SFG_FUZZ_STEPS` scale it up for a soak run. |
 | `test_deprecations.py`, `deprecation_scenario.py` | Runs a broad scenario in a fresh process and fails if the application's own modules issue a `DeprecationWarning` (also at import time). |
 | `test_view_transform.py` | Step 3: the `ViewTransform` class, and every conversion between world and screen coordinates with real zoom and offset values (widgets, mouse input, grid snapping and drawing, paste, pan, center). |
 | `test_pan_view_offset.py` | Step 4: a pan changes only the view; the view is remembered in the file; files of the old pan semantics look the same pixel by pixel. |
+| `test_zoom.py` | Step 5: zoom operations and limits, wheel, keyboard actions in the real main window, measured scaling of every drawn part, minimum click areas, grid hiding, zoom to fit, exports independent of the zoom. |
 | `test_widget_refresh.py` | Step 2: refresh is idempotent, events carry no state, event order does not matter, a pan does not rebuild branch shapes. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
 | `test_io_roundtrip.py` | Load/save round trips, old files without `grid_pos`, schema behaviour. |
@@ -276,18 +277,69 @@ Checks done:
 7. Open a saved file in a text editor: `grid_pos` is the same after panning (it no longer accumulates), `view_origin` is there.
 8. "New" resets the view and the grid to the origin.
 
-### Step 5: Zoom (10% to 100%)
+### Step 5: Zoom, 10% to 100% (done)
 
-- **5a** Programmatic zoom (debug shortcut): everything scales with z (node size, circle width, pen widths, arrow and handle sizes, label font and offsets, grid spacing). Prefer one painter transform per widget over scattering `* z` through constants.
-- **5b** Zoom input: keyboard shortcuts for zoom in, zoom out and reset to 100% (check the existing shortcuts in `gui/ui/main_window.ui` first), and Ctrl + mouse wheel zooming about the pointer (`t' = t + c * (1 - z'/z)`). Steps in a geometric progression, limits 10% and 100%, zoom level shown in the status bar. A "zoom to fit" command is proposed for the main use case.
-- **5c** Zoom-dependent behaviour to decide at the review of 5a (proposals): a minimum click target for tiny nodes at low zoom, hiding grid lines when their spacing is below about 6 px, and `Alt`-drag rubber band working in screen space.
-- **5d** Verify that save, TikZ, clipboard and PNG export do not depend on the zoom level (PNG export: current view or always 100%, to be decided).
-- *Tests:* at z = 1 identical to step 4; at other z every widget equals `to_screen(model)`; save/TikZ identical at any zoom.
+The graph can be zoomed from 100% down to 10%, with the keyboard, the menu and Ctrl + mouse wheel. Everything that is drawn scales with the zoom, so node size, line widths, arrows and text keep their relation, as in the TikZ output. At 100% the pictures are identical to step 1 (pixel by pixel, all 9 reference scenes).
+
+**Operating it**
+
+| Action | Menu (View) | Keys / mouse |
+|---|---|---|
+| Zoom in | Zoom In | `Ctrl++` or `Ctrl+=`; `Ctrl` + wheel away from you |
+| Zoom out | Zoom Out | `Ctrl+-`; `Ctrl` + wheel towards you |
+| Back to 100% | Zoom 100% | `Ctrl+0` |
+| Show the whole graph | Zoom to Fit | `Alt+Z` |
+
+The zoom is shown in the status bar. A step (one key press, one wheel notch) changes the zoom by the factor 2^(1/4), so four steps halve it; a part of a notch (touchpad) is the same part of a step. The range is 10% to 100%: zooming in at 100% or out at 10% does nothing, and the limits and 100% are reached exactly. The wheel and `Zoom In/Out` zoom around the mouse pointer or, for the keyboard, the centre of the window: the part of the graph there stays where it is. The plain wheel (without `Ctrl`) is not used. Turns of the wheel that arrive together are added up and zoomed in one go. "Zoom to fit" shows the whole graph centred, as large as fits but not beyond 100% (on an empty graph it does nothing). The zoom is not saved in the file; a file opens at 100% (see step 4).
+
+**Correction of the plan.** The formula for zooming around a point was wrong in the plan (`t' = t + c * (1 - z'/z)`), it is only right when the offset `t` is 0. The world point under the pointer `c` stays fixed if `t' = c - z' * (c - t) / z`. This is implemented (`GraphField.set_zoom`) and tested with 200 random zooms, offsets and anchors.
+
+**What scales, and how** (`gui/glyphs.py` has all dimensions at 100% in one place):
+
+| Part | At zoom z |
+|---|---|
+| Node | radius, circle line width and the selection number are drawn in a painter that is scaled by z around the centre of the widget. The widget has an even size (so its centre is on a pixel): `2 * ceil(11 * z)`, but at least 10 pixels |
+| Branch | line width 3 and arrow line width 1 times z; arrow length, height and curvature times z; the area around the line and the arrow that is kept free for anti-aliasing times z |
+| Spline handle | knob radius, circle line width times z |
+| Label | font size `13 pt * z` (at 100% exactly as before); label offsets times z (step 3) |
+| Grid | spacing `30 * z` (step 3) |
+
+A widget remembers the zoom it was built for and rebuilds itself when the zoom differs, also if its points did not move (`BranchWidget`, handles, labels, nodes). A pan is still only a move of the widgets. `QLabel` does not recompute its size for a label without text (a node without a name) after a font change; this is worked around in `LabelWidget.__apply_zoom` and tested.
+
+**Decisions made in this step** (change them at the review if you want something else):
+
+1. **Minimum click areas.** Nodes can always be grabbed on a circle of at least 10 pixels, branches along a line at least 6 pixels wide (8 at 100%), the arrow and the handle knob (radius at least 5 pixels, line 4 pixels) as well. The *drawing* is exactly scaled; only the area that reacts to the mouse does not get smaller. Labels get no minimum (their text is the click area).
+2. **The grid is not drawn when its lines are less than 6 pixels apart** (zoom below 20%): it would be a grey area. Snapping to the grid still works.
+3. **Thin lines are not made thicker.** A branch of width 3 is 0.3 pixels wide at 10% and therefore a faint grey line. This keeps the proportions as in TikZ; if it is too faint to see, a minimum line width can be added in `glyphs.py`.
+4. **Rubber band** (`Alt`+drag) stays in screen space and works at every zoom.
+5. **PNG export is unchanged: it saves what is shown**, so at 50% the picture is the 50% view. Save, TikZ and the clipboard do not depend on the zoom at all (tested); "always 100%" or "the whole graph" for PNG would be a separate change.
+6. **Sub-pixel curves:** the caches of branches and handles stay whole pixels (as decided in step 3), the curves look fine at 10% to 50% in the renders.
+
+Performance (offscreen, graph with 168 nodes and 216 branches): a pan step about 40 ms (unchanged), also at 50%; a zoom step about 220 ms, where all widgets are rebuilt (about 30 ms for the biggest example, 21 nodes and 27 branches). Repaints are suspended during a zoom and wheel events are added up, so a fast spin does not queue up work.
+
+Checks done:
+
+- All earlier tests pass; at 100% the 9 reference renders are identical to step 1; golden files unchanged.
+- `test_zoom.py` (51 tests): operations and exact limits; the anchor stays under the pointer (200 random cases); wheel (direction, notches, parts, `Ctrl` needed, anchor, limits, coalescing); the real main window (menu entries, shortcuts, **no shortcut is used twice in the whole window**, status bar); **measured in the rendered pictures** that node circle, line width, arrow, handle knob and text are the size at 100% times the zoom (zoom 1, 0.75, 0.5, 0.25) and that their relations stay; minimum click areas at zoom 1 to 0.1; grid hiding at the 6 pixel limit; zoom to fit for all examples in three window sizes (the whole graph is inside the window); TikZ, file and clipboard identical at every zoom.
+- The consistency checker verifies after every fuzz step that the node widgets have the right size, labels the right font size, branches cover their curve and were built for the current zoom.
+- Mutation check: 24 deliberate breaks (the old wrong formula, no limit at 100% or 10%, no snap to exactly 100%, plain wheel zooming, reversed wheel, nodes/pens/arrow/handle/font not scaled, widgets not rebuilt after a zoom, no minimum click areas, grid not hidden, zoom to fit not centred, status bar not updated, missing shortcut, and others) are all caught. Three of them were not caught at first and led to new tests (handle drawing, a branch whose points do not change when the zoom does, rounding at 100%).
+- Fuzz: 200 seeds of 100 steps with random zoom operations (steps around random anchors, wheel, zoom to fit, directly set views) interleaved with all other operations are clean.
+
+*Manual checklist for step 5* (in addition to the earlier ones):
+
+1. `Ctrl` + wheel zooms around the mouse pointer: the part of the graph under the pointer does not move. Try it with the pointer over empty canvas **and over a node, a branch, a label and a spline handle** (a real wheel is handed from these widgets to the canvas by Qt; this cannot be tested with synthetic events). The wheel without `Ctrl` does nothing.
+2. `Ctrl++` (and `Ctrl+=`), `Ctrl+-`, `Ctrl+0`, `Alt+Z` and the entries of the View menu do the same; the status bar shows the zoom; nothing zooms in beyond 100% or out beyond 10%.
+3. Zoom out to 50%, 25%, 10%: nodes, lines, arrows and text shrink together and look like a smaller version of the same picture. At 10% the grid is gone, at 25% it is visible.
+4. At 25% and 10%: select, drag nodes (with and without `Ctrl`), drag labels and spline handles, create nodes by double click, `Alt`-drag a rubber band, copy and paste, undo and redo. Everything must be grabbable (also a tiny node and a thin branch) and everything must land on the grid.
+5. Pan while zoomed out; "Center graph"; zoom to fit on the examples and on a big graph that is larger than the window.
+6. Zoom, then save, close, open: the file opens at 100%, showing the same top left part of the graph as when it was saved. Export TikZ at 100% and at 30%: the files are the same.
+7. At 100% nothing looks different from step 4 (compare with a few examples).
+8. Zoom out with a big graph and turn the wheel quickly: the program stays responsive and ends at the zoom of all notches together.
 
 ### Step 6: Mini map
 
 - A small overlay widget showing the whole graph (simplified nodes and branches drawn from the model) and a rectangle for the visible area. Click and drag in the mini map pans the view. Switch on/off by menu entry and shortcut; the setting is remembered between sessions, it is not part of the graph file.
-- Needs the view offset from step 4 and the zoom from step 5 (the visible rectangle is `to_world(viewport)`).
+- Needs the view offset from step 4 and the zoom from step 5 (the visible rectangle is `to_world(viewport)`; `GraphField.zoom_to_fit` already computes the world rectangle of a graph).
 - *Tests:* mini map content equals the model bounding box; the visible rectangle matches the view at several zoom levels; toggling does not change the model.
 
 ---

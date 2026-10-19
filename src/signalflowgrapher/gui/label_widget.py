@@ -13,6 +13,7 @@ from signalflowgrapher.model.model import (
 from signalflowgrapher.gui.graph_item import (
     WidgetPressEvent, WidgetMoveEvent, WidgetReleaseEvent
 )
+from signalflowgrapher.gui import glyphs
 from signalflowgrapher.gui.view_transform import ViewTransform
 
 # Load font using importlib.resources
@@ -48,11 +49,26 @@ class LabelWidget(QLabel, ObjectObservable):
         font_id = QFontDatabase.addApplicationFont(roman_font)
         if (font_id == -1):
             raise IOError("Font could not be loaded")
-        font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
-        font = QFont(font_name, 13)
-        self.setFont(font)
-        self.adjustSize()
+        self.__font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
+        self.__zoom = None
+        self.__apply_zoom()
         self.__reposition()
+
+    def __apply_zoom(self):
+        """
+        The text scales with the zoom, like everything else that is drawn.
+        """
+        self.__zoom = self.__view.zoom
+        font = QFont(self.__font_name)
+        font.setPointSizeF(glyphs.LABEL_FONT_POINTS * self.__zoom)
+        self.setFont(font)
+        # A label without text (a node without a name) does not notice that
+        # its size hint is out of date after a change of the font. Changing
+        # the margin (setting the same value is ignored) makes it compute
+        # the size hint again.
+        self.setMargin(1)
+        self.setMargin(0)
+        self.adjustSize()
 
     # Selection
     @property
@@ -88,6 +104,8 @@ class LabelWidget(QLabel, ObjectObservable):
         Derive the position from the owner widget and the label offset.
         The owner widget has to be up to date: refresh it first.
         """
+        if force or self.__zoom != self.__view.zoom:
+            self.__apply_zoom()
         self.__reposition()
 
     def __reposition(self):

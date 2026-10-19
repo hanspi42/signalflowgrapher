@@ -54,6 +54,11 @@
     <property name="title">
      <string>View</string>
     </property>
+    <addaction name="action_zoom_in"/>
+    <addaction name="action_zoom_out"/>
+    <addaction name="action_zoom_reset"/>
+    <addaction name="action_zoom_fit"/>
+    <addaction name="separator"/>
     <addaction name="action_center_graph"/>
     <addaction name="action_save_png"/>
     <addaction name="action_light_dark"/>
@@ -169,6 +174,38 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Del</string>
+   </property>
+  </action>
+  <action name="action_zoom_in">
+   <property name="text">
+    <string>Zoom In</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl++</string>
+   </property>
+  </action>
+  <action name="action_zoom_out">
+   <property name="text">
+    <string>Zoom Out</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+-</string>
+   </property>
+  </action>
+  <action name="action_zoom_reset">
+   <property name="text">
+    <string>Zoom 100%</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+0</string>
+   </property>
+  </action>
+  <action name="action_zoom_fit">
+   <property name="text">
+    <string>Zoom to Fit</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Z</string>
    </property>
   </action>
   <action name="action_center_graph">

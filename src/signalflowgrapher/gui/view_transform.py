@@ -2,6 +2,16 @@ import math
 from PySide6.QtCore import QObject, QPoint, QPointF, Signal
 
 
+# The zoom that the user can choose in the program (the class itself works
+# with every zoom greater than 0). The graph can be zoomed out to see all of
+# a big graph; there is no zoom in beyond 100%.
+MIN_ZOOM = 0.1
+MAX_ZOOM = 1.0
+# One step of the zoom keys or one notch of the mouse wheel changes the zoom
+# by this factor; four steps halve it.
+ZOOM_STEP = 2 ** 0.25
+
+
 class ViewTransform(QObject):
     """
     Maps between the two coordinate systems of the graph field.
