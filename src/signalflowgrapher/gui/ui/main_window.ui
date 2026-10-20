@@ -181,7 +181,7 @@
     <string>Zoom In</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl++</string>
+    <string>Alt+I</string>
    </property>
   </action>
   <action name="action_zoom_out">
@@ -189,7 +189,7 @@
     <string>Zoom Out</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+-</string>
+    <string>Alt+U</string>
    </property>
   </action>
   <action name="action_zoom_reset">
@@ -197,7 +197,7 @@
     <string>Zoom 100%</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+0</string>
+    <string>Alt+O</string>
    </property>
   </action>
   <action name="action_zoom_fit">

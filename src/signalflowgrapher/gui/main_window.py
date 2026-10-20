@@ -74,9 +74,15 @@ class MainWindow(QMainWindow):
         self._ui.action_zoom_out.triggered.connect(graph_field.zoom_out)
         self._ui.action_zoom_reset.triggered.connect(graph_field.zoom_reset)
         self._ui.action_zoom_fit.triggered.connect(graph_field.zoom_to_fit)
-        # Ctrl+= is the same key as Ctrl++ on keyboards where + needs Shift
+        # The Alt keys are the ones that need no numpad and no Shift (+ is
+        # Shift+1 on a Swiss keyboard): U, I, O are neighbours, as are
+        # out, in and 100%. The usual keys of other programs also work.
+        # (The first shortcut is the one shown in the menu.)
         self._ui.action_zoom_in.setShortcuts(
-            [QKeySequence("Ctrl++"), QKeySequence("Ctrl+=")])
+            [QKeySequence("Alt+I"), QKeySequence("Ctrl++"),
+             QKeySequence("Ctrl+=")])
+        self._ui.action_zoom_out.setShortcuts(
+            [QKeySequence("Alt+U"), QKeySequence("Ctrl+-")])
 
         # Show the zoom in the status bar
         self.__zoom_label = QLabel()

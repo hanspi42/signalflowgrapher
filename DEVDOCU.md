@@ -10,12 +10,13 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | 2b | Remove deprecated Qt and library calls | done, tested |
 | 3 | `ViewTransform` at identity | done, tested |
 | 4 | Pan becomes a view offset | done, tested |
-| 5 | Zoom (wheel and keyboard, everything scales with z) | done, ready for manual test |
+| 5 | Zoom (wheel and keyboard, everything scales with z) | done, tested |
+| 5b | Zoom up to 200%, keyboard shortcuts without numpad | done, ready for manual test |
 | 6 | Mini map | planned |
 
 ## Decisions
 
-- **Zoom range 10% to 100%.** The main use case is zooming out to see the whole graph. There is no zoom above 100%. Default is 100%.
+- **Zoom range 10% to 200%** (it was 10% to 100% in the first version of step 5, changed after its review). The main use is zooming out to see the whole graph; up to 200% is for working on details. Default is 100%.
 - **Everything scales with z**, exactly as in the TikZ output: node size, circle width, branch pen width, arrow size, spline handle size, label font size, label offsets and the grid. The size relationship between lines, text and nodes is therefore identical at every zoom level.
 - **Zoom input:** keyboard shortcuts for zoom in, zoom out and reset, and **Ctrl + mouse wheel** (zooming about the mouse pointer). The plain wheel is left unused.
 - **The model never contains zoom.** Model coordinates stay in "world units" (= pixels at 100%). Saved files, the clipboard, the TikZ export and the undo stack do not depend on the zoom level. The zoom level is not stored in the file.
@@ -277,20 +278,20 @@ Checks done:
 7. Open a saved file in a text editor: `grid_pos` is the same after panning (it no longer accumulates), `view_origin` is there.
 8. "New" resets the view and the grid to the origin.
 
-### Step 5: Zoom, 10% to 100% (done)
+### Step 5: Zoom (done; range and keys changed in step 5b)
 
-The graph can be zoomed from 100% down to 10%, with the keyboard, the menu and Ctrl + mouse wheel. Everything that is drawn scales with the zoom, so node size, line widths, arrows and text keep their relation, as in the TikZ output. At 100% the pictures are identical to step 1 (pixel by pixel, all 9 reference scenes).
+The graph can be zoomed with the keyboard, the menu and Ctrl + mouse wheel (the range is 10% to 200%, the keys are those of step 5b below). Everything that is drawn scales with the zoom, so node size, line widths, arrows and text keep their relation, as in the TikZ output. At 100% the pictures are identical to step 1 (pixel by pixel, all 9 reference scenes).
 
 **Operating it**
 
 | Action | Menu (View) | Keys / mouse |
 |---|---|---|
-| Zoom in | Zoom In | `Ctrl++` or `Ctrl+=`; `Ctrl` + wheel away from you |
-| Zoom out | Zoom Out | `Ctrl+-`; `Ctrl` + wheel towards you |
-| Back to 100% | Zoom 100% | `Ctrl+0` |
+| Zoom in | Zoom In | `Alt+I` (also `Ctrl++`, `Ctrl+=`); `Ctrl` + wheel away from you |
+| Zoom out | Zoom Out | `Alt+U` (also `Ctrl+-`); `Ctrl` + wheel towards you |
+| Back to 100% | Zoom 100% | `Alt+O` |
 | Show the whole graph | Zoom to Fit | `Alt+Z` |
 
-The zoom is shown in the status bar. A step (one key press, one wheel notch) changes the zoom by the factor 2^(1/4), so four steps halve it; a part of a notch (touchpad) is the same part of a step. The range is 10% to 100%: zooming in at 100% or out at 10% does nothing, and the limits and 100% are reached exactly. The wheel and `Zoom In/Out` zoom around the mouse pointer or, for the keyboard, the centre of the window: the part of the graph there stays where it is. The plain wheel (without `Ctrl`) is not used. Turns of the wheel that arrive together are added up and zoomed in one go. "Zoom to fit" shows the whole graph centred, as large as fits but not beyond 100% (on an empty graph it does nothing). The zoom is not saved in the file; a file opens at 100% (see step 4).
+The zoom is shown in the status bar. A step (one key press, one wheel notch) changes the zoom by the factor 2^(1/4), so four steps halve or double it; a part of a notch (touchpad) is the same part of a step. The range is 10% to 200%: zooming in at 200% or out at 10% does nothing, and the limits and 100% are reached exactly. The wheel and `Zoom In/Out` zoom around the mouse pointer or, for the keyboard, the centre of the window: the part of the graph there stays where it is. The plain wheel (without `Ctrl`) is not used. Turns of the wheel that arrive together are added up and zoomed in one go. "Zoom to fit" shows the whole graph centred, as large as fits but not beyond 100% (on an empty graph it does nothing). The zoom is not saved in the file; a file opens at 100% (see step 4).
 
 **Correction of the plan.** The formula for zooming around a point was wrong in the plan (`t' = t + c * (1 - z'/z)`), it is only right when the offset `t` is 0. The world point under the pointer `c` stays fixed if `t' = c - z' * (c - t) / z`. This is implemented (`GraphField.set_zoom`) and tested with 200 random zooms, offsets and anchors.
 
@@ -320,7 +321,7 @@ Performance (offscreen, graph with 168 nodes and 216 branches): a pan step about
 Checks done:
 
 - All earlier tests pass; at 100% the 9 reference renders are identical to step 1; golden files unchanged.
-- `test_zoom.py` (51 tests): operations and exact limits; the anchor stays under the pointer (200 random cases); wheel (direction, notches, parts, `Ctrl` needed, anchor, limits, coalescing); the real main window (menu entries, shortcuts, **no shortcut is used twice in the whole window**, status bar); **measured in the rendered pictures** that node circle, line width, arrow, handle knob and text are the size at 100% times the zoom (zoom 1, 0.75, 0.5, 0.25) and that their relations stay; minimum click areas at zoom 1 to 0.1; grid hiding at the 6 pixel limit; zoom to fit for all examples in three window sizes (the whole graph is inside the window); TikZ, file and clipboard identical at every zoom.
+- `test_zoom.py` (59 tests): operations and exact limits; the anchor stays under the pointer (200 random cases); wheel (direction, notches, parts, `Ctrl` needed, anchor, limits, coalescing); the real main window (menu entries, shortcuts, **no shortcut is used twice in the whole window**, status bar); **measured in the rendered pictures** that node circle, line width, arrow, handle knob and text are the size at 100% times the zoom (zoom 2, 1.5, 1, 0.75, 0.5, 0.25) and that their relations stay; minimum click areas at zoom 1 to 0.1; grid hiding at the 6 pixel limit; zoom to fit for all examples in three window sizes (the whole graph is inside the window); TikZ, file and clipboard identical at every zoom.
 - The consistency checker verifies after every fuzz step that the node widgets have the right size, labels the right font size, branches cover their curve and were built for the current zoom.
 - Mutation check: 24 deliberate breaks (the old wrong formula, no limit at 100% or 10%, no snap to exactly 100%, plain wheel zooming, reversed wheel, nodes/pens/arrow/handle/font not scaled, widgets not rebuilt after a zoom, no minimum click areas, grid not hidden, zoom to fit not centred, status bar not updated, missing shortcut, and others) are all caught. Three of them were not caught at first and led to new tests (handle drawing, a branch whose points do not change when the zoom does, rounding at 100%).
 - Fuzz: 200 seeds of 100 steps with random zoom operations (steps around random anchors, wheel, zoom to fit, directly set views) interleaved with all other operations are clean.
@@ -328,13 +329,46 @@ Checks done:
 *Manual checklist for step 5* (in addition to the earlier ones):
 
 1. `Ctrl` + wheel zooms around the mouse pointer: the part of the graph under the pointer does not move. Try it with the pointer over empty canvas **and over a node, a branch, a label and a spline handle** (a real wheel is handed from these widgets to the canvas by Qt; this cannot be tested with synthetic events). The wheel without `Ctrl` does nothing.
-2. `Ctrl++` (and `Ctrl+=`), `Ctrl+-`, `Ctrl+0`, `Alt+Z` and the entries of the View menu do the same; the status bar shows the zoom; nothing zooms in beyond 100% or out beyond 10%.
+2. `Alt+I`, `Alt+U`, `Alt+O`, `Alt+Z` (see step 5b) and the entries of the View menu do the same; the status bar shows the zoom; nothing zooms in beyond 200% or out beyond 10%.
 3. Zoom out to 50%, 25%, 10%: nodes, lines, arrows and text shrink together and look like a smaller version of the same picture. At 10% the grid is gone, at 25% it is visible.
 4. At 25% and 10%: select, drag nodes (with and without `Ctrl`), drag labels and spline handles, create nodes by double click, `Alt`-drag a rubber band, copy and paste, undo and redo. Everything must be grabbable (also a tiny node and a thin branch) and everything must land on the grid.
 5. Pan while zoomed out; "Center graph"; zoom to fit on the examples and on a big graph that is larger than the window.
 6. Zoom, then save, close, open: the file opens at 100%, showing the same top left part of the graph as when it was saved. Export TikZ at 100% and at 30%: the files are the same.
 7. At 100% nothing looks different from step 4 (compare with a few examples).
 8. Zoom out with a big graph and turn the wheel quickly: the program stays responsive and ends at the zoom of all notches together.
+
+### Step 5b: Zoom up to 200%, keyboard shortcuts without numpad (done)
+
+Two changes after the review of step 5.
+
+**1. The range is 10% to 200%** (`MAX_ZOOM = 2.0` in `gui/view_transform.py`). Everything above 100% works like below it: nodes, lines, arrows, handles and text are drawn at twice the size at 200% (measured in the rendered pictures, like at the smaller zooms), the grid lines are 60 pixels apart, the minimum click areas do not matter. Four steps in double the zoom and the limit is reached exactly, as at the lower end. "Zoom to fit" is still **limited to 100%**: it shows the whole graph and does not enlarge a small one (change the `1.0` in `GraphField.zoom_to_fit` if you want that to use up to 200%).
+
+**2. Shortcuts that work without numpad and without Shift.** On a Swiss keyboard `+` is `Shift+1`, so `Ctrl++` needs three keys. The View menu now shows:
+
+| Action | Shortcut | Also works |
+|---|---|---|
+| Zoom In | `Alt+I` | `Ctrl++`, `Ctrl+=` |
+| Zoom Out | `Alt+U` | `Ctrl+-` |
+| Zoom 100% | `Alt+O` | - |
+| Zoom to Fit | `Alt+Z` | - |
+
+`U`, `I` and `O` are neighbours on the top letter row (out, in, 100%), and they follow the `Alt+letter` scheme that the program already uses (`Alt+C` centre graph, `Alt+P`, `Alt+M`, `Alt+G`, `Alt+Z`). None of the keys is used by another action (`Ctrl+O` is Open, `Alt+O` is different); `Ctrl+0` is not used any more. The usual keys of other programs (`Ctrl++`, `Ctrl+=`, `Ctrl+-`) were kept as additional shortcuts because they cost nothing and help people with a numpad or another layout; to remove them, delete the extra entries in `MainWindow.__init__` (the first shortcut of the list is the one that the menu shows). The `.ui` file was changed and `ui_main_window.py` regenerated with `pyside6-uic main_window.ui -o ui_main_window.py` (see the note on `.ui` files in the V2.0 section "Porting Process" below; only the `.ui` file is edited by hand).
+
+Checks done:
+
+- The zoom tests were adapted to the new limit and extended: exactly 200% after four steps in, a fifth does nothing, in and out return to exactly 100%, reset to 100% from every zoom (also keeping the centre of the window), anchor invariance up to 200%, wheel at the limits, measured scaling of node, line, arrow, handle and text at 200% and 150%, minimum click areas at 200%, the status bar shows 200%.
+- **The shortcuts are tested by pressing the real key combinations in the real main window** (`QTest.keySequence`): `Alt+I`, `Ctrl++` and `Ctrl+=` zoom in, `Alt+U` and `Ctrl+-` zoom out, `Alt+O` gives 100% from 10%, 50%, 150% and 200%, `Alt+Z` zooms to fit, `Ctrl+0` does nothing. A test also checks that no shortcut is used twice in the whole window.
+
+- **The mutation checks of steps 3 to 5b were repeated from scratch** with a stricter runner (it works on a copy of the source, writes no bytecode and restores files from their saved text; the earlier runner could leave stale cached code behind when a mutation did not change the size of a file). Of 60 deliberate breaks, 54 are caught; 5 target code that was replaced in later steps (the transitional pan code of step 3 and two shortcut lists) and are covered by newer mutations; **1 was not caught: a new graph did not reset the grid position**, because the test never started from a graph with a grid position other than (0, 0). That test (`test_new_graph_starts_at_the_origin`) now loads such a file first, and the mutation is caught. The current code of the "view change refreshes the widgets" behaviour got two new mutations (zoom change, pan), both caught. Corrects the statements "all caught" for steps 3 and 4 above.
+- At 100% the 9 reference renders are still identical to step 1; fuzz: 100 more seeds of 100 steps with random zoom operations (now up to 200%) are clean.
+
+*Manual checklist for step 5b:*
+
+1. `Alt+I` zooms in beyond 100% up to exactly 200% (status bar), `Alt+U` zooms out down to 10%, `Alt+O` returns to 100% from anywhere. Check that the shortcuts work while the cursor is in the node name field of the side panel as well.
+2. At 150% and 200% everything looks like an enlarged version of the 100% picture (nodes, lines, arrows, text); dragging, handles, labels, rubber band and paste work; the grid lines are 60 pixels apart at 200%.
+3. `Ctrl+wheel` goes up to 200% as well. Pan and "Center graph" at 200%.
+4. "Zoom to fit" on a small graph stays at 100% (does not enlarge).
+5. The menu entries show the new shortcuts.
 
 ### Step 6: Mini map
 

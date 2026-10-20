@@ -31,12 +31,24 @@ class TestZoomOperations(ops.GuiTestCase):
     def zoom(self):
         return self.h.view.zoom
 
-    def test_the_limits_are_10_and_100_percent(self):
-        self.assertEqual(1.0, MAX_ZOOM)
+    def test_the_limits_are_10_and_200_percent(self):
+        self.assertEqual(2.0, MAX_ZOOM)
         self.assertEqual(0.1, MIN_ZOOM)
         self.assertEqual(1.0, self.zoom())              # start at 100%
 
-    def test_zoom_in_at_100_percent_does_nothing(self):
+    def test_zoom_in_goes_beyond_100_percent_up_to_exactly_200_percent(self):
+        seen = []
+        for _ in range(10):
+            self.h.field.zoom_in()
+            seen.append(self.zoom())
+        self.assertGreater(seen[0], 1.0)
+        self.assertEqual(seen, sorted(seen))             # never down
+        self.assertEqual(2.0, seen[3])                   # four steps double
+        self.assertEqual(2.0, seen[-1])
+        self.ok("at the largest zoom")
+
+    def test_zoom_in_at_200_percent_does_nothing(self):
+        self.h.field.set_zoom(2.0)
         before = (self.zoom(), self.h.view.offset)
         self.h.field.zoom_in()
         self.assertEqual(before, (self.zoom(), self.h.view.offset))
@@ -51,12 +63,12 @@ class TestZoomOperations(ops.GuiTestCase):
         self.assertEqual(0.1, min(seen))
         self.ok("at the smallest zoom")
 
-    def test_zoom_in_from_10_percent_reaches_exactly_100_percent(self):
+    def test_zoom_in_from_10_percent_reaches_exactly_200_percent(self):
         self.h.field.set_zoom(0.1)
-        for _ in range(40):
+        for _ in range(60):
             self.h.field.zoom_in()
-        self.assertEqual(1.0, self.zoom())
-        self.ok("back at 100%")
+        self.assertEqual(2.0, self.zoom())
+        self.ok("at 200%")
 
     def test_steps_out_and_in_return_to_exactly_100_percent(self):
         for steps in (1, 2, 4, 7, 13):
@@ -66,6 +78,16 @@ class TestZoomOperations(ops.GuiTestCase):
                 self.assertLess(self.zoom(), 1.0)
                 for _ in range(steps):
                     self.h.field.zoom_in()
+                self.assertEqual(1.0, self.zoom())
+
+    def test_steps_in_and_out_return_to_exactly_100_percent(self):
+        for steps in (1, 2, 3, 4):
+            with self.subTest(steps=steps):
+                for _ in range(steps):
+                    self.h.field.zoom_in()
+                self.assertGreater(self.zoom(), 1.0)
+                for _ in range(steps):
+                    self.h.field.zoom_out()
                 self.assertEqual(1.0, self.zoom())
 
     def test_small_steps_out_and_in_return_to_exactly_100_percent(self):
@@ -83,25 +105,44 @@ class TestZoomOperations(ops.GuiTestCase):
                         self.h.field.zoom_by_steps(part)
                     self.assertEqual(1.0, self.zoom())
 
-    def test_four_steps_halve_the_zoom(self):
+    def test_four_steps_halve_or_double_the_zoom(self):
         self.assertAlmostEqual(2 ** 0.25, ZOOM_STEP)
         for _ in range(4):
             self.h.field.zoom_out()
         self.assertAlmostEqual(0.5, self.zoom(), places=9)
+        self.h.field.zoom_reset()
+        for _ in range(4):
+            self.h.field.zoom_in()
+        self.assertEqual(2.0, self.zoom())
 
     def test_set_zoom_is_limited(self):
         self.h.field.set_zoom(5)
-        self.assertEqual(1.0, self.zoom())
+        self.assertEqual(2.0, self.zoom())
         self.h.field.set_zoom(0.01)
         self.assertEqual(0.1, self.zoom())
         self.h.field.set_zoom(0.3)
         self.assertEqual(0.3, self.zoom())
+        self.h.field.set_zoom(1.5)
+        self.assertEqual(1.5, self.zoom())
 
-    def test_reset_returns_to_100_percent(self):
-        self.h.field.set_zoom(0.3)
-        self.h.field.zoom_reset()
-        self.assertEqual(1.0, self.zoom())
-        self.ok("reset")
+    def test_reset_returns_to_100_percent_from_every_zoom(self):
+        for start in (0.1, 0.3, 0.9, 1.5, 2.0):
+            with self.subTest(start=start):
+                self.h.field.set_zoom(start)
+                self.h.field.zoom_reset()
+                self.assertEqual(1.0, self.zoom())
+                self.ok("reset from %s" % start)
+
+    def test_reset_keeps_the_centre_of_the_window_also_when_zooming_out(self):
+        centre = QPointF(self.h.field.width() / 2, self.h.field.height() / 2)
+        for start in (0.3, 2.0):
+            self.h.view.reset()
+            self.h.field.set_zoom(start)
+            world = self.h.view.to_world(centre)
+            self.h.field.zoom_reset()
+            after = self.h.view.to_world(centre)
+            self.assertAlmostEqual(world.x(), after.x(), places=6)
+            self.assertAlmostEqual(world.y(), after.y(), places=6)
 
     def test_the_point_under_the_anchor_stays_where_it_is(self):
         """
@@ -110,12 +151,12 @@ class TestZoomOperations(ops.GuiTestCase):
         """
         rnd = random.Random(42)
         for _ in range(200):
-            zoom = rnd.choice([0.1, 0.25, 0.3, 0.5, 0.8, 1.0])
+            zoom = rnd.choice([0.1, 0.25, 0.3, 0.5, 0.8, 1.0, 1.5, 2.0])
             offset = (rnd.randint(-400, 400), rnd.randint(-400, 400))
             self.h.view.set(zoom, QPointF(*offset))
             anchor = QPointF(rnd.randint(0, 1000), rnd.randint(0, 700))
             world = self.h.view.to_world(anchor)
-            self.h.field.set_zoom(rnd.uniform(0.1, 1.0), anchor)
+            self.h.field.set_zoom(rnd.uniform(0.1, 2.0), anchor)
             after = self.h.view.to_world(anchor)
             self.assertAlmostEqual(world.x(), after.x(), places=6)
             self.assertAlmostEqual(world.y(), after.y(), places=6)
@@ -131,7 +172,7 @@ class TestZoomOperations(ops.GuiTestCase):
 
     def test_a_node_under_the_anchor_stays_under_it(self):
         node = self.h.nodes[0]
-        for zoom in (0.8, 0.5, 0.25, 0.1):
+        for zoom in (2.0, 1.5, 0.8, 0.5, 0.25, 0.1):
             self.h.view.reset()
             screen = self.h.view.to_screen(QPointF(node.x, node.y))
             self.h.field.set_zoom(zoom, screen)
@@ -150,7 +191,7 @@ class TestZoomOperations(ops.GuiTestCase):
         self.assertEqual(undo, self.h.command_handler.can_undo.get())
 
     def test_zoomed_everything_stays_consistent(self):
-        for steps in range(0, 14):
+        for steps in range(-4, 14):
             self.h.field.set_zoom(ZOOM_STEP ** -steps)
             self.ok("zoom step %d" % steps)
 
@@ -247,9 +288,16 @@ class TestMouseWheel(ops.GuiTestCase):
 
     def test_the_wheel_at_the_limits_does_not_go_beyond(self):
         self.h.wheel(400, 300, 1200)
-        self.assertEqual(1.0, self.h.view.zoom)
+        self.assertEqual(2.0, self.h.view.zoom)
+        self.h.wheel(400, 300, 12000)
+        self.assertEqual(2.0, self.h.view.zoom)
         self.h.wheel(400, 300, -12000)
         self.assertEqual(0.1, self.h.view.zoom)
+
+    def test_ctrl_wheel_away_from_you_zooms_in_beyond_100_percent(self):
+        self.h.wheel(400, 300, 120)
+        self.assertAlmostEqual(ZOOM_STEP, self.h.view.zoom, places=9)
+        self.ok("zoomed in with the wheel")
 
 
 class TestZoomInTheMainWindow(TestCase):
@@ -263,6 +311,7 @@ class TestZoomInTheMainWindow(TestCase):
         cls.app = QApplication.instance() or QApplication([])
         cls.window = MainWindows.main_window()
         cls.window.show()
+        cls.window.activateWindow()
         cls.app.processEvents()
         cls.field = cls.window.findChild(GraphField)
         cls.label = cls.window.statusBar().findChildren(QLabel)[-1]
@@ -280,10 +329,60 @@ class TestZoomInTheMainWindow(TestCase):
         keys = {a.text(): [k.toString() for k in a.shortcuts()]
                 for a in (ui.action_zoom_in, ui.action_zoom_out,
                           ui.action_zoom_reset, ui.action_zoom_fit)}
-        self.assertEqual({"Zoom In": ["Ctrl++", "Ctrl+="],
-                          "Zoom Out": ["Ctrl+-"],
-                          "Zoom 100%": ["Ctrl+0"],
+        # The first shortcut is the one that the menu shows. The Alt keys
+        # need no numpad and no Shift (+ is Shift+1 on a Swiss keyboard);
+        # Ctrl++, Ctrl+= and Ctrl+- are the usual keys of other programs.
+        self.assertEqual({"Zoom In": ["Alt+I", "Ctrl++", "Ctrl+="],
+                          "Zoom Out": ["Alt+U", "Ctrl+-"],
+                          "Zoom 100%": ["Alt+O"],
                           "Zoom to Fit": ["Alt+Z"]}, keys)
+
+    def press(self, sequence):
+        from PySide6.QtGui import QKeySequence
+        from PySide6.QtTest import QTest
+        QTest.keySequence(self.window, QKeySequence(sequence))
+        self.app.processEvents()
+        return self.field.view.zoom
+
+    def test_pressing_the_keys_zooms(self):
+        """The real key presses, not only the list of shortcuts."""
+        for sequence in ("Alt+I", "Ctrl++", "Ctrl+="):
+            with self.subTest(sequence=sequence):
+                self.field.view.reset()
+                self.assertAlmostEqual(ZOOM_STEP, self.press(sequence))
+        for sequence in ("Alt+U", "Ctrl+-"):
+            with self.subTest(sequence=sequence):
+                self.field.view.reset()
+                self.assertAlmostEqual(1 / ZOOM_STEP, self.press(sequence))
+
+    def test_alt_o_sets_the_zoom_to_100_percent_from_anywhere(self):
+        for start in (0.1, 0.5, 1.5, 2.0):
+            with self.subTest(start=start):
+                self.field.set_zoom(start)
+                self.assertEqual(1.0, self.press("Alt+O"))
+
+    def test_ctrl_0_is_not_used_any_more(self):
+        self.field.set_zoom(0.5)
+        self.assertEqual(0.5, self.press("Ctrl+0"))
+
+    def test_alt_z_zooms_to_fit(self):
+        from PySide6.QtCore import QPointF
+        from signalflowgrapher.tests.gui.test_golden import example_files
+        from signalflowgrapher.containers import Controllers
+        Controllers.io_controller().load_graph(example_files()[-1])
+        self.app.processEvents()
+        try:
+            self.field.view.set(0.3, QPointF(500, 400))
+            self.field.zoom_to_fit()
+            expected = (self.field.view.zoom, self.field.view.offset)
+            self.field.view.set(0.3, QPointF(500, 400))
+            self.press("Alt+Z")
+            self.assertEqual(expected, (self.field.view.zoom,
+                                        self.field.view.offset))
+            self.assertNotEqual((0.3, QPointF(500, 400)), expected)
+        finally:
+            Controllers.io_controller().new_graph()
+            self.app.processEvents()
 
     def test_no_shortcut_is_used_twice(self):
         seen = {}
@@ -303,6 +402,9 @@ class TestZoomInTheMainWindow(TestCase):
         for _ in range(30):
             ui.action_zoom_out.trigger()
         self.assertEqual(0.1, self.field.view.zoom)
+        for _ in range(60):
+            ui.action_zoom_in.trigger()
+        self.assertEqual(2.0, self.field.view.zoom)
         ui.action_zoom_reset.trigger()
         self.assertEqual(1.0, self.field.view.zoom)
 
@@ -312,6 +414,8 @@ class TestZoomInTheMainWindow(TestCase):
         self.assertEqual("50%", self.label.text())
         self.field.set_zoom(0.1)
         self.assertEqual("10%", self.label.text())
+        self.field.set_zoom(2.0)
+        self.assertEqual("200%", self.label.text())
         self.field.zoom_reset()
         self.assertEqual("100%", self.label.text())
 
@@ -338,10 +442,10 @@ class TestEverythingScales(TestCase):
     the same at every zoom (as in the TikZ output).
     """
 
-    ZOOMS = (1.0, 0.75, 0.5, 0.25)
+    ZOOMS = (2.0, 1.5, 1.0, 0.75, 0.5, 0.25)
 
     def build(self, zoom):
-        h = Harness(900, 400)
+        h = Harness(1700, 600)
         a = h.double_click(150, 150)
         b = h.double_click(630, 150)
         br = h.ctrl_click_branch(a, b)
@@ -370,15 +474,19 @@ class TestEverythingScales(TestCase):
 
             # line: total darkness in a column a quarter of the way along
             x = int(ca.x() + (cb.x() - ca.x()) * 0.25)
+            line_reach = math.ceil(8 * max(zoom, 1))
             line = sum(ink(image, x, y, bg_l)
-                       for y in range(int(ca.y()) - 8, int(ca.y()) + 9))
+                       for y in range(int(ca.y()) - line_reach,
+                                      int(ca.y()) + line_reach + 1))
 
             # arrow: tallest dark column around the middle of the branch
             mid = h.widget_of(br).get_center()
             half = math.ceil(14 * zoom) + 1
+            arrow_reach = math.ceil(14 * max(zoom, 1)) + 2
             arrow = 0
             for xx in range(int(mid.x()) - half, int(mid.x()) + half + 1):
-                dark = [y for y in range(int(mid.y()) - 14, int(mid.y()) + 15)
+                dark = [y for y in range(int(mid.y()) - arrow_reach,
+                                         int(mid.y()) + arrow_reach + 1)
                         if ink(image, xx, y, bg_l) > 0.5]
                 if dark:
                     arrow = max(arrow, max(dark) - min(dark) + 1)
@@ -396,10 +504,11 @@ class TestEverythingScales(TestCase):
         cls.measured = {z: cls().measure(z) for z in cls.ZOOMS}
 
     def test_node_circle_is_the_size_at_100_percent_times_the_zoom(self):
-        full = self.measured[1.0]["node_outer"]
-        self.assertAlmostEqual(19, full, delta=1.5)    # (8 + 1.5) * 2
+        # outer diameter at 100%: (radius 8 + half of the line width 3) * 2
+        outer = (glyphs.NODE_RADIUS + glyphs.NODE_CIRCLE_WIDTH / 2) * 2
+        self.assertEqual(19, outer)
         for zoom in self.ZOOMS:
-            self.assertAlmostEqual(full * zoom,
+            self.assertAlmostEqual(outer * zoom,
                                    self.measured[zoom]["node_outer"],
                                    delta=1.6, msg="zoom %s" % zoom)
 
@@ -482,7 +591,7 @@ class TestEverythingScales(TestCase):
             h.close()
 
     def test_spline_handle_knob_is_the_size_at_100_percent_times_the_zoom(self):
-        h = Harness(900, 400)
+        h = Harness(1900, 500)
         try:
             a = h.double_click(150, 150)
             b = h.double_click(630, 150)
@@ -490,7 +599,7 @@ class TestEverythingScales(TestCase):
             handles = h.select_branch(br)
             h.field.toggle_grid_visibility()
             extents = {}
-            for zoom in (1.0, 0.5):
+            for zoom in (2.0, 1.0, 0.5):
                 h.set_view(zoom, (20, 20))
                 image = h.field.grab().toImage()
                 bg = QColor(image.pixel(5, 5))
@@ -502,6 +611,7 @@ class TestEverythingScales(TestCase):
                 extents[zoom] = max(rows) - min(rows) + 1
             self.assertAlmostEqual(12, extents[1.0], delta=1.5)   # (5 + 1) * 2
             self.assertAlmostEqual(6, extents[0.5], delta=1.6)
+            self.assertAlmostEqual(24, extents[2.0], delta=1.6)
         finally:
             h.close()
 
@@ -520,7 +630,7 @@ class TestMinimumClickAreas(ops.GuiTestCase):
         self.br = self.h.ctrl_click_branch(self.a, self.b)
 
     def test_nodes_can_be_hit_at_every_zoom(self):
-        for zoom in (1.0, 0.5, 0.25, 0.1):
+        for zoom in (2.0, 1.0, 0.5, 0.25, 0.1):
             with self.subTest(zoom=zoom):
                 self.h.set_view(zoom, (20, 20))
                 widget = self.h.widget_of(self.a)
@@ -540,7 +650,7 @@ class TestMinimumClickAreas(ops.GuiTestCase):
         self.assertEqual(22, self.h.widget_of(self.a).width())
 
     def test_branches_can_be_hit_at_every_zoom(self):
-        for zoom in (1.0, 0.5, 0.25, 0.1):
+        for zoom in (2.0, 1.0, 0.5, 0.25, 0.1):
             with self.subTest(zoom=zoom):
                 self.h.set_view(zoom, (20, 20))
                 widget = self.h.widget_of(self.br)
@@ -566,7 +676,7 @@ class TestMinimumClickAreas(ops.GuiTestCase):
 
     def test_handles_can_be_hit_at_every_zoom(self):
         self.h.select_branch(self.br)
-        for zoom in (1.0, 0.5, 0.25, 0.1):
+        for zoom in (2.0, 1.0, 0.5, 0.25, 0.1):
             with self.subTest(zoom=zoom):
                 self.h.set_view(zoom, (20, 20))
                 for handle in self.h.selected_handles():

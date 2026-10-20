@@ -23,7 +23,7 @@ from signalflowgrapher.tests.gui.snapshot import (
 VIEWS = [
     (1.0, (0, 0)),          # V2.0
     (1.0, (40, -30)),       # only shifted
-    (2.0, (0, 0)),          # not available in the app (max 100%) but valid
+    (2.0, (0, 0)),          # the largest zoom of the program (200%)
     (0.5, (0, 0)),
     (0.5, (37, -12)),
     (0.25, (100, 50)),

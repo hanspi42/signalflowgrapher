@@ -3,12 +3,12 @@ from PySide6.QtCore import QObject, QPoint, QPointF, Signal
 
 
 # The zoom that the user can choose in the program (the class itself works
-# with every zoom greater than 0). The graph can be zoomed out to see all of
-# a big graph; there is no zoom in beyond 100%.
+# with every zoom greater than 0): from 10% to see all of a big graph to 200%
+# to work on details.
 MIN_ZOOM = 0.1
-MAX_ZOOM = 1.0
+MAX_ZOOM = 2.0
 # One step of the zoom keys or one notch of the mouse wheel changes the zoom
-# by this factor; four steps halve it.
+# by this factor; four steps double or halve it.
 ZOOM_STEP = 2 ** 0.25
 
 

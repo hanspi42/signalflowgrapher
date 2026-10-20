@@ -166,7 +166,7 @@ class GraphField(QWidget):
 
     def set_zoom(self, zoom: float, anchor: QPointF = None):
         """
-        Zoom to the given factor (limited to 10% to 100%). The part of the
+        Zoom to the given factor (limited to 10% to 200%). The part of the
         graph that is at the screen position `anchor` stays there; without
         an anchor this is the centre of the window.
         """
@@ -205,7 +205,8 @@ class GraphField(QWidget):
     def zoom_to_fit(self):
         """
         Show the whole graph: zoomed out as far as necessary (but not
-        beyond 100%) and centred in the window.
+        beyond 100%: a small graph is not enlarged) and centred in the
+        window.
         """
         graph = self.__model.graph
         points = []
@@ -233,7 +234,8 @@ class GraphField(QWidget):
         height = max(max_y - min_y, 1)
         zoom = self.__limited_zoom(min(
             (self.width() - 2 * self.FIT_MARGIN) / width,
-            (self.height() - 2 * self.FIT_MARGIN) / height))
+            (self.height() - 2 * self.FIT_MARGIN) / height,
+            1.0))
         self.__view.set(zoom, QPointF(
             self.width() / 2 - zoom * (min_x + max_x) / 2,
             self.height() / 2 - zoom * (min_y + max_y) / 2))

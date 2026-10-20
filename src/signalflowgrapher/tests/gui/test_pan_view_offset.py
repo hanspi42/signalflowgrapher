@@ -238,7 +238,13 @@ class TestViewIsRememberedInTheFile(ops.GuiTestCase):
         self.ok("load replaces the view")
 
     def test_new_graph_starts_at_the_origin(self):
-        self.make_two_nodes_and_branch()
+        # a graph that has a grid position other than (0, 0), like every
+        # file that was saved by a version before step 4
+        with open(example_files()[0], encoding="utf-8") as f:
+            data = shifted_like_version_2(json.load(f), 17, 44)
+        with tempfile.TemporaryDirectory() as tmp:
+            self.h.load(write_json(tmp, "old.sfg", data))
+        self.assertNotEqual((0, 0), tuple(self.h.model.get_grid_position()))
         self.h.pan(70, 30)
         self.h.set_view(0.5)
         self.h.io.new_graph()
