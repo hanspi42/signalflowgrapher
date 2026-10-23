@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QSize, QTimer
 from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent, QWheelEvent
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
 from signalflowgrapher.gui.grid import FixedGrid, NoneGrid, GRID_SIZE
+from signalflowgrapher.gui.mini_map import MiniMapWidget
 from signalflowgrapher.gui.view_transform import (
     ViewTransform, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP)
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
@@ -73,6 +74,10 @@ class GraphField(QWidget):
         self.__grid_widget.show()
         self.__rubber_band: QRubberBand = QRubberBand(
             QRubberBand.Rectangle, self)
+        # The mini map lies over the widgets of the graph, in a corner. It
+        # is not part of the graph: it has no model object and does not
+        # appear in the maps of widgets.
+        self.__minimap = MiniMapWidget(self.__model, self.__view, self)
 
         self.setMinimumSize(800, 600)
 
@@ -80,6 +85,50 @@ class GraphField(QWidget):
     def view(self) -> ViewTransform:
         """The transformation between model and screen coordinates."""
         return self.__view
+
+    @property
+    def minimap(self) -> MiniMapWidget:
+        """The mini map (shown or not)."""
+        return self.__minimap
+
+    @property
+    def minimap_visible(self) -> bool:
+        return self.__minimap.isVisible()
+
+    def set_minimap_visible(self, visible: bool):
+        """Show or hide the mini map in the bottom right corner."""
+        self.__minimap.setVisible(visible)
+        self.__place_minimap()
+        self.__minimap.raise_()
+        self.__minimap.update()
+
+    def __place_minimap(self):
+        self.__minimap.move(
+            self.width() - self.__minimap.width() - MiniMapWidget.MARGIN,
+            self.height() - self.__minimap.height() - MiniMapWidget.MARGIN)
+
+    def childEvent(self, event):
+        # Every widget that is created later (nodes, branches, labels, spline
+        # handles) would otherwise lie over the mini map
+        super().childEvent(event)
+        minimap = self.__dict__.get("_GraphField__minimap")
+        if (minimap is not None and event.added()
+                and event.child() is not minimap
+                and event.child().isWidgetType()):
+            minimap.raise_()
+
+    def render_graph(self, target):
+        """
+        Render the graph field into a paint device (for a picture of what
+        is shown). The mini map is an aid for working with the graph and
+        not part of the picture.
+        """
+        was_visible = self.__minimap.isVisible()
+        self.__minimap.hide()
+        try:
+            self.render(target)
+        finally:
+            self.__minimap.setVisible(was_visible)
 
     def __on_view_changed(self):
         # Everything that is shown depends on the view: derive all widgets
@@ -99,6 +148,7 @@ class GraphField(QWidget):
         else:
             self.refresh_widgets()
         self.__grid_widget.update()
+        self.__minimap.update()
         # The model remembers what part of the graph is shown, for the file
         origin = self.__view.to_world(QPointF(0, 0))
         self.__model.set_view_origin((round(origin.x()), round(origin.y())))
@@ -520,6 +570,9 @@ class GraphField(QWidget):
             self.__selection_changed()
 
     def __handle_model_change(self, event):
+        # The mini map draws from the model: show every change (a repaint is
+        # scheduled once, however many events come)
+        self.__minimap.update()
         if isinstance(event, PositionedNodeAddedEvent):
             logger.debug("PositionedNodeAddedEvent received")
             self.__add_node(event.node)
@@ -691,6 +744,7 @@ class GraphField(QWidget):
     def resizeEvent(self, event: QResizeEvent):
         # Resize grid
         self.__grid_widget.resize(self.size())
+        self.__place_minimap()
         super().resizeEvent(event)
 
     def toggle_grid_visibility(self):

@@ -33,7 +33,8 @@ def _key(model_obj):
     return model_obj.id.int
 
 
-def run_sequence(seed, steps, allow_redo, random_views=False):
+def run_sequence(seed, steps, allow_redo, random_views=False,
+                 minimap=False):
     """
     Returns (ops, problems) of the first failing step, or (ops, []) if the
     whole sequence stayed consistent.
@@ -49,6 +50,8 @@ def run_sequence(seed, steps, allow_redo, random_views=False):
     try:
         if random_views:
             change_view()
+        if minimap:
+            h.field.set_minimap_visible(True)
         for step in range(steps):
             nodes = sorted(h.nodes, key=_key)
             branches = sorted(h.branches, key=_key)
@@ -56,6 +59,8 @@ def run_sequence(seed, steps, allow_redo, random_views=False):
             choices = ["node", "node", "undo", "pan"]
             if allow_redo:
                 choices.append("redo")
+            if minimap:
+                choices += ["minimap_drag", "minimap_drag", "minimap_toggle"]
             if random_views:
                 # directly set views, and the zoom operations of the user
                 choices += ["view", "view", "zoom_step", "zoom_step",
@@ -110,6 +115,13 @@ def run_sequence(seed, steps, allow_redo, random_views=False):
                                   rnd.randint(-80, 80))
             elif op == "view":
                 change_view()
+            elif op == "minimap_drag":
+                if h.field.minimap_visible:
+                    h.minimap_drag(rnd.randint(0, 219), rnd.randint(0, 159),
+                                   rnd.randint(-60, 280),
+                                   rnd.randint(-60, 220))
+            elif op == "minimap_toggle":
+                h.field.set_minimap_visible(not h.field.minimap_visible)
             elif op == "zoom_step":
                 h.field.zoom_by_steps(
                     rnd.uniform(-3, 3),
@@ -159,6 +171,21 @@ class TestFuzz(TestCase):
                 [], problems,
                 "seed %d failed at step %d (ops: ...%s)\n  %s"
                 % (5000 + seed, len(ops), ops[-5:],
+                   "\n  ".join(problems[:5])))
+
+    def test_random_operations_with_the_mini_map(self):
+        """
+        The mini map is shown, switched on and off and dragged in between
+        all the other operations (and zoom operations): it must stay in its
+        corner, over everything, and show the whole graph.
+        """
+        for seed in range(SEEDS):
+            ops, problems = run_sequence(7000 + seed, STEPS, True,
+                                         random_views=True, minimap=True)
+            self.assertEqual(
+                [], problems,
+                "seed %d failed at step %d (ops: ...%s)\n  %s"
+                % (7000 + seed, len(ops), ops[-5:],
                    "\n  ".join(problems[:5])))
 
     def test_sequences_that_used_to_leave_stale_branch_labels(self):

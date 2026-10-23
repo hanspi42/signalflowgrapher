@@ -31,6 +31,12 @@ def scenario():
     h.drag_label(a, -30, 30)
     h.drag_handle(h.select_branch(ab)[0], 30, -30)       # handle drag
     h.pan(40, -25)                                       # pan
+    h.field.set_minimap_visible(True)                    # mini map
+    h.minimap_drag(100, 80, 140, 100)
+    h.field.zoom_out()
+    h.field.zoom_in()
+    h.field.render_graph(h.field.grab())
+    h.field.set_minimap_visible(False)
     h.field.center_graph()
     h.select(a, b, ab)
     h.copy()

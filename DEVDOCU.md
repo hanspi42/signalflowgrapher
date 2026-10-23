@@ -11,8 +11,8 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | 3 | `ViewTransform` at identity | done, tested |
 | 4 | Pan becomes a view offset | done, tested |
 | 5 | Zoom (wheel and keyboard, everything scales with z) | done, tested |
-| 5b | Zoom up to 200%, keyboard shortcuts without numpad | done, ready for manual test |
-| 6 | Mini map | planned |
+| 5b | Zoom up to 200%, keyboard shortcuts without numpad | done, tested |
+| 6 | Mini map | done, ready for manual test |
 
 ## Decisions
 
@@ -21,7 +21,7 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 - **Zoom input:** keyboard shortcuts for zoom in, zoom out and reset, and **Ctrl + mouse wheel** (zooming about the mouse pointer). The plain wheel is left unused.
 - **The model never contains zoom.** Model coordinates stay in "world units" (= pixels at 100%). Saved files, the clipboard, the TikZ export and the undo stack do not depend on the zoom level. The zoom level is not stored in the file.
 - **Pan becomes a view offset** (step 4, agreed), so navigation no longer rewrites the model. A saved file remembers the part of the graph that was shown (`view_origin`), not the zoom.
-- **Mini map** can be switched on and off (step 6).
+- **Mini map** (step 6): shows all nodes and branches (no labels, no arrows) and a rectangle for the visible area; click and drag moves the view; it can be switched on and off, and the choice is remembered between sessions (not in the graph file).
 
 ## Coordinate handling in V2.0 (summary of the analysis)
 
@@ -61,6 +61,7 @@ No behaviour change of the application. Adds tests under `src/signalflowgrapher/
 | `test_view_transform.py` | Step 3: the `ViewTransform` class, and every conversion between world and screen coordinates with real zoom and offset values (widgets, mouse input, grid snapping and drawing, paste, pan, center). |
 | `test_pan_view_offset.py` | Step 4: a pan changes only the view; the view is remembered in the file; files of the old pan semantics look the same pixel by pixel. |
 | `test_zoom.py` | Step 5: zoom operations and limits, wheel, keyboard actions in the real main window, measured scaling of every drawn part, minimum click areas, grid hiding, zoom to fit, exports independent of the zoom. |
+| `test_minimap.py` | Step 6: what the mini map shows (all nodes and branches, no labels, no arrows, the shown rectangle), how it is drawn (measured in its picture), clicking and dragging, overlay behaviour, the menu entry and shortcut, the remembered choice. |
 | `test_widget_refresh.py` | Step 2: refresh is idempotent, events carry no state, event order does not matter, a pan does not rebuild branch shapes. |
 | `test_golden.py`, `golden/*.json` | For the 6 example graphs: model, canonical TikZ export and widget geometry at 100% / no pan. Plus a rendering-reproducibility test. |
 | `test_io_roundtrip.py` | Load/save round trips, old files without `grid_pos`, schema behaviour. |
@@ -370,11 +371,58 @@ Checks done:
 4. "Zoom to fit" on a small graph stays at 100% (does not enlarge).
 5. The menu entries show the new shortcuts.
 
-### Step 6: Mini map
+### Step 6: Mini map (done)
 
-- A small overlay widget showing the whole graph (simplified nodes and branches drawn from the model) and a rectangle for the visible area. Click and drag in the mini map pans the view. Switch on/off by menu entry and shortcut; the setting is remembered between sessions, it is not part of the graph file.
-- Needs the view offset from step 4 and the zoom from step 5 (the visible rectangle is `to_world(viewport)`; `GraphField.zoom_to_fit` already computes the world rectangle of a graph).
-- *Tests:* mini map content equals the model bounding box; the visible rectangle matches the view at several zoom levels; toggling does not change the model.
+A small map of the whole graph lies over the bottom right corner of the canvas and shows which part of it is visible. Switch it on and off in the View menu (**Mini Map**, `Alt+N`). It is off until you switch it on, and the choice is remembered for the next start.
+
+**What it shows** (as defined for this step):
+
+- **All nodes and all branches.** Branches are drawn as thin lines along their real curves, nodes as dots. A node or branch is never left out, however large the graph is.
+- **No labels** (neither node names nor branch weights) **and no arrows.** The picture does not change at all when a name, a weight or the position of a label changes (tested pixel by pixel). Labels do not count when the map decides how much to show.
+- **A rectangle for the part that the canvas shows** (highlight colour, light fill). It follows every pan and zoom.
+
+**How it is drawn.** Everything comes from the model, not from the widgets of the canvas (`gui/mini_map.py`). The map shows the graph and the visible part together, in the largest scale that fits both into the map (with 8 pixels of space at the border), centred. If you pan or zoom away from the graph the scale becomes smaller so that the rectangle stays in the map; the map is opaque, 220 x 160 pixels, 10 pixels from the corner. The extent of a branch is that of its curve, not only of its end points, so curves that bulge out of the hull of their nodes (self-loops!) are inside the map too.
+
+**Using it.** A click or drag with the left mouse button moves the view; the zoom does not change.
+
+- A press *outside* the rectangle shows the part around the clicked position (the rectangle jumps there); a press *inside* it grabs the rectangle without a jump and pulls it with the mouse.
+- While the mouse drags, the scale of the map is frozen (otherwise it would rescale under the mouse as soon as the rectangle leaves the graph); it fits again when the button is released.
+- The view moves in whole pixels, so a drag moves the widgets like a pan does and does not rebuild them.
+- It is a movement of the view like a pan: it does not change the graph, the selection or the undo history, and the file is not "modified". The wheel and other mouse buttons are not used by the map (the wheel goes to the canvas, `Ctrl` + wheel zooms). The map never takes the keyboard focus.
+
+**Switching and remembering.** `View > Mini Map` is a checkable menu entry; `Alt+N` (it was free; the letters C, G, M, P, Z, I, U and O are used by other actions). The choice is stored by `utils/settings.py` (`AppSettings`) in the settings of the user, an ini file (on Linux `~/.config/signalflowgrapher/signalflowgrapher.ini`), with the key `view/minimap`; it is not part of a graph file. The default is off (`DEFAULT_MINIMAP_VISIBLE`).
+
+**How it sits on the canvas.** The map is a child widget of `GraphField` that is not part of the graph (no model object, not in the maps of widgets, ignored by "Center graph" and the rubber band). Every widget that is created later (nodes, branches, labels, spline handles) would lie over it, so `GraphField.childEvent` raises the map whenever a widget is added; it is moved to its corner at every resize and repainted at every change of the graph or the view. Pictures of the graph (**Save as PNG**) are made with `GraphField.render_graph`, which leaves the map out: it is an aid for working, not part of the drawing.
+
+**Tests never touch the settings of the user.** The test harness redirects the settings folder of the whole test process to a temporary folder. (While developing this step the first version of the tests wrote the choice into the real settings file; `AppSettings` now uses an explicit ini format, because `QSettings(organization, application)` uses the native format of the system (the registry on Windows), which a test cannot redirect in the same way on every system.)
+
+Decisions made in this step (change them at the review if you want something else):
+
+1. **Default off**, so that the program looks as before until the map is wanted. One constant to change.
+2. **Fixed size and place** (220 x 160 pixels, bottom right). It cannot be moved or resized; if the corner is in your way, switch it off.
+3. **The selection is not shown** in the map (only nodes, branches and the shown rectangle, as defined).
+4. A press inside the rectangle does not jump; a press outside does.
+
+Performance (offscreen, graph with 168 nodes and 216 branches, on a machine that was twice as slow as at step 5): one paint of the map takes about 9 ms; a pan step costs about 2 ms more with the map on, a zoom step about 16 ms more; with the map off nothing changes (same numbers as step 5b measured side by side).
+
+Checks done:
+
+- All earlier tests pass; the 9 reference renders are identical to step 1 (the map is off by default); golden files unchanged.
+- `test_minimap.py` (48 tests): the extent of the graph equals the extent of all nodes and the *sampled curves* (also self-loops); the shown part equals the canvas in world units for 8 views; everything is inside the map at every zoom and offset (also far away); **in the picture** every node is a dark dot, every branch is visible along its whole curve for all six examples, a long straight branch is as thick in the middle as at its ends (no arrow), names, weights and label positions do not change the picture, the rectangle is drawn where it is reported, nothing of the canvas underneath shines through; clicks, drags, no jump inside, frozen scale while dragging, whole pixels and no rebuild of branch widgets, other buttons and the wheel ignored, graph/zoom/selection/history untouched, a double click creates no node; the map is in the corner at every window size, over everything created later (checked with the real hit test `childAt`), repainted after pan, zoom, new node, move, undo and new graph; the real main window (menu entry, `Alt+N` pressed for real, choice stored), Save as PNG through the real menu action has no map; the remembered choice is applied at a program start (fresh processes: default off, on, kept, off).
+- The consistency checker verifies after every fuzz step that a visible map is in its corner, over all other widgets and contains the whole graph and the shown part; the fuzz tests switch the map on and off and drag in it (90 more seeds of 100 steps with the map and random zoom operations are clean).
+- Mutation check on a copy of the source: 33 deliberate breaks (arrows drawn on branches, names drawn, nodes or branches or the rectangle not drawn, the extent ignoring curves or counting labels, no padding, the map rescaling while dragging, a jump from inside, the wrong direction, offsets not rounded, other buttons or the wheel used, focus taken, visible at start, translucent, wrong corner, not raised over new widgets, not repainted after a view or graph change, PNG export containing the map, menu entry not connected, choice not stored or not applied, default on, and others) are all caught. Two were not caught at first (the right and middle button, the translucent background); their tests were weak and have been strengthened.
+
+*Manual checklist for step 6* (in addition to the earlier ones):
+
+1. `View > Mini Map` (and `Alt+N`) shows and hides the map in the bottom right corner; close the program and start it again: it comes back as you left it. The map is off at the very first start.
+2. Open the examples: all nodes and branches are in the map, as thin lines and dots; no names, weights or arrows. Self-loops and the long curves are completely inside the map.
+3. The blue rectangle is the part that the canvas shows: zoom (`Alt+U`, `Alt+I`, `Ctrl` + wheel), pan and "Center graph" and watch it follow; zoomed far out it covers the whole graph and more.
+4. Click outside the rectangle: the canvas shows the part around that place. Press inside it and drag: the rectangle follows the mouse without a jump. Drag beyond the border of the map. Dragging should feel about as smooth as panning.
+5. While the map is on: create nodes and branches (also under the map), select a branch (spline handles appear), drag nodes: the map stays on top of everything and keeps showing the current graph. Undo and redo update it.
+6. Clicks in the map do not clear the selection, create nodes or change the file ("modified" state).
+7. Resize the window: the map stays in the corner.
+8. *Save as PNG* with the map on: the picture has no map.
+9. `Ctrl` + wheel with the pointer over the map zooms the canvas; the plain wheel does nothing.
 
 ---
 

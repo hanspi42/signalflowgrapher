@@ -106,6 +106,23 @@ class TestConsistencyChecker(TestCase):
         self.h.model.set_view_origin((5, 5))
         self.assert_problem("model view origin")
 
+    def test_detects_mini_map_in_the_wrong_place(self):
+        self.h.field.set_minimap_visible(True)
+        self.assertEqual([], check_consistency(self.h))
+        self.h.field.minimap.move(5, 5)
+        self.assert_problem("not in the bottom right corner")
+
+    def test_detects_mini_map_under_other_widgets(self):
+        self.h.field.set_minimap_visible(True)
+        self.h.field.minimap.lower()
+        self.assert_problem("not over the other widgets")
+
+    def test_detects_mini_map_that_does_not_show_everything(self):
+        from PySide6.QtCore import QRectF
+        self.h.field.set_minimap_visible(True)
+        self.h.field.minimap.world_rect = lambda: QRectF(0, 0, 10, 10)
+        self.assert_problem("outside of the map")
+
     def test_detects_non_integer_node_label_offset(self):
         self.h.model.graph.move_label_relative(self.a, 0.5, 0)
         self.assert_problem("non-integer label offset")

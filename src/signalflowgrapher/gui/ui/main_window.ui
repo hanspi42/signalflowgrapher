@@ -63,6 +63,7 @@
     <addaction name="action_save_png"/>
     <addaction name="action_light_dark"/>
     <addaction name="action_toggle_grid"/>
+    <addaction name="action_minimap"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
@@ -232,6 +233,17 @@
      <string>Alt+M</string>
     </property>
    </action>
+  <action name="action_minimap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Mini Map</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+N</string>
+   </property>
+  </action>
    <action name="action_toggle_grid">
     <property name="text">
      <string>Toggle Grid</string>

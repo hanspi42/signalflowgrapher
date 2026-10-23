@@ -8,6 +8,7 @@ from PySide6 import QtCore
 from PySide6.QtGui import QGuiApplication, QKeySequence, QPixmap
 
 from signalflowgrapher.controllers.main_controller import MainController
+from signalflowgrapher.utils.settings import AppSettings
 from signalflowgrapher.controllers.io_controller import IOController
 from signalflowgrapher.gui.conditional_actions.conditional_action import (
     ConditionalAction)
@@ -25,8 +26,10 @@ class MainWindow(QMainWindow):
                  main_controller: MainController,
                  io_controller: IOController,
                  command_handler,
-                 *args, **kwargs):
+                 *args, settings: AppSettings = None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Settings that are remembered between two sessions
+        self.__settings = settings if settings is not None else AppSettings()
 
         # Load UI from generated class
         self._ui = Ui_MainWindow()
@@ -83,6 +86,11 @@ class MainWindow(QMainWindow):
              QKeySequence("Ctrl+=")])
         self._ui.action_zoom_out.setShortcuts(
             [QKeySequence("Alt+U"), QKeySequence("Ctrl+-")])
+
+        # The mini map: switched on and off in the View menu; the choice is
+        # remembered for the next start of the program
+        self._ui.action_minimap.toggled.connect(self.__set_minimap_visible)
+        self._ui.action_minimap.setChecked(self.__settings.minimap_visible())
 
         # Show the zoom in the status bar
         self.__zoom_label = QLabel()
@@ -284,6 +292,10 @@ class MainWindow(QMainWindow):
     def __center_graph(self):
         self.__graph_field.center_graph()
 
+    def __set_minimap_visible(self, visible: bool):
+        self.__graph_field.set_minimap_visible(visible)
+        self.__settings.set_minimap_visible(visible)
+
     def __update_zoom_label(self):
         self.__zoom_label.setText(
             "%d%%" % round(self.__graph_field.view.zoom * 100))
@@ -297,7 +309,7 @@ class MainWindow(QMainWindow):
             fileName += '.png'
         p = QPixmap(self.__graph_field.size())
         p.fill()
-        self.__graph_field.render(p)
+        self.__graph_field.render_graph(p)
         p.save(fileName, 'PNG')
 
     def __light_dark(self):

@@ -14,9 +14,12 @@ Run with the offscreen Qt platform (set automatically below).
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+import atexit  # noqa: E402
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
 import uuid  # noqa: E402
 from signalflowgrapher.algorithms import graph as graph_module  # noqa: E402
-from PySide6.QtCore import QEvent, QPoint, QPointF, Qt  # noqa: E402
+from PySide6.QtCore import QEvent, QPoint, QPointF, QSettings, Qt  # noqa: E402
 from PySide6.QtGui import QCursor, QMouseEvent, QWheelEvent  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
@@ -26,6 +29,12 @@ from signalflowgrapher.controllers.main_controller import MainController  # noqa
 from signalflowgrapher.gui.graph_field import GraphField  # noqa: E402
 from signalflowgrapher.model.model import Model  # noqa: E402
 
+
+# The tests must never read or write the settings of the user: the settings
+# of the whole test process live in a temporary folder.
+_settings_folder = tempfile.mkdtemp(prefix="sfg_test_settings_")
+QSettings.setPath(QSettings.IniFormat, QSettings.UserScope, _settings_folder)
+atexit.register(shutil.rmtree, _settings_folder, ignore_errors=True)
 
 _id_counter = [0]
 
@@ -200,6 +209,28 @@ class Harness:
         QApplication.sendEvent(target, event)
         self.process_events()
         return event
+
+    # ------------------------------------------------------------ mini map
+    def minimap_global(self, x, y):
+        return self.field.minimap.mapToGlobal(QPoint(int(x), int(y)))
+
+    def minimap_press(self, x, y, modifiers=Qt.NoModifier):
+        self.press(self.field.minimap, self.minimap_global(x, y),
+                   modifiers=modifiers)
+
+    def minimap_move(self, x, y):
+        self.move(self.field.minimap, self.minimap_global(x, y))
+
+    def minimap_release(self, x, y):
+        self.release(self.field.minimap, self.minimap_global(x, y))
+
+    def minimap_drag(self, x0, y0, x1, y1, steps=4):
+        """Press at (x0, y0) in the mini map, move to (x1, y1), release."""
+        self.minimap_press(x0, y0)
+        for i in range(1, steps + 1):
+            self.minimap_move(x0 + (x1 - x0) * i / steps,
+                              y0 + (y1 - y0) * i / steps)
+        self.minimap_release(x1, y1)
 
     # ------------------------------------------------------ user operations
     def double_click(self, x, y):

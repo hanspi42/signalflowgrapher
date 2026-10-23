@@ -14,6 +14,8 @@ invariants that hold *today* between model coordinates and widget state:
   * grid offset state agrees everywhere (model, grid widgets)
   * the view origin that the model remembers for the file is the world
     position at the top left corner of the window
+  * a visible mini map is in the bottom right corner, over all other
+    widgets, and contains the whole graph and the shown part
   * every model object has exactly one widget and one label widget
   * the model graph itself is topologically consistent
 
@@ -252,6 +254,58 @@ def check_view_origin(h: Harness):
     return problems
 
 
+def bezier_points(branch, samples=40):
+    """Points on the curve of a branch (world coordinates)."""
+    p = [(branch.start.x, branch.start.y),
+         (branch.spline1_x, branch.spline1_y),
+         (branch.spline2_x, branch.spline2_y),
+         (branch.end.x, branch.end.y)]
+    points = []
+    for i in range(samples + 1):
+        t = i / samples
+        a, b, c, d = (1 - t) ** 3, 3 * (1 - t) ** 2 * t, \
+            3 * (1 - t) * t ** 2, t ** 3
+        points.append((a * p[0][0] + b * p[1][0] + c * p[2][0] + d * p[3][0],
+                       a * p[0][1] + b * p[1][1] + c * p[2][1] + d * p[3][1]))
+    return points
+
+
+def check_minimap(h: Harness):
+    """A visible mini map is placed, on top and shows everything."""
+    problems = []
+    mm = h.field.minimap
+    if not mm.isVisible():
+        return problems
+    field = h.field
+    corner = QPoint(field.width() - mm.width() - mm.MARGIN,
+                    field.height() - mm.height() - mm.MARGIN)
+    if mm.pos() != corner:
+        problems.append("mini map is at %s, not in the bottom right corner "
+                        "%s" % (mm.pos(), corner))
+    widgets = [c for c in field.children() if c.isWidgetType()]
+    if widgets[-1] is not mm:
+        problems.append("mini map is not over the other widgets (the top "
+                        "one is a %s)" % type(widgets[-1]).__name__)
+    mapping = mm.mapping()
+    inner = QRectF(0, 0, mm.width(), mm.height()).adjusted(
+        mm.PADDING - 0.5, mm.PADDING - 0.5, -mm.PADDING + 0.5,
+        -mm.PADDING + 0.5)
+    points = [(n.x, n.y) for n in h.model.graph.nodes]
+    for branch in h.model.graph.branches:
+        points.extend(bezier_points(branch))
+    visible = mm.visible_rect()
+    points.extend([(visible.left(), visible.top()),
+                   (visible.right(), visible.bottom())])
+    for x, y in points:
+        q = mapping.to_minimap(QPointF(x, y))
+        if not inner.contains(q):
+            problems.append("mini map: the world position (%.1f, %.1f) is "
+                            "at (%.1f, %.1f), outside of the map"
+                            % (x, y, q.x(), q.y()))
+            break
+    return problems
+
+
 def check_grid(h: Harness):
     """
     The grid position belongs to the graph and does not change with pan or
@@ -285,7 +339,8 @@ def check_grid(h: Harness):
 
 
 ALL_CHECKS = (check_model, check_widget_sets, check_nodes, check_branches,
-              check_labels, check_handles, check_grid, check_view_origin)
+              check_labels, check_handles, check_grid, check_view_origin,
+              check_minimap)
 
 
 def check_consistency(h: Harness):
