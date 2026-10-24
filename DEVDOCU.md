@@ -8,7 +8,8 @@ AI in software development is all the rage these days, so I decided to give it a
 
 My first prompt was:
 
-```The attached zip file contains the code of https://github.com/hanspi42/signalflowgrapher.
+```
+The attached zip file contains the code of https://github.com/hanspi42/signalflowgrapher.
 My goal is to introduce a zoom functionality. Attempting this has already failed twice, mainly
 because coordinates of nodes, branches, splines, texts, the grid on the canvas, etc. seem to be
 partly stored as absolute and partly as relative values.
