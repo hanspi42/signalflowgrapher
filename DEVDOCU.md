@@ -12,7 +12,8 @@ V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a *
 | 4 | Pan becomes a view offset | done, tested |
 | 5 | Zoom (wheel and keyboard, everything scales with z) | done, tested |
 | 5b | Zoom up to 200%, keyboard shortcuts without numpad | done, tested |
-| 6 | Mini map | done, ready for manual test |
+| 6 | Mini map | done, tested |
+| Release | Version 3.0.0: `pyproject.toml`, About dialog, README release notes | done |
 
 ## Decisions
 
@@ -136,7 +137,7 @@ Separate small changes; the application behaves as before except for the fixed b
 - **1d** The model is the only owner of the pan. `GraphField.__grid_offset` and the copies in `FixedGrid` and `FixedGridWidget` are removed; `FixedGrid(size, offset_source)` and `FixedGridWidget(size, offset_source)` read `Model.get_grid_position` when they snap or paint, and `GraphField` triggers a repaint on `GraphMovedEvent` and `GraphChangedEvent`. One grid size constant, `GRID_SIZE` in `gui/grid.py`. The consistency checker verifies that `GraphField` has no copy of the pan state.
 - **1e** Branch between nodes at the same position (K4): the branch is created as an arc below the nodes with label offset `(0, 30)`, and the step size of the overlap loop in `create_branch_auto_pos` has a minimum of 30 for coinciding nodes (it was 0, so the loop never ended). Layouts for all other node positions are unchanged.
 - **1f** Old tests repaired in step 0. The TikZ export sorts nodes and branches by id, so the numbering is reproducible (K6).
-- **1g** File format version: files are written with `"version": "3.0"` (`FILE_FORMAT_VERSION` in `io/json.py`). Files with version `2.0`, any other version or no version are still read; there is no version check on load. The version of the Python package in `pyproject.toml` (2.1.3) is not changed by this step; it belongs to the release.
+- **1g** File format version: files are written with `"version": "3.0"` (`FILE_FORMAT_VERSION` in `io/json.py`). Files with version `2.0`, any other version or no version are still read; there is no version check on load. The version of the Python package in `pyproject.toml` was not changed by this step; it was set to 3.0.0 at the release.
 - The fuzz tests no longer avoid coinciding nodes.
 
 *Manual checklist for step 1* (in addition to the checklist of step 0):
@@ -257,7 +258,7 @@ What changed:
 **Compatibility.**
 
 - Files of V2.0 and steps 1 to 3 (coordinates shifted by the pan, `grid_pos` = accumulated pan) load unchanged and look exactly as before: the grid lines come out at the same place (`grid_pos mod 30`), which a test shows pixel by pixel.
-- Files written now can be opened by V2.0: the coordinates are consistent, `grid_pos` is just a grid position, and the unknown key `view_origin` is ignored. V2.0 then shows the graph from the origin instead of the saved view; "Center graph" helps.
+- Files written now can be opened by V2.0: the coordinates are consistent, `grid_pos` is just a grid position, and the unknown key `view_origin` is ignored (checked at the release with the unmodified code of V2.1.3: its validator and `ObservableGraph.from_dict` load a V3 file that was written after panning and zooming). V2.0 then shows the graph from the origin instead of the saved view; "Center graph" helps.
 - The file format version stays "3.0"; `view_origin` is an additive optional key (schema and `resources/schema.json` updated).
 
 Checks done:

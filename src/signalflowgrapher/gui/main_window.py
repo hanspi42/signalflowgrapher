@@ -328,7 +328,7 @@ class MainWindow(QMainWindow):
         box = QMessageBox()
         box.setWindowTitle("About")
         box.setText(
-            "<h1>SFGrapher v2.1.0</h1>Initially Developed at the University"
+            "<h1>SFGrapher v3.0.0</h1>Initially Developed at the University"
             " of Applied Sciences and Arts Northwestern"
             " Switzerland (FHNW) by Nicolai Wassermann"
             " and Simon Näf. Updated and ported to QT6 by"
