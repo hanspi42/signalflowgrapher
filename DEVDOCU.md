@@ -31,7 +31,7 @@ Can you make a plan with several steps that make it possible for me as a human t
 Once we agree on the plan, we can start.
 ```
 
-The plan was the 6-step plan below, it was very good, after some comments by me we started.
+The plan was the first 5 steps of the 6-step plan below, it was very good, after some comments by me we started.
 
 I then spent ten days pressing "continue" every five hours, reviewing documentation, patches, code. I was impressed how good the work was, and amazed by how much testing Sonnet would do unprompted to make sure what it delivers is really working. I don't know whether the model would work so precisely anyway, or whether it did because the code base I submitted had a good structure and documented tests.
 
