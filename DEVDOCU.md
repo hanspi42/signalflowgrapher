@@ -1,5 +1,47 @@
 # Developer Documentation for V3.0
 
+## AI Disclosure
+
+It has long been a dream to have a zoom functionality in this app, but several attempts failed, mainly because coordinate handling was not done well and a world-to-view transform was missing.
+
+AI in software development is all the rage these days, so I decided to give it a try and used my free account and Claude's Sonnet 5.5 model to tidy up the code and implement Zoom. The result exceeded my wildest dreams, but that may have been partly because I gave Sonnet 5.5 the task to do the work such that I can review it step-wise (and review it I did because I did not want AI slop in the code). 
+
+My first prompt was:
+
+```The attached zip file contains the code of https://github.com/hanspi42/signalflowgrapher.
+My goal is to introduce a zoom functionality. Attempting this has already failed twice, mainly
+because coordinates of nodes, branches, splines, texts, the grid on the canvas, etc. seem to be
+partly stored as absolute and partly as relative values.
+
+Can you please analyse the code and document for me which coordinates are stored how and where?
+Please also create relevant UML sequence diagrams for object creation, moving, copy, paste, etc.
+```
+
+It took me more than an hour to read the resulting document, and I then really understood what was wrong in V2.
+
+I then gave it the following prompt:
+
+```
+Let's make a plan for
+- fixing the inconsistencies
+- implement a view transform
+- implement zoom.
+Can you make a plan with several steps that make it possible for me as a human to review in between and test extensively?
+Once we agree on the plan, we can start.
+```
+
+The plan was the 6-step plan below, it was very good, after some comments by me we started.
+
+I then spent ten days pressing "continue" every five hours, reviewing documentation, patches, code. I was impressed how good the work was, and amazed by how much testing Sonnet would do unprompted to make sure what it delivers is really working. I don't know whether the model would work so precisely anyway, or whether it did because the code base I submitted had a good structure and documented tests.
+
+What you have below was all written by Sonnet. I wrote nothing myself, I just **told** Sonnet to do some changes every now and then. The result is amazing, but the experience is also alarming. Me, not a professional programmer, could solve a problem in ten days (in parallel to my normal work) that two far more experienced people could not.
+
+By the way, I tried to assess how much energy this consumed. From different sources I estimate that using the 5-hour limit of Sonnet once will consume a bit less than 50 Wh. I used that limit about 30 times, so we are at 1.5kWh. If I had programmed myself for 10h, my laptop and screen would have used about the same amount of energy. This is not so much, but then again, this ignores the energy that was used to train Sonnet 5.5.
+
+And now comes what Sonnet wrote:
+
+## Summary
+
 V3.0 adds **zoom** (to see a whole graph that is larger than the window) and a **mini map**. Both require a clean separation between model coordinates and what is drawn on screen. This section is the working plan; it is updated at the end of every step. The documentation of V2.0 follows below.
 
 | Step | Title | Status |
