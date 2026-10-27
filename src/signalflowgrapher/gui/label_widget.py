@@ -1,3 +1,4 @@
+import math
 from importlib import resources
 from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import QFont, QFontDatabase, QCursor, QPalette
@@ -5,17 +6,20 @@ from PySide6.QtCore import Qt, QPoint, QPointF
 from signalflowgrapher.common.observable import ObjectObservable
 from signalflowgrapher.model.model import (
     PositionedNodeAddedEvent, PositionedNodeMovedEvent,
-    CurvedBranchTransformedEvent, LabeledObject,
-    LabelMovedEvent, LabelChangedTextEvent,
-    GraphMovedEvent
+    CurvedBranchTransformedEvent, CurvedBranch, LabeledObject,
+    LabelMovedEvent, LabelChangedTextEvent
 )
 
 from signalflowgrapher.gui.graph_item import (
     WidgetPressEvent, WidgetMoveEvent, WidgetReleaseEvent
 )
+from signalflowgrapher.gui import glyphs
+from signalflowgrapher.gui.view_transform import ViewTransform
 
 # Load font using importlib.resources
-with resources.path("signalflowgrapher.resources", "HeptaSlab-Regular.ttf") as font_path:
+with resources.as_file(
+        resources.files("signalflowgrapher.resources")
+        .joinpath("HeptaSlab-Regular.ttf")) as font_path:
     roman_font = str(font_path)
 
 
@@ -24,6 +28,7 @@ class LabelWidget(QLabel, ObjectObservable):
                  text: str,
                  owner: LabeledObject,
                  owner_widget,
+                 view: ViewTransform,
                  parent=None,
                  flags=Qt.WindowFlags()):
         QLabel.__init__(self, text, parent=parent, flags=flags)
@@ -39,16 +44,31 @@ class LabelWidget(QLabel, ObjectObservable):
         # --- LabelWidget-specific ---
         self.__owner = owner
         self.__owner_widget = owner_widget
+        self.__view = view
 
-        font_database = QFontDatabase()
-        font_id = font_database.addApplicationFont(roman_font)
+        font_id = QFontDatabase.addApplicationFont(roman_font)
         if (font_id == -1):
             raise IOError("Font could not be loaded")
-        font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
-        font = QFont(font_name, 13)
-        self.setFont(font)
-        self.adjustSize()
+        self.__font_name = QFontDatabase.applicationFontFamilies(font_id)[0]
+        self.__zoom = None
+        self.__apply_zoom()
         self.__reposition()
+
+    def __apply_zoom(self):
+        """
+        The text scales with the zoom, like everything else that is drawn.
+        """
+        self.__zoom = self.__view.zoom
+        font = QFont(self.__font_name)
+        font.setPointSizeF(glyphs.LABEL_FONT_POINTS * self.__zoom)
+        self.setFont(font)
+        # A label without text (a node without a name) does not notice that
+        # its size hint is out of date after a change of the font. Changing
+        # the margin (setting the same value is ignored) makes it compute
+        # the size hint again.
+        self.setMargin(1)
+        self.setMargin(0)
+        self.adjustSize()
 
     # Selection
     @property
@@ -72,20 +92,35 @@ class LabelWidget(QLabel, ObjectObservable):
         return QPointF(self.x() + self.width() / 2,
                        self.y() + self.height() / 2)
     
-    def move_relative(self, dx, dy):
-        pos = self.pos()
-        self.move(QPoint(pos.x() + dx, pos.y() + dy))
+    def get_world_center(self) -> QPointF:
+        """
+        The centre of the label in world coordinates, converted from the
+        position on the screen (the label is placed in whole pixels).
+        """
+        return self.__view.to_world(self.get_center())
 
-    def graph_moved_event(self, event: GraphMovedEvent):
-        self.move_relative(event.dx, event.dy)
-    
+    def refresh(self, force: bool = False):
+        """
+        Derive the position from the owner widget and the label offset.
+        The owner widget has to be up to date: refresh it first.
+        """
+        if force or self.__zoom != self.__view.zoom:
+            self.__apply_zoom()
+        self.__reposition()
+
     def __reposition(self):
         """
         Reposition on parent widget based on own size and owner position.
         """
+        # floor (not int): a move of the owner by a whole number of pixels
+        # moves the label by exactly that number, also at negative positions
+        # The offset is in world units, it scales with the zoom
         center = self.__owner_widget.get_center()
-        p = QPoint(int(center.x() + self.__owner.label_dx - self.width() / 2),
-                   int(center.y() + self.__owner.label_dy - self.height() / 2))
+        dx = self.__view.to_screen_delta(self.__owner.label_dx)
+        dy = self.__view.to_screen_delta(self.__owner.label_dy)
+        p = QPoint(
+            math.floor(center.x() + dx - self.width() / 2),
+            math.floor(center.y() + dy - self.height() / 2))
         self.move(p)
 
     # Model events
@@ -100,9 +135,15 @@ class LabelWidget(QLabel, ObjectObservable):
     def node_moved_event(self, event: PositionedNodeMovedEvent):
         """
         Triggered after node has moved.
-        Makes sure the position is updated accordingly if necessary.
+        Makes sure the position is updated accordingly if necessary. The
+        label of a branch is placed relative to the middle of the branch,
+        which moves when one of its end nodes moves.
         """
         if self.__owner is event.node:
+            self.__reposition()
+        elif isinstance(self.__owner, CurvedBranch) and (
+                self.__owner.start is event.node
+                or self.__owner.end is event.node):
             self.__reposition()
 
     def branch_transformed_event(self, event: CurvedBranchTransformedEvent):
@@ -133,7 +174,7 @@ class LabelWidget(QLabel, ObjectObservable):
 
     # Mouse handling (was in GraphItem)
     def mousePressEvent(self, event, notify=True):
-        self._mouse_press_pos = event.globalPos()
+        self._mouse_press_pos = event.globalPosition().toPoint()
         self._mouse_move_pos = self._mouse_press_pos
 
         if notify:
@@ -142,7 +183,7 @@ class LabelWidget(QLabel, ObjectObservable):
     def mouseMoveEvent(self, event):
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-            global_pos = event.globalPos()
+            global_pos = event.globalPosition().toPoint()
             diff = global_pos - self._mouse_move_pos
 
             self._notify(

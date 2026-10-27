@@ -2,12 +2,13 @@ import ntpath
 import logging
 
 from PySide6.QtWidgets import (
-    QMainWindow, QDockWidget, QFileDialog, QMessageBox)
+    QMainWindow, QDockWidget, QFileDialog, QMessageBox, QLabel)
 from PySide6.QtCore import Qt, QCoreApplication
 from PySide6 import QtCore
-from PySide6.QtGui import QGuiApplication, QPixmap
+from PySide6.QtGui import QGuiApplication, QKeySequence, QPixmap
 
 from signalflowgrapher.controllers.main_controller import MainController
+from signalflowgrapher.utils.settings import AppSettings
 from signalflowgrapher.controllers.io_controller import IOController
 from signalflowgrapher.gui.conditional_actions.conditional_action import (
     ConditionalAction)
@@ -25,8 +26,10 @@ class MainWindow(QMainWindow):
                  main_controller: MainController,
                  io_controller: IOController,
                  command_handler,
-                 *args, **kwargs):
+                 *args, settings: AppSettings = None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Settings that are remembered between two sessions
+        self.__settings = settings if settings is not None else AppSettings()
 
         # Load UI from generated class
         self._ui = Ui_MainWindow()
@@ -70,6 +73,30 @@ class MainWindow(QMainWindow):
         self._ui.action_new.triggered.connect(self.__new)
         self._ui.action_exit.triggered.connect(lambda: self.close())
         self._ui.action_center_graph.triggered.connect(self.__center_graph)
+        self._ui.action_zoom_in.triggered.connect(graph_field.zoom_in)
+        self._ui.action_zoom_out.triggered.connect(graph_field.zoom_out)
+        self._ui.action_zoom_reset.triggered.connect(graph_field.zoom_reset)
+        self._ui.action_zoom_fit.triggered.connect(graph_field.zoom_to_fit)
+        # The Alt keys are the ones that need no numpad and no Shift (+ is
+        # Shift+1 on a Swiss keyboard): U, I, O are neighbours, as are
+        # out, in and 100%. The usual keys of other programs also work.
+        # (The first shortcut is the one shown in the menu.)
+        self._ui.action_zoom_in.setShortcuts(
+            [QKeySequence("Alt+I"), QKeySequence("Ctrl++"),
+             QKeySequence("Ctrl+=")])
+        self._ui.action_zoom_out.setShortcuts(
+            [QKeySequence("Alt+U"), QKeySequence("Ctrl+-")])
+
+        # The mini map: switched on and off in the View menu; the choice is
+        # remembered for the next start of the program
+        self._ui.action_minimap.toggled.connect(self.__set_minimap_visible)
+        self._ui.action_minimap.setChecked(self.__settings.minimap_visible())
+
+        # Show the zoom in the status bar
+        self.__zoom_label = QLabel()
+        self._ui.statusbar.addPermanentWidget(self.__zoom_label)
+        graph_field.view.changed.connect(self.__update_zoom_label)
+        self.__update_zoom_label()
         self._ui.action_save_png.triggered.connect(self.__save_png)
         self._ui.action_light_dark.triggered.connect(self.__light_dark)
         self._ui.action_about.triggered.connect(self.__about)
@@ -265,6 +292,14 @@ class MainWindow(QMainWindow):
     def __center_graph(self):
         self.__graph_field.center_graph()
 
+    def __set_minimap_visible(self, visible: bool):
+        self.__graph_field.set_minimap_visible(visible)
+        self.__settings.set_minimap_visible(visible)
+
+    def __update_zoom_label(self):
+        self.__zoom_label.setText(
+            "%d%%" % round(self.__graph_field.view.zoom * 100))
+
     def __save_png(self):
         fileName, extension = QFileDialog.getSaveFileName(
             self, 'Save File', '', 'PNG Files (*.png)')
@@ -274,7 +309,7 @@ class MainWindow(QMainWindow):
             fileName += '.png'
         p = QPixmap(self.__graph_field.size())
         p.fill()
-        self.__graph_field.render(p)
+        self.__graph_field.render_graph(p)
         p.save(fileName, 'PNG')
 
     def __light_dark(self):
@@ -293,7 +328,7 @@ class MainWindow(QMainWindow):
         box = QMessageBox()
         box.setWindowTitle("About")
         box.setText(
-            "<h1>SFGrapher v2.1.0</h1>Initially Developed at the University"
+            "<h1>SFGrapher v3.0.0</h1>Initially Developed at the University"
             " of Applied Sciences and Arts Northwestern"
             " Switzerland (FHNW) by Nicolai Wassermann"
             " and Simon Näf. Updated and ported to QT6 by"

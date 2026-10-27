@@ -54,10 +54,16 @@
     <property name="title">
      <string>View</string>
     </property>
+    <addaction name="action_zoom_in"/>
+    <addaction name="action_zoom_out"/>
+    <addaction name="action_zoom_reset"/>
+    <addaction name="action_zoom_fit"/>
+    <addaction name="separator"/>
     <addaction name="action_center_graph"/>
     <addaction name="action_save_png"/>
     <addaction name="action_light_dark"/>
     <addaction name="action_toggle_grid"/>
+    <addaction name="action_minimap"/>
    </widget>
    <widget class="QMenu" name="menu_help">
     <property name="title">
@@ -171,6 +177,38 @@
     <string>Ctrl+Shift+Del</string>
    </property>
   </action>
+  <action name="action_zoom_in">
+   <property name="text">
+    <string>Zoom In</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+I</string>
+   </property>
+  </action>
+  <action name="action_zoom_out">
+   <property name="text">
+    <string>Zoom Out</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+U</string>
+   </property>
+  </action>
+  <action name="action_zoom_reset">
+   <property name="text">
+    <string>Zoom 100%</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+O</string>
+   </property>
+  </action>
+  <action name="action_zoom_fit">
+   <property name="text">
+    <string>Zoom to Fit</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+Z</string>
+   </property>
+  </action>
   <action name="action_center_graph">
    <property name="text">
     <string>Center Graph</string>
@@ -195,6 +233,17 @@
      <string>Alt+M</string>
     </property>
    </action>
+  <action name="action_minimap">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Mini Map</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+N</string>
+   </property>
+  </action>
    <action name="action_toggle_grid">
     <property name="text">
      <string>Toggle Grid</string>

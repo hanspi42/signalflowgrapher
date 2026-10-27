@@ -2,9 +2,14 @@
 
 ![SignalFlowGrapher Title Image](https://raw.githubusercontent.com/hanspi42/signalflowgrapher/master/tools/title_image.png)
 
-## Version 2.1.3
+## Version 3.0.0
 
-Minor update from 2.1.0: `signalflowgrapher-register` will now also work on Linux and macOS.
+- **Zoom** from 10% to 200%: `Ctrl` + mouse wheel, `Alt+I` / `Alt+U` for in / out, `Alt+O` for 100%, `Alt+Z` to fit the whole graph. Nodes, lines, arrows and text scale together.
+- **Mini map** (View > Mini Map, `Alt+N`): the whole graph and the visible part; click or drag to move the view. Off by default, the choice is remembered.
+- Panning no longer changes the graph, and a saved file remembers the part that was shown. Files of version 2 open unchanged; files of version 3 can still be opened by version 2.
+- Fixes: pasting after panning snaps to the grid and keeps label offsets; branch labels follow after undo/redo of a node move; two nodes at the same position can be connected; the TikZ export is reproducible.
+
+Version 2.1.3: `signalflowgrapher-register` also works on Linux and macOS.
 
 This version can be installed with pip or downloaded and run locally. Please follow the steps in the section [Getting started](##Getting-started).
 

@@ -367,7 +367,9 @@ class Model(ObjectObservable):
         self.__graph: ObservableGraph = None
         self.__gridpos_x = 0
         self.__gridpos_y = 0
-        
+        self.__view_origin_x = 0
+        self.__view_origin_y = 0
+
     @property
     def graph(self) -> ObservableGraph:
         """
@@ -396,36 +398,43 @@ class Model(ObjectObservable):
             graph.branches
         ))
 
-    def move_graph_relative(self, dx, dy):
-        """
-        Move the whole graph relative to its current position on x-axis and
-        y-axis by dx and dy.
-        """
-        nodes = self.__graph.nodes
-        for node in nodes:
-            node.move(dx, dy)
-
-        branches = self.__graph.branches
-        for branch in branches:
-            branch.transform(dx, dy, dx, dy)
-
-        self.__gridpos_x += dx
-        self.__gridpos_y += dy
-
-        self._notify(GraphMovedEvent(nodes, branches, dx, dy))
-
     def set_grid_position(self, grid_pos):
         """
-        Set the grid position of the graph.
+        Set the grid position of the graph: the world position of one grid
+        line crossing. The grid lines are at this position plus multiples
+        of the grid size, so only the remainder matters.
+
+        It belongs to the graph (it is saved in the file) and does not
+        change when the user pans or zooms: nodes that snap to the grid
+        stay on it. Files of V2.0 stored the accumulated pan here; as the
+        coordinates of those files were already shifted by that pan, the
+        grid lines come out at the same place.
         """
         self.__gridpos_x, self.__gridpos_y = grid_pos
 
-
     def get_grid_position(self):
         """
-        Get the current grid position of the graph.
+        Get the grid position of the graph (see set_grid_position).
         """
         return self.__gridpos_x, self.__gridpos_y
+
+    def set_view_origin(self, view_origin):
+        """
+        Set the world position that is at the top left corner of the window.
+
+        It only remembers where the user looked at the graph, so that the
+        saved file opens showing the same part of the graph. Panning and
+        zooming do not change the graph itself, so this is not part of the
+        undo history. The window keeps it up to date and reads it when a
+        graph is loaded.
+        """
+        self.__view_origin_x, self.__view_origin_y = view_origin
+
+    def get_view_origin(self):
+        """
+        Get the world position at the top left corner of the window.
+        """
+        return self.__view_origin_x, self.__view_origin_y
 
     def __handle_model_change(self, event):
         self._notify(event)
@@ -536,10 +545,3 @@ class GraphChangedEvent(GraphEvent):
         super().__init__(*args, **kwargs)
 
 
-class GraphMovedEvent(GraphEvent):
-    """Occurs after the whole graph has been moved."""
-
-    def __init__(self, nodes, branches, dx, dy, **kwargs):
-        super().__init__(nodes, branches, **kwargs)
-        self.dx = dx
-        self.dy = dy

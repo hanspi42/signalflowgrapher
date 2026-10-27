@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PySide6.QtGui import QMouseEvent, QCursor
-from signalflowgrapher.model.model import GraphMovedEvent
 from signalflowgrapher.common.observable import ObjectObservable
 
 # Some code is inspired by
@@ -35,17 +34,20 @@ class GraphItem(QWidget, ObjectObservable):
         return QPointF(self.x() + self.width() / 2,
                        self.y() + self.height() / 2)
 
-    def move_relative(self, dx, dy):
-        current_position = self.pos()
-        new_position = QPoint(current_position.x() + dx,
-                              current_position.y() + dy)
-        self.move(new_position)
+    def refresh(self, force: bool = False):
+        """
+        Derive position and shape of the widget from the model.
 
-    def graph_moved_event(self, event: GraphMovedEvent):
-        self.move_relative(event.dx, event.dy)
+        Idempotent: the result only depends on the current state of the
+        model, never on which events came before or in which order, so
+        refreshing a widget twice (or after unrelated events) changes
+        nothing. With force=True everything is recomputed, even if the
+        widget believes that it is up to date.
+        """
+        pass
 
     def mousePressEvent(self, event, notify=True):
-        self._mouse_press_pos = event.globalPos()
+        self._mouse_press_pos = event.globalPosition().toPoint()
         self._mouse_move_pos = self._mouse_press_pos
 
         if notify:
@@ -56,7 +58,7 @@ class GraphItem(QWidget, ObjectObservable):
         # Move is only triggered with left mouse button pressed
         if event.buttons() == Qt.LeftButton:
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-            global_position = event.globalPos()
+            global_position = event.globalPosition().toPoint()
             diff = global_position - self._mouse_move_pos
 
             self._notify(
@@ -94,7 +96,7 @@ class WidgetClickEvent(WidgetEvent):
 class WidgetPressEvent(WidgetClickEvent):
     def __init__(self, widget: GraphItem, mouse_event: QMouseEvent,
                  *args, **kwargs):
-        super().__init__(widget, mouse_event.globalPos(), mouse_event,
+        super().__init__(widget, mouse_event.globalPosition().toPoint(), mouse_event,
                          *args, **kwargs)
 
 

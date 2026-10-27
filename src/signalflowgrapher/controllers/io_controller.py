@@ -27,13 +27,19 @@ class IOController(object):
         """Save graph as json under the given path"""
         logger.info("Save graph to path: %s", path)
         export = JSONExport()
-        export.write_as_json(self.__model.graph, self.__model.get_grid_position(), path)
+        export.write_as_json(self.__model.graph,
+                             self.__model.get_grid_position(),
+                             path,
+                             view_origin=self.__model.get_view_origin())
         self.__command_handler.reset()
 
     def new_graph(self):
         """Initialize new graph"""
         logger.info("Create new graph")
         graph = ObservableGraph()
+        # A new graph has the grid at the origin and is shown from there
+        self.__model.set_grid_position((0, 0))
+        self.__model.set_view_origin((0, 0))
         self.__model.graph = graph
         self.__command_handler.reset()
 
@@ -48,7 +54,14 @@ class IOController(object):
         if "grid_pos" in dict:
             del dict["grid_pos"]
 
+        # extract the part of the graph that was shown when the file was
+        # saved; files without it (all files of V2.0) are shown from (0, 0)
+        view_origin = tuple(dict.get("view_origin", (0, 0)))
+        if "view_origin" in dict:
+            del dict["view_origin"]
+
         self.__model.set_grid_position(grid_pos)
+        self.__model.set_view_origin(view_origin)
         graph = ObservableGraph.from_dict(dict)
         self.__model.graph = graph
         self.__command_handler.reset()

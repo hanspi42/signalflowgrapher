@@ -37,7 +37,8 @@ class TestIOController(TestCase):
 
         json_export.write_as_json.assert_called_once_with(
             model.graph, model.get_grid_position(),
-            "Path to save graph to")
+            "Path to save graph to",
+            view_origin=model.get_view_origin())
         command_handler.reset.assert_called_once()
 
     def test_new_graph(self):

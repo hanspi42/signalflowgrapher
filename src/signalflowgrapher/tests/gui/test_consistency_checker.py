@@ -1,0 +1,132 @@
+"""
+Tests for the consistency checker itself ("who watches the watchmen").
+
+Each test builds a healthy GUI state, asserts that the checker is silent,
+then breaks exactly one invariant behind the application's back and asserts
+that the checker reports it. If one of these tests fails, the checker has
+become blind to that class of error and cannot protect the refactoring.
+"""
+from unittest import TestCase
+
+from PySide6.QtCore import QPoint
+
+from signalflowgrapher.tests.gui.harness import Harness, _private
+from signalflowgrapher.tests.gui.consistency import check_consistency
+
+
+class TestConsistencyChecker(TestCase):
+    def setUp(self):
+        self.h = Harness()
+        self.a = self.h.double_click(150, 150)
+        self.b = self.h.double_click(450, 330)
+        self.br = self.h.ctrl_click_branch(self.a, self.b)
+
+    def tearDown(self):
+        self.h.close()
+
+    def assert_problem(self, fragment):
+        problems = check_consistency(self.h)
+        self.assertTrue(any(fragment in p for p in problems),
+                        "expected a problem containing %r, got %r"
+                        % (fragment, problems))
+
+    def test_healthy_state_is_clean(self):
+        self.assertEqual([], check_consistency(self.h))
+
+    def test_detects_stale_node_widget(self):
+        w = self.h.widget_of(self.a)
+        w.move(w.pos() + QPoint(3, 0))
+        self.assert_problem("widget centre")
+
+    def test_detects_model_change_without_event(self):
+        # bypass the observable graph: widgets cannot know
+        self.a.move(5, 5)
+        self.assert_problem("widget centre")
+
+    def test_detects_stale_branch_cache(self):
+        self.b.move(10, 0)      # model only, no event
+        self.assert_problem("cached end")
+
+    def test_detects_stale_branch_geometry(self):
+        w = self.h.widget_of(self.br)
+        w.move(w.pos() + QPoint(0, 40))
+        self.assert_problem("mid point")
+
+    def test_detects_stale_label(self):
+        self.h.label_of(self.a).move(self.h.label_of(self.a).pos()
+                                     + QPoint(9, 0))
+        self.assert_problem("label of")
+
+    def test_detects_stale_branch_label(self):
+        self.h.label_of(self.br).move(self.h.label_of(self.br).pos()
+                                      + QPoint(0, -9))
+        self.assert_problem("label of")
+
+    def test_detects_stale_handle(self):
+        handles = self.h.select_branch(self.br)
+        self.assertEqual(2, len(handles))
+        handles[0].move(handles[0].pos() + QPoint(7, 7))
+        # handle geometry itself is derived; break the cached spline
+        handles[0]._spline_abs = handles[0]._spline_abs + QPoint(4, 0)
+        self.assert_problem("handle spline")
+
+    def test_detects_second_copy_of_pan_state_in_field(self):
+        self.h.pan(30, 30)
+        self.assertEqual([], check_consistency(self.h))
+        self.h.field._GraphField__grid_offset = QPoint(30, 30)
+        self.assert_problem("keeps its own copy of the pan state")
+
+    def test_detects_grid_widget_offset_mismatch(self):
+        self.h.pan(10, 10)
+        gw = self.h.private("grid_widget")
+        gw._FixedGridWidget__offset_source = lambda: (3, 3)
+        self.assert_problem("FixedGridWidget offset")
+
+    def test_detects_snapping_grid_offset_mismatch(self):
+        self.h.pan(10, 10)
+        grid = self.h.private("fixed_grid")
+        grid._FixedGrid__offset_source = lambda: (7, 7)
+        self.assert_problem("FixedGrid offset")
+
+    def test_detects_missing_widget(self):
+        self.h.model_widget_map.pop(self.a)
+        self.assert_problem("model->widget map")
+
+    def test_detects_missing_label(self):
+        self.h.model_label_map.pop(self.a)
+        self.assert_problem("model->label map")
+
+    def test_detects_non_integer_node_coordinates(self):
+        self.h.model.graph.move_node_relative(self.a, 0.5, 0)
+        self.assert_problem("non-integer")
+
+    def test_detects_wrong_view_origin_in_model(self):
+        self.h.pan(30, 10)
+        self.assertEqual([], check_consistency(self.h))
+        self.h.model.set_view_origin((5, 5))
+        self.assert_problem("model view origin")
+
+    def test_detects_mini_map_in_the_wrong_place(self):
+        self.h.field.set_minimap_visible(True)
+        self.assertEqual([], check_consistency(self.h))
+        self.h.field.minimap.move(5, 5)
+        self.assert_problem("not in the bottom right corner")
+
+    def test_detects_mini_map_under_other_widgets(self):
+        self.h.field.set_minimap_visible(True)
+        self.h.field.minimap.lower()
+        self.assert_problem("not over the other widgets")
+
+    def test_detects_mini_map_that_does_not_show_everything(self):
+        from PySide6.QtCore import QRectF
+        self.h.field.set_minimap_visible(True)
+        self.h.field.minimap.world_rect = lambda: QRectF(0, 0, 10, 10)
+        self.assert_problem("outside of the map")
+
+    def test_detects_non_integer_node_label_offset(self):
+        self.h.model.graph.move_label_relative(self.a, 0.5, 0)
+        self.assert_problem("non-integer label offset")
+
+    def test_detects_broken_graph_topology(self):
+        self.a._Node__outgoing.discard(self.br)   # damage the model graph
+        self.assert_problem("missing in start.outgoing")

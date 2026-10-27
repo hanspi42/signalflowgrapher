@@ -1,8 +1,11 @@
-from PySide6 import QtCore, QtGui
-from PySide6.QtCore import Qt, QPoint, QRect, QSize
-from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent
+from PySide6 import QtGui
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QSize, QTimer
+from PySide6.QtGui import QMouseEvent, QCursor, QResizeEvent, QWheelEvent
 from PySide6.QtWidgets import QWidget, QApplication, QMessageBox, QRubberBand
-from signalflowgrapher.gui.grid import FixedGrid, NoneGrid
+from signalflowgrapher.gui.grid import FixedGrid, NoneGrid, GRID_SIZE
+from signalflowgrapher.gui.mini_map import MiniMapWidget
+from signalflowgrapher.gui.view_transform import (
+    ViewTransform, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP)
 from signalflowgrapher.gui.fixed_grid_widget import FixedGridWidget
 from signalflowgrapher.gui.branch_widget import (
     BranchWidget, Spline1HandleWidget, Spline2HandleWidget,
@@ -11,7 +14,7 @@ from signalflowgrapher.gui.branch_widget import (
 from signalflowgrapher.commands.command_handler import CommandHandler
 from signalflowgrapher.model.model import (
     Model, CurvedBranchAddedEvent, CurvedBranchRemovedEvent,
-    CurvedBranchTransformedEvent, GraphChangedEvent, GraphMovedEvent,
+    CurvedBranchTransformedEvent, GraphChangedEvent,
     LabelChangedTextEvent, LabelMovedEvent,
     LabeledObject, PositionedNodeAddedEvent,
     PositionedNodeMovedEvent, PositionedNodeRemovedEvent,
@@ -47,16 +50,116 @@ class GraphField(QWidget):
         self.__label_model_map = {}
         self.__mouse_press_pos: QPoint = None
         self.__selection_rect = None
-        self.__grid_size = 30
-        self.__grid = FixedGrid(self.__grid_size)
-        self.__grid_widget = FixedGridWidget(self.__grid_size, parent=self)
+        # Maps world coordinates (the model) to screen coordinates (this
+        # widget). All widgets are placed through it and all mouse input
+        # is converted with it.
+        self.__view = ViewTransform(parent=self)
+        self.__view.changed.connect(self.__on_view_changed)
+        self.__shown_zoom = self.__view.zoom
+        # Turns of the mouse wheel that came together are one zoom
+        self.__wheel_steps = 0.0
+        self.__wheel_anchor = None
+        self.__wheel_timer = QTimer(self)
+        self.__wheel_timer.setSingleShot(True)
+        self.__wheel_timer.setInterval(0)
+        self.__wheel_timer.timeout.connect(self.__apply_wheel_steps)
+        # The model owns the pan; grid snapping and grid drawing read it
+        self.__fixed_grid = FixedGrid(GRID_SIZE,
+                                      self.__model.get_grid_position)
+        self.__grid = self.__fixed_grid
+        self.__grid_widget = FixedGridWidget(
+            GRID_SIZE, self.__model.get_grid_position, self.__view,
+            parent=self)
         self.__grid_widget.resize(self.size())
         self.__grid_widget.show()
-        self.__grid_offset = QPoint()
         self.__rubber_band: QRubberBand = QRubberBand(
             QRubberBand.Rectangle, self)
+        # The mini map lies over the widgets of the graph, in a corner. It
+        # is not part of the graph: it has no model object and does not
+        # appear in the maps of widgets.
+        self.__minimap = MiniMapWidget(self.__model, self.__view, self)
 
         self.setMinimumSize(800, 600)
+
+    @property
+    def view(self) -> ViewTransform:
+        """The transformation between model and screen coordinates."""
+        return self.__view
+
+    @property
+    def minimap(self) -> MiniMapWidget:
+        """The mini map (shown or not)."""
+        return self.__minimap
+
+    @property
+    def minimap_visible(self) -> bool:
+        return self.__minimap.isVisible()
+
+    def set_minimap_visible(self, visible: bool):
+        """Show or hide the mini map in the bottom right corner."""
+        self.__minimap.setVisible(visible)
+        self.__place_minimap()
+        self.__minimap.raise_()
+        self.__minimap.update()
+
+    def __place_minimap(self):
+        self.__minimap.move(
+            self.width() - self.__minimap.width() - MiniMapWidget.MARGIN,
+            self.height() - self.__minimap.height() - MiniMapWidget.MARGIN)
+
+    def childEvent(self, event):
+        # Every widget that is created later (nodes, branches, labels, spline
+        # handles) would otherwise lie over the mini map
+        super().childEvent(event)
+        minimap = self.__dict__.get("_GraphField__minimap")
+        if (minimap is not None and event.added()
+                and event.child() is not minimap
+                and event.child().isWidgetType()):
+            minimap.raise_()
+
+    def render_graph(self, target):
+        """
+        Render the graph field into a paint device (for a picture of what
+        is shown). The mini map is an aid for working with the graph and
+        not part of the picture.
+        """
+        was_visible = self.__minimap.isVisible()
+        self.__minimap.hide()
+        try:
+            self.render(target)
+        finally:
+            self.__minimap.setVisible(was_visible)
+
+    def __on_view_changed(self):
+        # Everything that is shown depends on the view: derive all widgets
+        # from the model again. Widgets that are only moved by a pan are
+        # moved, not rebuilt.
+        zoom_changed = self.__shown_zoom != self.__view.zoom
+        self.__shown_zoom = self.__view.zoom
+        if zoom_changed:
+            # Everything changes its size: paint the window once at the end,
+            # not after every widget (a third of the time). A pan does not
+            # need this, the moved widgets are painted where they are.
+            self.setUpdatesEnabled(False)
+            try:
+                self.refresh_widgets()
+            finally:
+                self.setUpdatesEnabled(True)
+        else:
+            self.refresh_widgets()
+        self.__grid_widget.update()
+        self.__minimap.update()
+        # The model remembers what part of the graph is shown, for the file
+        origin = self.__view.to_world(QPointF(0, 0))
+        self.__model.set_view_origin((round(origin.x()), round(origin.y())))
+
+    def __show_view_origin_of_model(self):
+        """
+        Show the part of the graph that the model remembers (the part that
+        was shown when the file was saved) at zoom 100%.
+        """
+        origin_x, origin_y = self.__model.get_view_origin()
+        self.__view.set(1.0, QPointF(-origin_x, -origin_y))
 
     def on_esc_press(self):
         self.__clear_selection()
@@ -65,8 +168,7 @@ class GraphField(QWidget):
         self.__grid = NoneGrid()
 
     def on_ctrl_release(self):
-        self.__grid = FixedGrid(self.__grid_size)
-        self.__grid.set_offset(self.__grid_offset)
+        self.__grid = self.__fixed_grid
         self.__grid_widget.lower()
 
     def center_graph(self):
@@ -93,15 +195,143 @@ class GraphField(QWidget):
         graph_center_x = min_x + graph_width // 2
         graph_center_y = min_y + graph_height // 2
 
-        dx = viewport_center_x - graph_center_x
-        dy = viewport_center_y - graph_center_y
+        # Show the graph shifted by this distance on the screen
+        self.__pan_view(viewport_center_x - graph_center_x,
+                        viewport_center_y - graph_center_y)
 
-        # Move graph and update grid offset
-        self.__model.move_graph_relative(dx, dy)
-        self.__grid_offset += QtCore.QPoint(dx, dy)
-        self.__grid.set_offset(self.__grid_offset)
-        self.__grid_widget.set_offset(self.__grid_offset)
-        self.__grid_widget.repaint()
+    # Space that "zoom to fit" leaves around the graph, in pixels
+    FIT_MARGIN = 40
+
+    @staticmethod
+    def __limited_zoom(zoom: float) -> float:
+        """
+        The zoom the user can choose: between MIN_ZOOM and MAX_ZOOM; values
+        that only differ by rounding errors from the limits and from 100%
+        are the exact value, so that steps in and out arrive at 100% again.
+        """
+        for exact in (1.0, MIN_ZOOM, MAX_ZOOM):
+            if abs(zoom - exact) < 1e-6:
+                zoom = exact
+        return min(max(zoom, MIN_ZOOM), MAX_ZOOM)
+
+    def set_zoom(self, zoom: float, anchor: QPointF = None):
+        """
+        Zoom to the given factor (limited to 10% to 200%). The part of the
+        graph that is at the screen position `anchor` stays there; without
+        an anchor this is the centre of the window.
+        """
+        new_zoom = self.__limited_zoom(zoom)
+        old_zoom = self.__view.zoom
+        if new_zoom == old_zoom:
+            return
+        if anchor is None:
+            anchor = QPointF(self.width() / 2, self.height() / 2)
+        # The world position under the anchor is (anchor - offset) / zoom
+        # and has to be shown at the anchor with the new zoom:
+        #   new_zoom * world + new_offset = anchor
+        offset = self.__view.offset
+        ratio = new_zoom / old_zoom
+        self.__view.set(new_zoom, QPointF(
+            anchor.x() - ratio * (anchor.x() - offset.x()),
+            anchor.y() - ratio * (anchor.y() - offset.y())))
+
+    def zoom_by_steps(self, steps: float, anchor: QPointF = None):
+        """
+        Zoom in (steps > 0) or out (steps < 0) by steps of the keyboard or
+        mouse wheel, see ZOOM_STEP.
+        """
+        self.set_zoom(self.__view.zoom * ZOOM_STEP ** steps, anchor)
+
+    def zoom_in(self):
+        self.zoom_by_steps(1)
+
+    def zoom_out(self):
+        self.zoom_by_steps(-1)
+
+    def zoom_reset(self):
+        """Back to 100%, the centre of the window stays where it is."""
+        self.set_zoom(1.0)
+
+    def zoom_to_fit(self):
+        """
+        Show the whole graph: zoomed out as far as necessary (but not
+        beyond 100%: a small graph is not enlarged) and centred in the
+        window.
+        """
+        graph = self.__model.graph
+        points = []
+        for node in graph.nodes:
+            points.append((node.x, node.y))
+            points.append((node.x + node.label_dx, node.y + node.label_dy))
+        for branch in graph.branches:
+            curve = [(branch.start.x, branch.start.y),
+                     (branch.spline1_x, branch.spline1_y),
+                     (branch.spline2_x, branch.spline2_y),
+                     (branch.end.x, branch.end.y)]
+            points.extend(curve)
+            # label: placed relative to the middle of the curve
+            middle_x = sum(w * p[0] for w, p in zip((1, 3, 3, 1), curve)) / 8
+            middle_y = sum(w * p[1] for w, p in zip((1, 3, 3, 1), curve)) / 8
+            points.append((middle_x + branch.label_dx,
+                           middle_y + branch.label_dy))
+        if not points:
+            return
+        min_x = min(p[0] for p in points)
+        max_x = max(p[0] for p in points)
+        min_y = min(p[1] for p in points)
+        max_y = max(p[1] for p in points)
+        width = max(max_x - min_x, 1)
+        height = max(max_y - min_y, 1)
+        zoom = self.__limited_zoom(min(
+            (self.width() - 2 * self.FIT_MARGIN) / width,
+            (self.height() - 2 * self.FIT_MARGIN) / height,
+            1.0))
+        self.__view.set(zoom, QPointF(
+            self.width() / 2 - zoom * (min_x + max_x) / 2,
+            self.height() / 2 - zoom * (min_y + max_y) / 2))
+
+    def wheelEvent(self, event: QWheelEvent):
+        # Ctrl + mouse wheel zooms around the mouse pointer; the wheel alone
+        # is not used
+        if event.modifiers() & Qt.ControlModifier:
+            steps = event.angleDelta().y() / 120
+            if steps:
+                # Zooming rebuilds every widget, which takes a while for a
+                # big graph. A fast turn of the wheel produces many events
+                # at once; they are added up and zoomed in one go.
+                self.__wheel_steps += steps
+                self.__wheel_anchor = event.position()
+                self.__wheel_timer.start()
+            event.accept()
+        else:
+            super().wheelEvent(event)
+
+    def __apply_wheel_steps(self):
+        steps, anchor = self.__wheel_steps, self.__wheel_anchor
+        self.__wheel_steps = 0.0
+        self.__wheel_anchor = None
+        if steps:
+            self.zoom_by_steps(steps, anchor)
+
+    def __pan_view(self, screen_dx: float, screen_dy: float):
+        """
+        Show the graph shifted by a distance on the screen. Only the view
+        changes; the graph (its coordinates, the undo history) does not.
+        """
+        offset = self.__view.offset
+        self.__view.set(offset=QPointF(offset.x() + screen_dx,
+                                       offset.y() + screen_dy))
+
+    def __relative_grid_move(self, event) -> QPoint:
+        """
+        Snap the move of a dragged widget to the grid. The mouse moved by a
+        distance on the screen; the result is the move of the model in
+        world units.
+        """
+        return self.__grid.relative_move(
+            self.__view.to_world_delta(event.dx),
+            self.__view.to_world_delta(event.dy),
+            event.widget.get_world_center())
 
 
     def __selection_changed(self):
@@ -133,7 +363,9 @@ class GraphField(QWidget):
 
     def mouseDoubleClickEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
-            grid_pos = self.__grid.get_grid_position(event.position().toPoint())
+            # the click is on the screen, the node is created in the world
+            world_pos = self.__view.to_world(event.position().toPoint())
+            grid_pos = self.__grid.get_grid_position(world_pos.toPoint())
             self.__controller.create_node(grid_pos.x(), grid_pos.y())
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -154,11 +386,7 @@ class GraphField(QWidget):
                         self.__remove_selection(widget)
             else:
                 self.setCursor(QCursor(Qt.ClosedHandCursor))
-                self.__grid_offset += diff
-                self.__grid.set_offset(self.__grid_offset)
-                self.__grid_widget.set_offset(self.__grid_offset)
-                self.__grid_widget.repaint()
-                self.__model.move_graph_relative(diff.x(), diff.y())
+                self.__pan_view(diff.x(), diff.y())
                 self.__mouse_press_pos = global_position
 
     def __on_label_click(self, event):
@@ -178,9 +406,7 @@ class GraphField(QWidget):
 
         if isinstance(event, WidgetMoveEvent):
             label_model = self.__label_model_map[event.widget]
-            grid_move = self.__grid.relative_move(event.dx,
-                                                  event.dy,
-                                                  event.widget)
+            grid_move = self.__relative_grid_move(event)
             self.__controller.move_label_relative(label_model,
                                                   grid_move.x(),
                                                   grid_move.y())
@@ -227,10 +453,7 @@ class GraphField(QWidget):
                 self.__clear_selection()
                 self.__add_selection(event.widget)
 
-            grid_move = self.__grid.relative_move(
-                event.dx,
-                event.dy,
-                event.widget)
+            grid_move = self.__relative_grid_move(event)
 
             for widget in self.__selection:
                 if isinstance(widget, NodeWidget):
@@ -279,9 +502,7 @@ class GraphField(QWidget):
         if isinstance(event, SplineHandleWidgetMoveEvent):
             widget = event.widget
             dx1, dy1, dx2, dy2 = 0, 0, 0, 0
-            grid_move = self.__grid.relative_move(event.dx,
-                                                  event.dy,
-                                                  event.widget)
+            grid_move = self.__relative_grid_move(event)
             if isinstance(widget, Spline1HandleWidget):
                 dx1, dy1 = grid_move.x(), grid_move.y()
             elif isinstance(widget, Spline2HandleWidget):
@@ -349,6 +570,9 @@ class GraphField(QWidget):
             self.__selection_changed()
 
     def __handle_model_change(self, event):
+        # The mini map draws from the model: show every change (a repaint is
+        # scheduled once, however many events come)
+        self.__minimap.update()
         if isinstance(event, PositionedNodeAddedEvent):
             logger.debug("PositionedNodeAddedEvent received")
             self.__add_node(event.node)
@@ -433,32 +657,38 @@ class GraphField(QWidget):
             self.__widget_model_map.clear()
             self.__label_model_map.clear()
             self.__model_label_map.clear()
+            # Show the graph where it was when it was saved (this has to be
+            # done before the widgets are created, which are placed
+            # through the view)
+            self.__show_view_origin_of_model()
             for node in event.nodes:
                 self.__add_node(node)
             for branch in event.branches:
                 self.__add_branch(branch)
 
-            grid_offset_ = self.__model.get_grid_position()
-            self.__grid_offset = QPoint(grid_offset_[0], grid_offset_[1])
-            self.__grid.set_offset(self.__grid_offset)
-            self.__grid_widget.set_offset(self.__grid_offset)
-            self.__grid_widget.repaint()
+            self.__grid_widget.update()
             return
-        if isinstance(event, GraphMovedEvent):
-            for widget in self.__model_widget_map.values():
-                widget.graph_moved_event(event)
 
-            for widget in self.__model_label_map.values():
-                widget.graph_moved_event(event)
+    def refresh_widgets(self, force: bool = False):
+        """
+        Derive position and shape of all widgets from the model.
 
-            for widget in self.__handles:
-                widget.graph_moved_event(event)
+        Nodes and branches come first, labels last: a label is placed
+        relative to its owner widget (for a branch: relative to the middle
+        of the drawn curve). With force=True all widgets are recomputed
+        completely, even those that believe to be up to date.
+        """
+        for widget in self.__model_widget_map.values():
+            widget.refresh(force)
+        for handle in self.__handles:
+            handle.refresh(force)
+        for label in self.__model_label_map.values():
+            label.refresh(force)
 
     def __add_node(self, node):
-        widget = NodeWidget(node, parent=self)
+        widget = NodeWidget(node, self.__view, parent=self)
         # Set initial position centered to given point
-        widget.move(QPoint(int(node.x - widget.width() / 2),
-                           int(node.y - widget.height() / 2)))
+        widget.refresh()
         widget.observe(self.__on_node_click)
         self.__model_widget_map[node] = widget
         self.__widget_model_map[widget] = node
@@ -468,12 +698,7 @@ class GraphField(QWidget):
         self.__add_selection(widget)
 
     def __add_branch(self, branch):
-        widget = BranchWidget(branch,
-                              QPoint(int(branch.spline1_x),
-                                     int(branch.spline1_y)),
-                              QPoint(int(branch.spline2_x),
-                                     int(branch.spline2_y)),
-                              parent=self)
+        widget = BranchWidget(branch, self.__view, parent=self)
 
         self.__model_widget_map[branch] = widget
         self.__widget_model_map[widget] = branch
@@ -501,6 +726,7 @@ class GraphField(QWidget):
         label = LabelWidget(labeled_object.label_text,
                             labeled_object,
                             widget,
+                            self.__view,
                             parent=self)
 
         self.__model_label_map[labeled_object] = label
@@ -518,6 +744,7 @@ class GraphField(QWidget):
     def resizeEvent(self, event: QResizeEvent):
         # Resize grid
         self.__grid_widget.resize(self.size())
+        self.__place_minimap()
         super().resizeEvent(event)
 
     def toggle_grid_visibility(self):
@@ -582,11 +809,13 @@ class GraphField(QWidget):
                                         "Mouse pointer is outside the graph area.")
             return
 
-        mouse_x, mouse_y = local_pos.x(), local_pos.y()
+        # The mouse is on the screen, the pasted nodes are in the world
+        world_pos = self.__view.to_world(local_pos).toPoint()
 
-        # Snap to grid
-        grid_x = int(self.__grid_size*round((mouse_x-2) / self.__grid_size))
-        grid_y = int(self.__grid_size*round((mouse_y-2) / self.__grid_size))
+        # Snap to the grid lines (always the fixed grid: Ctrl is held while
+        # pasting, which switches the active grid off)
+        grid_pos = self.__fixed_grid.get_grid_position(world_pos)
+        grid_x, grid_y = grid_pos.x(), grid_pos.y()
 
         # Compute bounding box of copied nodes
         min_x = min(n["x"] for n in nodes_data)
@@ -606,7 +835,9 @@ class GraphField(QWidget):
                 new_x = nd["x"] + dx
                 new_y = nd["y"] + dy
 
-                new_node = self.__controller.create_node(new_x, new_y)
+                new_node = self.__controller.create_node(
+                    new_x, new_y,
+                    nd.get("label_dx", 0), nd.get("label_dy", 30))
 
                 # Restore node name if present
                 name = nd.get("name")
