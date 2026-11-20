@@ -4,8 +4,8 @@
 
 ## Version 3.1.0
 
-- **Evaluate Mason now accepts SymPy singleton weights**: `S(1)/2` is the exact rational 1/2. `S` is therefore reserved for SymPy's singleton registry and can no longer be used as a symbol name or node name.
-- **Safer weight validation**: weights with undefined function calls (e.g. `f(x)/2`) are reported in the input mask and in a message dialog instead of silently breaking the Mason evaluation.
+- **"Evaluate Mason" now accepts SymPy's singleton S()**: e.g., `S(1)/2` and `S.Half` are now the exact rational 1/2. However, `S` can no longer be used as a symbol name or node name.
+- **Safer weight validation**: branch weights with undefined function calls (e.g. `f(x)/2`) are reported in the input mask and in a message dialog instead of silently breaking the Mason evaluation.
 
 ## Version 3.0.0
 
