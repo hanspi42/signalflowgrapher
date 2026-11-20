@@ -1,7 +1,7 @@
 import unittest
 from signalflowgrapher.algorithms.graph import Graph, Branch, Node
 from signalflowgrapher.algorithms.mason import loop_to_expression, mason
-from sympy import Mul, Symbol, srepr
+from sympy import Mul, Rational, Symbol, srepr
 
 
 class TestMason(unittest.TestCase):
@@ -212,3 +212,32 @@ class TestMason(unittest.TestCase):
             .subs(result.loops)
 
         self.assertEqual(expected_num, str(actual_num))
+
+    # Regression: the weight 'S(1)/2' must parse as the exact rational 1/2
+    # (SymPy's singleton registry), not as an applied undefined function
+    def test_mason_with_s_singleton_weight(self):
+        # Create graph
+        graph = Graph()
+
+        # Add nodes
+        node_x = Node(graph)  # input node
+        node_z = Node(graph)  # output node
+
+        # Add branches
+        Branch(node_x, node_z, "S(1)/2")
+
+        # Execute
+        result = mason(graph, node_x, node_z)
+
+        # Assert
+        self.assertEqual(Rational(1, 2), result.paths[0][1])
+
+        actual = result.transfer_function[0][0] \
+            .subs(result.transfer_function) \
+            .subs(result.numerator) \
+            .subs(result.denominator) \
+            .subs(result.determinant) \
+            .subs(result.paths) \
+            .subs(result.loops)
+
+        self.assertEqual("1/2", str(actual))

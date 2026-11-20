@@ -281,13 +281,18 @@ class SideWidget(QWidget):
 
 
     def __show_mason(self, sel):
-        # Generate mason result and catch illegal sympy expressions in branchweights
+        # Generate mason result, build the window and catch illegal
+        # sympy expressions in branch weights and in the result window
         try:
             mason_result = self.__io_controller.generate_mason(
                 self.__model.graph,
                 sel[0],
                 sel[1]
             )
+
+            # Pass content and open window
+            window = MasonWindow()
+            window.set_content(mason_result)
 
         except Exception as e:
             msg = QMessageBox(self)
@@ -297,9 +302,6 @@ class SideWidget(QWidget):
             msg.exec_()
             return
 
-        # Pass content and open window
-        window = MasonWindow()
-        window.set_content(mason_result)
         window.exec()  # Wait until window is closed
 
     def __handle_selection_change(self, old_selection, new_selection):

@@ -2,6 +2,11 @@
 
 ![SignalFlowGrapher Title Image](https://raw.githubusercontent.com/hanspi42/signalflowgrapher/master/tools/title_image.png)
 
+## Version 3.1.0
+
+- **Evaluate Mason now accepts SymPy singleton weights**: `S(1)/2` is the exact rational 1/2. `S` is therefore reserved for SymPy's singleton registry and can no longer be used as a symbol name or node name.
+- **Safer weight validation**: weights with undefined function calls (e.g. `f(x)/2`) are reported in the input mask and in a message dialog instead of silently breaking the Mason evaluation.
+
 ## Version 3.0.0
 
 - **Zoom** from 10% to 200%: `Ctrl` + mouse wheel, `Alt+I` / `Alt+U` for in / out, `Alt+O` for 100%, `Alt+Z` to fit the whole graph. Nodes, lines, arrows and text scale together.
